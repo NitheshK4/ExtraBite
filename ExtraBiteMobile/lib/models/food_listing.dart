@@ -1,81 +1,54 @@
 class FoodListing {
   final String id;
-  final String title;
-  final String pgName;
+  final String foodName;
   final String description;
-  final int availablePortions;
-  final int totalPortions;
+  final String propertyId;
+  final String propertyName;
+  final double distanceKm;
+  final String category;
+  final bool isVegetarian;
   final double originalPrice;
-  final double pickupPrice; // Pay at pickup price
-  final bool isVeg;
-  final String category; // Breakfast, Lunch, Dinner, Snacks
-  final double latitude;
-  final double longitude;
-  final String address;
-  final DateTime createdAt;
-  final DateTime expiresAt;
-  final String imageUrl;
-  final bool isAvailable;
+  final double sellingPrice;
+  final int availablePortions;
+  final DateTime preparedTime;
+  final DateTime pickupStarts;
+  final DateTime pickupEnds;
+  final List<String> ingredients;
+  final List<String> allergens;
+  final String verificationStatus; // e.g. "verified", "unverified"
 
   FoodListing({
     required this.id,
-    required this.title,
-    required this.pgName,
+    required this.foodName,
     required this.description,
-    required this.availablePortions,
-    required this.totalPortions,
-    required this.originalPrice,
-    required this.pickupPrice,
-    required this.isVeg,
+    required this.propertyId,
+    required this.propertyName,
+    required this.distanceKm,
     required this.category,
-    required this.latitude,
-    required this.longitude,
-    required this.address,
-    required this.createdAt,
-    required this.expiresAt,
-    required this.imageUrl,
-    this.isAvailable = true,
+    required this.isVegetarian,
+    required this.originalPrice,
+    required this.sellingPrice,
+    required this.availablePortions,
+    required this.preparedTime,
+    required this.pickupStarts,
+    required this.pickupEnds,
+    required this.ingredients,
+    required this.allergens,
+    required this.verificationStatus,
   });
 
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
+  double get discountPercentage {
+    if (originalPrice <= 0) return 0;
+    final discount = originalPrice - sellingPrice;
+    return ((discount / originalPrice) * 100).clamp(0, 100);
+  }
 
-  FoodListing copyWith({
-    String? id,
-    String? title,
-    String? pgName,
-    String? description,
-    int? availablePortions,
-    int? totalPortions,
-    double? originalPrice,
-    double? pickupPrice,
-    bool? isVeg,
-    String? category,
-    double? latitude,
-    double? longitude,
-    String? address,
-    DateTime? createdAt,
-    DateTime? expiresAt,
-    String? imageUrl,
-    bool? isAvailable,
-  }) {
-    return FoodListing(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      pgName: pgName ?? this.pgName,
-      description: description ?? this.description,
-      availablePortions: availablePortions ?? this.availablePortions,
-      totalPortions: totalPortions ?? this.totalPortions,
-      originalPrice: originalPrice ?? this.originalPrice,
-      pickupPrice: pickupPrice ?? this.pickupPrice,
-      isVeg: isVeg ?? this.isVeg,
-      category: category ?? this.category,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
-      address: address ?? this.address,
-      createdAt: createdAt ?? this.createdAt,
-      expiresAt: expiresAt ?? this.expiresAt,
-      imageUrl: imageUrl ?? this.imageUrl,
-      isAvailable: isAvailable ?? this.isAvailable,
-    );
+  bool get isExpired {
+    return DateTime.now().isAfter(pickupEnds);
+  }
+
+  bool get isPickupActive {
+    final now = DateTime.now();
+    return now.isAfter(pickupStarts) && now.isBefore(pickupEnds);
   }
 }
