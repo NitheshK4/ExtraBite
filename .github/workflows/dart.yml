@@ -25,14 +25,21 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.35.2'
           channel: 'stable'
 
       - name: Install dependencies
         run: flutter pub get
+        working-directory: ExtraBiteMobile
 
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
+        working-directory: ExtraBiteMobile
+
+      - name: Run tests
+        run: flutter test
+        working-directory: ExtraBiteMobile
 
       - name: Build Android APK
         run: flutter build apk --debug
+        working-directory: ExtraBiteMobile
