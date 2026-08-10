@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ExtraBite-Antigravity.iml" filepath="$PROJECT_DIR$/.idea/ExtraBite-Antigravity.iml" />
+      <module fileurl="file://$PROJECT_DIR$/extrabite_mobile.iml" filepath="$PROJECT_DIR$/extrabite_mobile.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/extrabite_mobile_android.iml" filepath="$PROJECT_DIR$/android/extrabite_mobile_android.iml" />
     </modules>
   </component>
 </project>
