@@ -43,3 +43,9 @@ jobs:
       - name: Build Android APK
         run: flutter build apk --debug
         working-directory: ExtraBiteMobile
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extrabite-app-debug
+          path: ExtraBiteMobile/build/app/outputs/flutter-apk/app-debug.apk
