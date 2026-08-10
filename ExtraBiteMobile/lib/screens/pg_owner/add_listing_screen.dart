@@ -36,6 +36,7 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error picking image: $e')),
       );

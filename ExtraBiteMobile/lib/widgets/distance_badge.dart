@@ -11,7 +11,7 @@ class DistanceBadge extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext meContext) {
+  Widget build(BuildContext context) {
     final isVeryClose = distanceKm <= 1.0;
     final isWithinDefaultRadius = distanceKm <= 2.0;
 
