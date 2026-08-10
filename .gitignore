@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/release
 
 .gradle/
+.env
+ExtraBiteMobile/
+node_modules/
