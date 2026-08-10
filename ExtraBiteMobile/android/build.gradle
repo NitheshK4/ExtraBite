@@ -1,0 +1,44 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+subprojects {
+    project.plugins.withId('com.android.library') {
+        project.android {
+            compileSdk = 35
+            ext.flutter = [
+                compileSdkVersion: 35,
+                minSdkVersion: 21,
+                targetSdkVersion: 35,
+                ndkVersion: "25.1.8937393"
+            ]
+        }
+    }
+    project.plugins.withId('com.android.application') {
+        project.android {
+            compileSdk = 35
+            ext.flutter = [
+                compileSdkVersion: 35,
+                minSdkVersion: 21,
+                targetSdkVersion: 35,
+                ndkVersion: "25.1.8937393"
+            ]
+        }
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
