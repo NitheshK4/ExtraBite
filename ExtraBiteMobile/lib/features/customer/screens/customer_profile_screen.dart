@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 
 class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -15,6 +17,41 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
+    if (authState.status == AuthStatus.authenticating ||
+        authState.status == AuthStatus.uninitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('My Profile')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.account_circle_outlined, size: 64, color: AppColors.textLight),
+              const SizedBox(height: 16),
+              const Text('No active user session.'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(authProvider.notifier).resetToRoleSelection();
+                },
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
@@ -24,16 +61,16 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Avatar & Name Card
-            _buildProfileCard(),
+            // Dynamic Avatar & Name Card
+            _buildProfileCard(user),
             const SizedBox(height: 24),
-            
+
             // Preferences section
             _buildSectionHeader('Dietary Preferences'),
             const SizedBox(height: 8),
             _buildPreferenceCard(),
             const SizedBox(height: 24),
-            
+
             // Settings section
             _buildSectionHeader('App Settings'),
             const SizedBox(height: 8),
@@ -49,7 +86,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             // Logout Option
             _buildLogoutButton(context),
             const SizedBox(height: 32),
-            
+
             // Brand Footer
             Center(
               child: Column(
@@ -87,7 +124,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     );
   }
 
-  Widget _buildProfileCard() {
+  Widget _buildProfileCard(UserModel user) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -96,9 +133,9 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             CircleAvatar(
               radius: 36,
               backgroundColor: AppColors.primary,
-              child: const Text(
-                'PK',
-                style: TextStyle(
+              child: Text(
+                user.initials,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -106,27 +143,27 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pavan Kumar',
-                    style: TextStyle(
+                    user.name,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'pavan.kumar@example.com',
-                    style: TextStyle(color: AppColors.textSecondary),
+                    user.email,
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    '+91 9876543210',
-                    style: TextStyle(color: AppColors.textLight, fontSize: 13),
+                    user.phone,
+                    style: const TextStyle(color: AppColors.textLight, fontSize: 13),
                   ),
                 ],
               ),
@@ -227,7 +264,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             const ListTile(
               leading: Icon(Icons.info_outline, color: AppColors.textSecondary),
               title: Text('About ExtraBite'),
-              subtitle: Text('Version 1.0.0 (Beta) • Marketplace Foundation'),
+              subtitle: Text('Version 1.0.0 • Marketplace Foundation'),
             ),
           ],
         ),
@@ -271,7 +308,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Allergen Profile'),
-        content: const Text('Mock Allergen configurations will be persisted when backend integrations are live. Standard support covers Peanuts, Gluten, Egg, Soy, and Dairy warnings.'),
+        content: const Text('Allergen configurations will be saved to your authenticated account.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
         ],
@@ -347,12 +384,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Log Out?'),
-        content: const Text('Mock logout action. Auth flow is not implemented in Stage 1.'),
+        content: const Text('Are you sure you want to log out? All cached local session data will be cleared.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authProvider.notifier).logout();
+            },
             child: const Text('Logout'),
           ),
         ],
