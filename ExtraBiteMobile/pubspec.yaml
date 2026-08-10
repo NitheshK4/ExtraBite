@@ -1,0 +1,36 @@
+name: extrabite_mobile
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.0
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/branding/extrabite_logo.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/extrabite_logo.png"
+  min_sdk_android: 23
