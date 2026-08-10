@@ -61,7 +61,6 @@ void main() {
       final container = ProviderContainer();
       final filteredList = container.read(filteredFoodProvider);
       
-      // All items in customer listings must have status 'verified'
       for (final item in filteredList) {
         expect(item.verificationStatus, equals('verified'));
       }
@@ -71,14 +70,12 @@ void main() {
       final container = ProviderContainer();
       final notifier = container.read(foodProvider.notifier);
       
-      // Select Breakfast category
       notifier.updateCategory('Breakfast');
       var filteredList = container.read(filteredFoodProvider);
       for (final item in filteredList) {
         expect(item.category, equals('Breakfast'));
       }
 
-      // Select Vegetarian category
       notifier.updateCategory('Vegetarian');
       filteredList = container.read(filteredFoodProvider);
       for (final item in filteredList) {
@@ -90,7 +87,6 @@ void main() {
       final container = ProviderContainer();
       final notifier = container.read(foodProvider.notifier);
       
-      // Search for Biryani
       notifier.updateSearchQuery('Biryani');
       final filteredList = container.read(filteredFoodProvider);
       for (final item in filteredList) {
@@ -112,7 +108,6 @@ void main() {
 
       final initialActiveCount = container.read(activeReservationsProvider).length;
 
-      // Reserve the first food item
       final targetFood = foodList.first;
       final reservation = reservationNotifier.createReservation(
         listing: targetFood,
@@ -124,7 +119,6 @@ void main() {
       expect(reservation.amountToCollect, equals(targetFood.sellingPrice * 2));
       expect(reservation.status, equals(ReservationStatus.reserved));
 
-      // Active reservations list should grow by 1
       final activeList = container.read(activeReservationsProvider);
       expect(activeList.length, equals(initialActiveCount + 1));
       expect(activeList.first.id, equals(reservation.id));
@@ -138,14 +132,11 @@ void main() {
       expect(activeList.isNotEmpty, isTrue);
       final targetId = activeList.first.id;
 
-      // Cancel the reservation
       reservationNotifier.cancelReservation(targetId);
 
-      // Verify it is no longer in the active list
       final newActiveList = container.read(activeReservationsProvider);
       expect(newActiveList.any((item) => item.id == targetId), isFalse);
 
-      // Verify it exists in the past list with status cancelled
       final pastList = container.read(pastReservationsProvider);
       expect(pastList.any((item) => item.id == targetId && item.status == ReservationStatus.cancelled), isTrue);
     });
@@ -158,36 +149,44 @@ void main() {
           child: ExtraBiteApp(),
         ),
       );
-      // Wait for GoRouter to resolve initial route
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      // 1. Verify Home Screen loads Location Header & search bar
+      // 1. Initial screen must be Role Selection screen
+      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Personal User'), findsOneWidget);
+      expect(find.text('Hostel / PG Owner'), findsOneWidget);
+
+      // 2. Select Personal User role
+      await tester.tap(find.text('Personal User'));
+      await tester.pumpAndSettle();
+
+      // 3. Log in as Personal User
+      expect(find.text('Log In as Personal User'), findsOneWidget);
+      await tester.enterText(find.byType(TextFormField).at(0), 'testuser@example.com');
+      await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+      await tester.tap(find.text('Log In as Personal User'));
+      await tester.pumpAndSettle();
+
+      // 4. Verify Customer Home Screen loads after login
       expect(find.text('Near VIT-AP University'), findsOneWidget);
       expect(find.text('Search meals, PGs or messes...'), findsOneWidget);
 
-      // 2. Verify that Chicken Rice card is rendered on screen
-      expect(find.text('Chicken Rice'), findsWidgets);
-      expect(find.text('Royal Men\'s Hostel'), findsWidgets);
-
-      // 3. Tap on Search tab icon
+      // 5. Navigate to Search tab
       final searchIcon = find.byIcon(Icons.search_outlined);
       expect(searchIcon, findsOneWidget);
       await tester.tap(searchIcon);
       await tester.pumpAndSettle();
-
-      // Verify Search page header appears
       expect(find.text('Search Marketplace'), findsOneWidget);
 
-      // 4. Tap on Reservations tab icon
-      final reservationsIcon = find.byIcon(Icons.receipt_long_outlined);
-      expect(reservationsIcon, findsOneWidget);
-      await tester.tap(reservationsIcon);
+      // 6. Navigate to Profile tab and check authenticated user info (not hardcoded developer data!)
+      final profileIcon = find.byIcon(Icons.person_outline);
+      expect(profileIcon, findsOneWidget);
+      await tester.tap(profileIcon);
       await tester.pumpAndSettle();
 
-      // Verify Reservations page header appears
-      expect(find.text('My Food Reservations'), findsOneWidget);
+      expect(find.text('Testuser'), findsOneWidget);
+      expect(find.text('testuser@example.com'), findsOneWidget);
+      expect(find.text('Pavan Kumar'), findsNothing);
     });
   });
 }
