@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# System files
+.DS_Store
+
+# Prompt & spec folders
+00_START_HERE/
+01_PRODUCT_VISION/
+02_CUSTOMER_APP/
+03_OWNER_AND_ADMIN/
+04_TECH_AND_QA/
