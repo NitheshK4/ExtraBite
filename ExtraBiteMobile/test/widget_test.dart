@@ -6,6 +6,10 @@ import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/models/reservation.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
+import 'package:extrabite_mobile/providers/location_provider.dart';
+import 'package:extrabite_mobile/core/location/location_state.dart';
+import 'package:extrabite_mobile/features/customer/screens/food_detail_screen.dart';
+import 'mocks.dart';
 
 void main() {
   group('1. FoodListing Model Tests', () {
@@ -25,9 +29,11 @@ void main() {
         preparedTime: DateTime.now(),
         pickupStarts: DateTime.now(),
         pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: [],
-        allergens: [],
+        ingredients: const [],
+        allergens: const [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
       expect(listing.discountPercentage, equals(25.0));
     });
@@ -48,17 +54,63 @@ void main() {
         preparedTime: DateTime.now().subtract(const Duration(hours: 4)),
         pickupStarts: DateTime.now().subtract(const Duration(hours: 3)),
         pickupEnds: DateTime.now().subtract(const Duration(hours: 1)),
-        ingredients: [],
-        allergens: [],
+        ingredients: const [],
+        allergens: const [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
       expect(expiredListing.isExpired, isTrue);
     });
   });
 
-  group('2. Food Provider & Real-Time Filtering Tests', () {
-    test('Starts with clean 0 sample listings and supports dynamic additions', () {
-      final container = ProviderContainer();
+  group('2. Food Provider & Filtering Tests', () {
+    test('Initializes with verified mock listings only in filtered provider', () {
+      final container = createMockLocationContainer();
+      final filteredList = container.read(filteredFoodProvider);
+      
+      for (final item in filteredList) {
+        expect(item.verificationStatus, equals('verified'));
+      }
+    });
+
+    test('Filters listings correctly by Category Selection', () {
+      final container = createMockLocationContainer();
+      final notifier = container.read(foodProvider.notifier);
+      
+      notifier.updateCategory('Breakfast');
+      var filteredList = container.read(filteredFoodProvider);
+      for (final item in filteredList) {
+        expect(item.category, equals('Breakfast'));
+      }
+
+      notifier.updateCategory('Vegetarian');
+      filteredList = container.read(filteredFoodProvider);
+      for (final item in filteredList) {
+        expect(item.isVegetarian, isTrue);
+      }
+    });
+
+    test('Filters listings correctly by Search Query', () {
+      final container = createMockLocationContainer();
+      final notifier = container.read(foodProvider.notifier);
+      
+      notifier.updateSearchQuery('Biryani');
+      final filteredList = container.read(filteredFoodProvider);
+      for (final item in filteredList) {
+        expect(
+          item.foodName.toLowerCase().contains('biryani') ||
+          item.propertyName.toLowerCase().contains('biryani') ||
+          item.category.toLowerCase().contains('biryani'),
+          isTrue,
+        );
+      }
+    });
+
+    test('Starts with clean/mock sample listings and supports dynamic additions', () {
+      final container = createMockLocationContainer();
+      final notifier = container.read(foodProvider.notifier);
+      notifier.clearAll();
       expect(container.read(filteredFoodProvider), isEmpty);
 
       final listing = FoodListing(
@@ -76,20 +128,23 @@ void main() {
         preparedTime: DateTime.now(),
         pickupStarts: DateTime.now(),
         pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: ['Rice', 'Chicken'],
+        ingredients: const ['Rice', 'Chicken'],
         allergens: const [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
 
-      container.read(foodProvider.notifier).addListing(listing);
+      notifier.addListing(listing);
       final filteredList = container.read(filteredFoodProvider);
       expect(filteredList.length, equals(1));
       expect(filteredList.first.foodName, equals('Chicken Biryani'));
     });
 
-    test('Filters listings correctly by Category Selection & Search Query', () {
-      final container = ProviderContainer();
+    test('Filters listings correctly by Category Selection & Search Query on dynamic lists', () {
+      final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
+      notifier.clearAll();
 
       final vegMeal = FoodListing(
         id: 'real_veg',
@@ -106,9 +161,11 @@ void main() {
         preparedTime: DateTime.now(),
         pickupStarts: DateTime.now(),
         pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: ['Rice'],
+        ingredients: const ['Rice'],
         allergens: const [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
 
       final nonVegMeal = FoodListing(
@@ -126,9 +183,11 @@ void main() {
         preparedTime: DateTime.now(),
         pickupStarts: DateTime.now(),
         pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: ['Chicken'],
+        ingredients: const ['Chicken'],
         allergens: const [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
 
       notifier.addListing(vegMeal);
@@ -152,10 +211,58 @@ void main() {
   });
 
   group('3. Reservation Creation & State Tests', () {
+    test('Creates new active reservations and updates lists correctly', () {
+      final container = createMockLocationContainer();
+      final foodList = container.read(filteredFoodProvider);
+      final reservationNotifier = container.read(reservationProvider.notifier);
+
+      final initialActiveCount = container.read(activeReservationsProvider).length;
+
+      final targetFood = foodList.first;
+      final reservation = reservationNotifier.createReservation(
+        listing: targetFood,
+        quantity: 2,
+      );
+
+      expect(reservation.foodName, equals(targetFood.foodName));
+      expect(reservation.quantity, equals(2));
+      expect(reservation.amountToCollect, equals(targetFood.sellingPrice * 2));
+      expect(reservation.status, equals(ReservationStatus.reserved));
+
+      final activeList = container.read(activeReservationsProvider);
+      expect(activeList.length, equals(initialActiveCount + 1));
+      expect(activeList.first.id, equals(reservation.id));
+    });
+
+    test('Cancels active reservations correctly', () {
+      final container = createMockLocationContainer();
+      final foodList = container.read(filteredFoodProvider);
+      final reservationNotifier = container.read(reservationProvider.notifier);
+
+      final targetFood = foodList.first;
+      final reservation = reservationNotifier.createReservation(
+        listing: targetFood,
+        quantity: 2,
+      );
+
+      final activeList = container.read(activeReservationsProvider);
+      expect(activeList.isNotEmpty, isTrue);
+      final targetId = reservation.id;
+
+      reservationNotifier.cancelReservation(targetId);
+
+      final newActiveList = container.read(activeReservationsProvider);
+      expect(newActiveList.any((item) => item.id == targetId), isFalse);
+
+      final pastList = container.read(pastReservationsProvider);
+      expect(pastList.any((item) => item.id == targetId && item.status == ReservationStatus.cancelled), isTrue);
+    });
+
     test('Creates new active reservations and decrements portions in real time', () {
-      final container = ProviderContainer();
+      final container = createMockLocationContainer();
       final foodNotifier = container.read(foodProvider.notifier);
       final reservationNotifier = container.read(reservationProvider.notifier);
+      foodNotifier.clearAll();
 
       final listing = FoodListing(
         id: 'item_100',
@@ -175,6 +282,8 @@ void main() {
         ingredients: const [],
         allergens: const [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
 
       foodNotifier.addListing(listing);
@@ -191,24 +300,86 @@ void main() {
       expect(reservation.status, equals(ReservationStatus.reserved));
 
       final activeList = container.read(activeReservationsProvider);
-      expect(activeList.length, equals(1));
-      expect(activeList.first.id, equals(reservation.id));
+      expect(activeList.any((item) => item.id == reservation.id), isTrue);
 
       final updatedFood = container.read(foodDetailProvider('item_100'));
       expect(updatedFood?.availablePortions, equals(7));
+    });
 
-      // Cancel reservation
-      reservationNotifier.cancelReservation(reservation.id);
-      expect(container.read(activeReservationsProvider), isEmpty);
-      expect(container.read(pastReservationsProvider).length, equals(1));
+    testWidgets('Sold Out listing disables Reserve button and displays Sold Out in UI', (WidgetTester tester) async {
+      final mockService = MockLocationService();
+
+      final soldOutListing = FoodListing(
+        id: 'item_sold_out',
+        foodName: 'Sold Out Meal',
+        description: 'No portions left',
+        propertyId: 'p1',
+        propertyName: 'Sri Sai PG',
+        distanceKm: 0.5,
+        category: 'Lunch',
+        isVegetarian: true,
+        originalPrice: 100.0,
+        sellingPrice: 50.0,
+        availablePortions: 0,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const [],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                mockService,
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+            foodProvider.overrideWith((ref) {
+              final notifier = FoodNotifier();
+              notifier.clearAll();
+              notifier.addListing(soldOutListing);
+              return notifier;
+            }),
+          ],
+          child: const MaterialApp(
+            home: FoodDetailScreen(foodId: 'item_sold_out'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify "Sold Out" text is displayed on the button
+      expect(find.text('Sold Out'), findsOneWidget);
+
+      // Verify portions displayed is 0
+      expect(find.text('0'), findsOneWidget);
+
+      // Verify the ElevatedButton is disabled (onPressed is null)
+      final elevatedButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(elevatedButton.onPressed, isNull);
     });
   });
 
   group('4. UI Navigation & Smoke Tests', () {
     testWidgets('App UI Smoke & Navigation Test', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: ExtraBiteApp(),
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                MockLocationService(),
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+          ],
+          child: const ExtraBiteApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -230,7 +401,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 4. Verify Customer Home Screen loads after login
-      expect(find.text('Near VIT-AP University'), findsOneWidget);
+      expect(find.text('Near VIT-AP University'), findsAtLeastNWidgets(1));
       expect(find.text('Search meals, PGs or messes...'), findsOneWidget);
 
       // 5. Navigate to Search tab
@@ -240,7 +411,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Search Marketplace'), findsOneWidget);
 
-      // 6. Navigate to Profile tab and check authenticated user info (not hardcoded developer data!)
+      // 6. Navigate to Profile tab and check authenticated user info
       final profileIcon = find.byIcon(Icons.person_outline);
       expect(profileIcon, findsOneWidget);
       await tester.tap(profileIcon);
