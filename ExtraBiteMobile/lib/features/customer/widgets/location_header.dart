@@ -1,18 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../providers/auth_provider.dart';
 
-class LocationHeader extends StatelessWidget {
+class LocationHeader extends ConsumerWidget {
   const LocationHeader({super.key});
 
-  String getGreeting() {
+  String getGreeting([String? name]) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning 👋';
-    if (hour < 17) return 'Good afternoon 👋';
-    return 'Good evening 👋';
+    String timeGreeting;
+    if (hour < 12) {
+      timeGreeting = 'Good morning';
+    } else if (hour < 17) {
+      timeGreeting = 'Good afternoon';
+    } else {
+      timeGreeting = 'Good evening';
+    }
+
+    if (name != null && name.trim().isNotEmpty) {
+      final firstName = name.trim().split(' ').first;
+      return '$timeGreeting, $firstName 👋';
+    }
+    return '$timeGreeting 👋';
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    final initials = user?.initials ?? 'EB';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
@@ -44,7 +61,7 @@ class LocationHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        getGreeting(),
+                        getGreeting(user?.name),
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 13,
@@ -55,21 +72,25 @@ class LocationHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
-                ),
-                child: const Center(
-                  child: Text(
-                    'PK',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+              InkWell(
+                onTap: () => context.go('/customer/profile'),
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
