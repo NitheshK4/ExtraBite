@@ -438,8 +438,9 @@ class _LocationRadiusBottomSheetState extends State<_LocationRadiusBottomSheet> 
                             icon: const Icon(Icons.refresh, size: 16),
                             label: const Text('Try Again', style: TextStyle(fontSize: 12)),
                             onPressed: () async {
+                              final nav = Navigator.of(context);
                               await widget.ref.read(locationProvider.notifier).requestAndFetchGPSLocation();
-                              if (mounted) Navigator.pop(context);
+                              if (mounted) nav.pop();
                             },
                           ),
                         ),
@@ -583,9 +584,10 @@ class _LocationRadiusBottomSheetState extends State<_LocationRadiusBottomSheet> 
                     icon: const Icon(Icons.sync, color: AppColors.primary),
                     tooltip: 'Re-fetch GPS',
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       await widget.ref.read(locationProvider.notifier).requestAndFetchGPSLocation();
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(
                             content: Text('📍 Live GPS position updated.'),
                             duration: Duration(seconds: 2),

@@ -385,7 +385,6 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
 
   void _showLocationPicker(BuildContext context) {
     final locationState = ref.read(locationProvider);
-    final textController = TextEditingController(text: locationState.localityLabel);
 
     showDialog(
       context: context,
