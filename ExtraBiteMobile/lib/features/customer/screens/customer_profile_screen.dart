@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/location_provider.dart';
 
 class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -224,10 +225,13 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               },
             ),
             const Divider(color: AppColors.border, height: 1),
-            const ListTile(
-              title: Text('Saved Pickup Location'),
-              subtitle: Text('Near VIT-AP University Campus'),
-              trailing: Icon(Icons.my_location, color: AppColors.primary),
+            ListTile(
+              title: const Text('Saved Pickup Location'),
+              subtitle: Text(ref.watch(locationProvider).displayName),
+              trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary),
+              onTap: () {
+                _showLocationPicker(context);
+              },
             ),
           ],
         ),
@@ -374,6 +378,52 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got It')),
+        ],
+      ),
+    );
+  }
+
+  void _showLocationPicker(BuildContext context) {
+    final current = ref.read(locationProvider).displayName;
+    final textController = TextEditingController(text: current);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.location_on, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Saved Location'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your default campus or hostel location:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'e.g. Near VIT-AP University Gate 2',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final newLoc = textController.text.trim();
+              if (newLoc.isNotEmpty) {
+                ref.read(locationProvider.notifier).updateLocation(newLoc);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
         ],
       ),
     );

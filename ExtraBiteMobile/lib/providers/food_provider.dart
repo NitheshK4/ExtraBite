@@ -226,12 +226,61 @@ class FoodNotifier extends StateNotifier<FoodState> {
     ];
   }
 
+  void addListing(FoodListing listing) {
+    state = state.copyWith(
+      listings: [listing, ...state.listings],
+    );
+  }
+
+  void removeListing(String id) {
+    state = state.copyWith(
+      listings: state.listings.where((item) => item.id != id).toList(),
+    );
+  }
+
+  void decrementPortions(String id, int count) {
+    state = state.copyWith(
+      listings: state.listings.map((item) {
+        if (item.id == id) {
+          final newPortions = (item.availablePortions - count).clamp(0, 9999);
+          return FoodListing(
+            id: item.id,
+            foodName: item.foodName,
+            description: item.description,
+            propertyId: item.propertyId,
+            propertyName: item.propertyName,
+            locationAddress: item.locationAddress,
+            distanceKm: item.distanceKm,
+            category: item.category,
+            isVegetarian: item.isVegetarian,
+            originalPrice: item.originalPrice,
+            sellingPrice: item.sellingPrice,
+            availablePortions: newPortions,
+            preparedTime: item.preparedTime,
+            pickupStarts: item.pickupStarts,
+            pickupEnds: item.pickupEnds,
+            ingredients: item.ingredients,
+            allergens: item.allergens,
+            verificationStatus: item.verificationStatus,
+            latitude: item.latitude,
+            longitude: item.longitude,
+          );
+        }
+        return item;
+      }).toList(),
+    );
+  }
+
   void updateSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
   }
 
   void updateCategory(String category) {
     state = state.copyWith(selectedCategory: category);
+  }
+
+  void clearAll() {
+    state = state.copyWith(listings: const []);
   }
 }
 

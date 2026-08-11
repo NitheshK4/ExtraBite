@@ -4,6 +4,7 @@ class FoodListing {
   final String description;
   final String propertyId;
   final String propertyName;
+  final String locationAddress;
   final double distanceKm;
   final String category;
   final bool isVegetarian;
@@ -26,6 +27,7 @@ class FoodListing {
     required this.description,
     required this.propertyId,
     required this.propertyName,
+    this.locationAddress = 'Near VIT-AP University',
     required this.distanceKm,
     required this.category,
     required this.isVegetarian,

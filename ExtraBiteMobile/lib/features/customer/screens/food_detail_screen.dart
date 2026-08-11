@@ -110,34 +110,70 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Property Details
-                  Row(
-                    children: [
-                      const Icon(Icons.business, size: 18, color: AppColors.textSecondary),
-                      const SizedBox(width: 6),
-                      Text(
-                        food.propertyName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                  // Pickup Location & Property Box
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.business, size: 18, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                food.propertyName,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Distance & Preparation info
-                  Row(
-                    children: [
-                      const Icon(Icons.navigation, size: 14, color: AppColors.primary),
-                      const SizedBox(width: 4),
-                      Text('${food.distanceKm.toStringAsFixed(1)} km away'),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.restaurant, size: 14, color: AppColors.primary),
-                      const SizedBox(width: 4),
-                      Text('Prepared ${DateFormat('hh:mm a').format(food.preparedTime)}'),
-                    ],
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.location_on, size: 16, color: AppColors.secondary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                food.locationAddress,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.navigation, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${food.distanceKm.toStringAsFixed(1)} km away',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                            ),
+                            const SizedBox(width: 16),
+                            const Icon(Icons.restaurant, size: 14, color: AppColors.textLight),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Prepared ${DateFormat('hh:mm a').format(food.preparedTime)}',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   
@@ -331,7 +367,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   }
 
   void _triggerReservation(BuildContext context, FoodListing food) {
-    // Call state notifier to add reservation mock state
+    // Decrement available portions in real-time
+    ref.read(foodProvider.notifier).decrementPortions(food.id, _portionsToReserve);
+
+    // Call state notifier to add reservation state
     final reservation = ref.read(reservationProvider.notifier).createReservation(
       listing: food,
       quantity: _portionsToReserve,

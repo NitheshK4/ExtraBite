@@ -28,8 +28,8 @@ void main() {
         preparedTime: DateTime.now(),
         pickupStarts: DateTime.now(),
         pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: [],
-        allergens: [],
+        ingredients: const [],
+        allergens: const [],
         verificationStatus: 'verified',
         latitude: 16.4971,
         longitude: 80.5005,
@@ -53,8 +53,8 @@ void main() {
         preparedTime: DateTime.now().subtract(const Duration(hours: 4)),
         pickupStarts: DateTime.now().subtract(const Duration(hours: 3)),
         pickupEnds: DateTime.now().subtract(const Duration(hours: 1)),
-        ingredients: [],
-        allergens: [],
+        ingredients: const [],
+        allergens: const [],
         verificationStatus: 'verified',
         latitude: 16.4971,
         longitude: 80.5005,
@@ -105,6 +105,108 @@ void main() {
         );
       }
     });
+
+    test('Starts with clean/mock sample listings and supports dynamic additions', () {
+      final container = createMockLocationContainer();
+      final notifier = container.read(foodProvider.notifier);
+      notifier.clearAll();
+      expect(container.read(filteredFoodProvider), isEmpty);
+
+      final listing = FoodListing(
+        id: 'real_1',
+        foodName: 'Chicken Biryani',
+        description: 'Fresh surplus biryani',
+        propertyId: 'p1',
+        propertyName: 'Sri Sai PG',
+        distanceKm: 0.8,
+        category: 'Dinner',
+        isVegetarian: false,
+        originalPrice: 140.0,
+        sellingPrice: 70.0,
+        availablePortions: 10,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const ['Rice', 'Chicken'],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      notifier.addListing(listing);
+      final filteredList = container.read(filteredFoodProvider);
+      expect(filteredList.length, equals(1));
+      expect(filteredList.first.foodName, equals('Chicken Biryani'));
+    });
+
+    test('Filters listings correctly by Category Selection & Search Query on dynamic lists', () {
+      final container = createMockLocationContainer();
+      final notifier = container.read(foodProvider.notifier);
+      notifier.clearAll();
+
+      final vegMeal = FoodListing(
+        id: 'real_veg',
+        foodName: 'South Indian Veg Meals',
+        description: 'Thali',
+        propertyId: 'p1',
+        propertyName: 'Sri Sai PG',
+        distanceKm: 0.5,
+        category: 'Lunch',
+        isVegetarian: true,
+        originalPrice: 80.0,
+        sellingPrice: 40.0,
+        availablePortions: 6,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const ['Rice'],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      final nonVegMeal = FoodListing(
+        id: 'real_nonveg',
+        foodName: 'Chicken Biryani',
+        description: 'Biryani',
+        propertyId: 'p2',
+        propertyName: 'Royal PG',
+        distanceKm: 1.0,
+        category: 'Dinner',
+        isVegetarian: false,
+        originalPrice: 120.0,
+        sellingPrice: 25.0,
+        availablePortions: 4,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const ['Chicken'],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      notifier.addListing(vegMeal);
+      notifier.addListing(nonVegMeal);
+
+      notifier.updateCategory('Lunch');
+      var filteredList = container.read(filteredFoodProvider);
+      expect(filteredList.length, equals(1));
+      expect(filteredList.first.foodName, equals('South Indian Veg Meals'));
+
+      notifier.updateCategory('Vegetarian');
+      filteredList = container.read(filteredFoodProvider);
+      expect(filteredList.every((item) => item.isVegetarian), isTrue);
+
+      notifier.updateCategory('All');
+      notifier.updateSearchQuery('Biryani');
+      filteredList = container.read(filteredFoodProvider);
+      expect(filteredList.length, equals(1));
+      expect(filteredList.first.foodName, equals('Chicken Biryani'));
+    });
   });
 
   group('3. Reservation Creation & State Tests', () {
@@ -133,11 +235,18 @@ void main() {
 
     test('Cancels active reservations correctly', () {
       final container = createMockLocationContainer();
+      final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
+
+      final targetFood = foodList.first;
+      final reservation = reservationNotifier.createReservation(
+        listing: targetFood,
+        quantity: 2,
+      );
+
       final activeList = container.read(activeReservationsProvider);
-      
       expect(activeList.isNotEmpty, isTrue);
-      final targetId = activeList.first.id;
+      final targetId = reservation.id;
 
       reservationNotifier.cancelReservation(targetId);
 
@@ -146,6 +255,54 @@ void main() {
 
       final pastList = container.read(pastReservationsProvider);
       expect(pastList.any((item) => item.id == targetId && item.status == ReservationStatus.cancelled), isTrue);
+    });
+
+    test('Creates new active reservations and decrements portions in real time', () {
+      final container = createMockLocationContainer();
+      final foodNotifier = container.read(foodProvider.notifier);
+      final reservationNotifier = container.read(reservationProvider.notifier);
+      foodNotifier.clearAll();
+
+      final listing = FoodListing(
+        id: 'item_100',
+        foodName: 'Chapati & Curry',
+        description: 'Fresh chapatis',
+        propertyId: 'p1',
+        propertyName: 'Royal Hostel',
+        distanceKm: 0.5,
+        category: 'Dinner',
+        isVegetarian: true,
+        originalPrice: 60.0,
+        sellingPrice: 30.0,
+        availablePortions: 10,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const [],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      foodNotifier.addListing(listing);
+
+      final reservation = reservationNotifier.createReservation(
+        listing: listing,
+        quantity: 3,
+      );
+      foodNotifier.decrementPortions(listing.id, 3);
+
+      expect(reservation.foodName, equals('Chapati & Curry'));
+      expect(reservation.quantity, equals(3));
+      expect(reservation.amountToCollect, equals(90.0));
+      expect(reservation.status, equals(ReservationStatus.reserved));
+
+      final activeList = container.read(activeReservationsProvider);
+      expect(activeList.any((item) => item.id == reservation.id), isTrue);
+
+      final updatedFood = container.read(foodDetailProvider('item_100'));
+      expect(updatedFood?.availablePortions, equals(7));
     });
   });
 
@@ -183,7 +340,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // 4. Verify Customer Home Screen loads after login
-      expect(find.text('Near VIT-AP University'), findsOneWidget);
+      expect(find.text('Near VIT-AP University'), findsAtLeastNWidgets(1));
       expect(find.text('Search meals, PGs or messes...'), findsOneWidget);
 
       // 5. Navigate to Search tab
@@ -193,7 +350,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Search Marketplace'), findsOneWidget);
 
-      // 6. Navigate to Profile tab and check authenticated user info (not hardcoded developer data!)
+      // 6. Navigate to Profile tab and check authenticated user info
       final profileIcon = find.byIcon(Icons.person_outline);
       expect(profileIcon, findsOneWidget);
       await tester.tap(profileIcon);

@@ -11,6 +11,14 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 class LocationNotifier extends StateNotifier<LocationState> {
   final LocationService _locationService;
 
+  static const Map<String, (double, double)> presetCoordinates = {
+    'Near VIT-AP University': (16.4971, 80.5005),
+    'Near SRM University-AP': (16.4710, 80.5100),
+    'Thullur Center': (16.5300, 80.4700),
+    'Mangalagiri Town': (16.4300, 80.5600),
+    'Vijayawada Benz Circle': (16.5000, 80.6400),
+  };
+
   LocationNotifier(
     this._locationService, [
     LocationState initialState = const LocationState.initial(),
@@ -50,6 +58,29 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
   void setMockLocation(double latitude, double longitude) {
     state = LocationState.available(latitude, longitude);
+  }
+
+  void updateLocation(String newLocation) {
+    final clean = newLocation.trim();
+    if (clean.isEmpty) return;
+
+    double lat = 16.4971;
+    double lon = 80.5005;
+
+    for (final entry in presetCoordinates.entries) {
+      if (clean.toLowerCase().contains(entry.key.toLowerCase())) {
+        lat = entry.value.$1;
+        lon = entry.value.$2;
+        break;
+      }
+    }
+
+    state = LocationState.available(lat, lon, clean);
+  }
+
+  void resetToDefault() {
+    state = const LocationState.initial();
+    determinePosition();
   }
 }
 

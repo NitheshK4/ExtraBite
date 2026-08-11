@@ -265,7 +265,7 @@ void main() {
 
       await tester.pump();
       
-      expect(find.text('Detecting your location...'), findsOneWidget);
+      expect(find.text('Detecting your location...'), findsAtLeastNWidgets(1));
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // Complete the completer to release resources
@@ -300,7 +300,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Location permission required'), findsOneWidget);
+      expect(find.text('Location permission required'), findsAtLeastNWidgets(1));
       expect(find.text('Enable Location'), findsOneWidget);
     });
 
@@ -320,7 +320,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Location services are turned off'), findsOneWidget);
+      expect(find.text('Location services are turned off'), findsAtLeastNWidgets(1));
       expect(find.text('Enable Location'), findsOneWidget);
     });
 

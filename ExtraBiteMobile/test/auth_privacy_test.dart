@@ -38,6 +38,44 @@ void main() {
       expect(find.text('+91 9876543210'), findsNothing);
     });
 
+    testWidgets('1b. Back button and Change button on Auth Screen navigate back to Role Selection', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: ExtraBiteApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Select Personal User role
+      await tester.tap(find.text('Personal User'));
+      await tester.pumpAndSettle();
+
+      // We are on Auth Screen
+      expect(find.text('Personal User Auth'), findsOneWidget);
+
+      // Tap AppBar back button
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      // Must be back on Role Selection screen
+      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Personal User'), findsOneWidget);
+
+      // Select Owner role
+      await tester.tap(find.text('Hostel / PG Owner'));
+      await tester.pumpAndSettle();
+
+      // We are on Owner Auth Screen
+      expect(find.text('Hostel / PG Owner Auth'), findsOneWidget);
+
+      // Tap 'Change' button
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      // Must be back on Role Selection screen
+      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+    });
+
     testWidgets('2. User A logs in and sees only User A\'s authenticated data', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -71,11 +109,15 @@ void main() {
       await tester.tap(find.text('Create Personal User Account'));
       await tester.pumpAndSettle();
 
-      // Navigate to Profile tab
-      await tester.tap(find.byIcon(Icons.person_outline));
+      // On Home screen, header must show dynamic initials 'AS' and not 'PK'
+      expect(find.text('AS'), findsOneWidget);
+      expect(find.text('PK'), findsNothing);
+
+      // Tap on the header avatar to navigate to Profile
+      await tester.tap(find.text('AS'));
       await tester.pumpAndSettle();
 
-      // Verify User A's data is displayed
+      // Verify User A's data is displayed on Profile
       expect(find.text('Alice Smith'), findsOneWidget);
       expect(find.text('alice@example.com'), findsOneWidget);
       expect(find.text('+91 9111111111'), findsOneWidget);

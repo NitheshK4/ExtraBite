@@ -32,7 +32,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // 1. Uninitialized or Role Selection -> Force Role Selection Screen
       if (status == AuthStatus.uninitialized || status == AuthStatus.selectingRole) {
-        return isAuthRoute ? null : '/auth/role-selection';
+        if (state.matchedLocation == '/auth/role-selection') return null;
+        return '/auth/role-selection';
       }
 
       // 2. Unauthenticated, Authenticating, or Error -> Force Login Screen
