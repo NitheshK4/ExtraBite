@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS food_listings (
     discounted_price DECIMAL(10,2) NOT NULL, -- ExtraBite Price (Pay at pickup)
     total_portions INTEGER NOT NULL CHECK (total_portions > 0),
     available_portions INTEGER NOT NULL CHECK (available_portions >= 0),
+    CONSTRAINT check_available_portions_bound CHECK (available_portions <= total_portions),
     dietary_type dietary_type NOT NULL DEFAULT 'vegetarian',
     ingredients TEXT[] DEFAULT '{}',
     allergens TEXT[] DEFAULT '{}',
@@ -188,14 +189,6 @@ CREATE POLICY "Owners view reservations for their listings" ON reservations FOR 
         WHERE pg.owner_id = auth.uid()
     )
 );
-CREATE POLICY "Customers create own reservations" ON reservations
-    FOR INSERT WITH CHECK (
-        customer_id = auth.uid() AND
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND role = 'customer'
-        )
-    );
 CREATE POLICY "Customers cancel own reservations" ON reservations
     FOR UPDATE USING (customer_id = auth.uid())
     WITH CHECK (
@@ -237,7 +230,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (OLD.status = 'confirmed' OR OLD.status = 'ready_for_pickup') AND NEW.status = 'cancelled' THEN
         UPDATE food_listings
-        SET available_portions = available_portions + OLD.portions_count,
+        SET available_portions = least(available_portions + OLD.portions_count, total_portions),
             status = CASE WHEN status = 'sold_out' THEN 'active'::listing_status ELSE status END
         WHERE id = OLD.listing_id;
     END IF;
@@ -275,7 +268,7 @@ BEGIN
     );
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE OR REPLACE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
@@ -300,7 +293,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE OR REPLACE TRIGGER before_profile_updated
 BEFORE UPDATE ON public.profiles
@@ -413,7 +406,7 @@ BEGIN
 
     RETURN v_reservation;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- 13. Enable Supabase Realtime for food_listings
 ALTER PUBLICATION supabase_realtime ADD TABLE public.food_listings;
