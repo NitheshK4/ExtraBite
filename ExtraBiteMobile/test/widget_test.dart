@@ -8,6 +8,7 @@ import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/core/location/location_state.dart';
+import 'package:extrabite_mobile/features/customer/screens/food_detail_screen.dart';
 import 'mocks.dart';
 
 void main() {
@@ -303,6 +304,66 @@ void main() {
 
       final updatedFood = container.read(foodDetailProvider('item_100'));
       expect(updatedFood?.availablePortions, equals(7));
+    });
+
+    testWidgets('Sold Out listing disables Reserve button and displays Sold Out in UI', (WidgetTester tester) async {
+      final mockService = MockLocationService();
+
+      final soldOutListing = FoodListing(
+        id: 'item_sold_out',
+        foodName: 'Sold Out Meal',
+        description: 'No portions left',
+        propertyId: 'p1',
+        propertyName: 'Sri Sai PG',
+        distanceKm: 0.5,
+        category: 'Lunch',
+        isVegetarian: true,
+        originalPrice: 100.0,
+        sellingPrice: 50.0,
+        availablePortions: 0,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const [],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                mockService,
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+            foodProvider.overrideWith((ref) {
+              final notifier = FoodNotifier();
+              notifier.clearAll();
+              notifier.addListing(soldOutListing);
+              return notifier;
+            }),
+          ],
+          child: const MaterialApp(
+            home: FoodDetailScreen(foodId: 'item_sold_out'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify "Sold Out" text is displayed on the button
+      expect(find.text('Sold Out'), findsOneWidget);
+
+      // Verify portions displayed is 0
+      expect(find.text('0'), findsOneWidget);
+
+      // Verify the ElevatedButton is disabled (onPressed is null)
+      final elevatedButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(elevatedButton.onPressed, isNull);
     });
   });
 

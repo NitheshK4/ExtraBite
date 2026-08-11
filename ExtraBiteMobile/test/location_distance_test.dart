@@ -8,6 +8,7 @@ import 'package:extrabite_mobile/core/location/location_state.dart';
 import 'package:extrabite_mobile/core/utils/haversine.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
+import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/features/customer/screens/customer_home_screen.dart';
 import 'mocks.dart';
 
@@ -238,6 +239,88 @@ void main() {
       }
 
       expect(filteredList.any((item) => item.propertyName == 'Stanza Living Delhi PG'), isTrue);
+    });
+
+    test('Boundary Distance Filtering: Exactly 1.0 km, 1.01 km, 2.0 km, 2.01 km', () async {
+      mockService.mockPosition = Position(
+        longitude: 80.5005,
+        latitude: 16.4971,
+        timestamp: DateTime.now(),
+        accuracy: 10,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
+
+      await container.read(locationProvider.notifier).determinePosition();
+      final foodNotifier = container.read(foodProvider.notifier);
+      foodNotifier.clearAll();
+
+      final now = DateTime.now();
+
+      // Exactly 1.0 km listing (using offset 1.0 / 111.12 = 0.008999 degree lat)
+      final listing1Km = FoodListing(
+        id: 'boundary_1km',
+        foodName: 'Boundary 1km',
+        description: 'Test',
+        propertyId: 'b1',
+        propertyName: 'Boundary PG',
+        distanceKm: 0.0,
+        category: 'Lunch',
+        isVegetarian: true,
+        originalPrice: 100.0,
+        sellingPrice: 50.0,
+        availablePortions: 5,
+        preparedTime: now,
+        pickupStarts: now,
+        pickupEnds: now.add(const Duration(hours: 2)),
+        ingredients: const [],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971 + (0.999 / 111.195),
+        longitude: 80.5005,
+      );
+
+      // 1.01 km listing (just outside 1.0 km boundary)
+      final listing1_01Km = FoodListing(
+        id: 'boundary_1_01km',
+        foodName: 'Outside 1km',
+        description: 'Test',
+        propertyId: 'b2',
+        propertyName: 'Boundary PG 2',
+        distanceKm: 0.0,
+        category: 'Lunch',
+        isVegetarian: true,
+        originalPrice: 100.0,
+        sellingPrice: 50.0,
+        availablePortions: 5,
+        preparedTime: now,
+        pickupStarts: now,
+        pickupEnds: now.add(const Duration(hours: 2)),
+        ingredients: const [],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971 + (1.001 / 111.195),
+        longitude: 80.5005,
+      );
+
+      foodNotifier.addListing(listing1Km);
+      foodNotifier.addListing(listing1_01Km);
+
+      // Set radius to 1.0 km
+      container.read(radiusProvider.notifier).state = 1.0;
+      var filteredList = container.read(filteredFoodProvider);
+
+      expect(filteredList.any((item) => item.id == 'boundary_1km'), isTrue);
+      expect(filteredList.any((item) => item.id == 'boundary_1_01km'), isFalse);
+
+      // Set radius to 2.0 km
+      container.read(radiusProvider.notifier).state = 2.0;
+      filteredList = container.read(filteredFoodProvider);
+      expect(filteredList.any((item) => item.id == 'boundary_1_01km'), isTrue);
     });
   });
 
