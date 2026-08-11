@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_listing.dart';
+import 'location_provider.dart';
 
 class FoodState {
   final List<FoodListing> listings;
@@ -26,7 +27,6 @@ class FoodState {
 }
 
 class FoodNotifier extends StateNotifier<FoodState> {
-  // Starts with clean, real-time empty listings. Real listings are created dynamically by PG/Hostel Owners.
   FoodNotifier() : super(FoodState(listings: const [], searchQuery: '', selectedCategory: 'All'));
 
   void addListing(FoodListing listing) {
@@ -46,26 +46,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
       listings: state.listings.map((item) {
         if (item.id == id) {
           final newPortions = (item.availablePortions - count).clamp(0, 9999);
-          return FoodListing(
-            id: item.id,
-            foodName: item.foodName,
-            description: item.description,
-            propertyId: item.propertyId,
-            propertyName: item.propertyName,
-            locationAddress: item.locationAddress,
-            distanceKm: item.distanceKm,
-            category: item.category,
-            isVegetarian: item.isVegetarian,
-            originalPrice: item.originalPrice,
-            sellingPrice: item.sellingPrice,
-            availablePortions: newPortions,
-            preparedTime: item.preparedTime,
-            pickupStarts: item.pickupStarts,
-            pickupEnds: item.pickupEnds,
-            ingredients: item.ingredients,
-            allergens: item.allergens,
-            verificationStatus: item.verificationStatus,
-          );
+          return item.copyWith(availablePortions: newPortions);
         }
         return item;
       }).toList(),
@@ -89,35 +70,66 @@ final foodProvider = StateNotifierProvider<FoodNotifier, FoodState>((ref) {
   return FoodNotifier();
 });
 
+/// GPS-filtered and distance-sorted surplus food provider
 final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
-  final state = ref.watch(foodProvider);
-  
-  // Filter out unverified properties
-  var list = state.listings.where((item) => item.verificationStatus == 'verified').toList();
-  
-  // Apply Category Filter
-  if (state.selectedCategory != 'All') {
-    if (state.selectedCategory == 'Vegetarian') {
+  final foodState = ref.watch(foodProvider);
+  final locationState = ref.watch(locationProvider);
+
+  final userLat = locationState.latitude;
+  final userLng = locationState.longitude;
+  final maxRadiusMeters = locationState.radiusMeters;
+
+  // 1. Filter out unverified, expired, or 0-portion listings
+  var list = foodState.listings.where((item) {
+    return item.verificationStatus == 'verified' &&
+        !item.isExpired &&
+        item.availablePortions > 0;
+  }).map((item) {
+    // 2. Calculate real-time Haversine distance from customer GPS coordinates
+    final distanceMeters = FoodListing.calculateHaversineDistanceMeters(
+      userLat,
+      userLng,
+      item.latitude,
+      item.longitude,
+    );
+    final distanceKm = distanceMeters / 1000.0;
+
+    return item.copyWith(
+      distanceMeters: distanceMeters,
+      distanceKm: distanceKm,
+    );
+  }).where((item) {
+    // 3. Strictly filter listings within selected GPS radius (e.g. 2000m)
+    return item.distanceMeters <= maxRadiusMeters;
+  }).toList();
+
+  // 4. Apply Category Filter
+  if (foodState.selectedCategory != 'All') {
+    if (foodState.selectedCategory == 'Vegetarian') {
       list = list.where((item) => item.isVegetarian).toList();
-    } else if (state.selectedCategory == 'Non-Vegetarian') {
+    } else if (foodState.selectedCategory == 'Non-Vegetarian') {
       list = list.where((item) => !item.isVegetarian).toList();
-    } else if (state.selectedCategory == 'Under ₹30') {
+    } else if (foodState.selectedCategory == 'Under ₹30') {
       list = list.where((item) => item.sellingPrice < 30.0).toList();
     } else {
-      list = list.where((item) => item.category.toLowerCase() == state.selectedCategory.toLowerCase()).toList();
+      list = list.where((item) => item.category.toLowerCase() == foodState.selectedCategory.toLowerCase()).toList();
     }
   }
-  
-  // Apply Search Query Filter
-  if (state.searchQuery.isNotEmpty) {
-    final query = state.searchQuery.toLowerCase();
+
+  // 5. Apply Search Query Filter
+  if (foodState.searchQuery.isNotEmpty) {
+    final query = foodState.searchQuery.toLowerCase();
     list = list.where((item) =>
       item.foodName.toLowerCase().contains(query) ||
       item.propertyName.toLowerCase().contains(query) ||
+      item.locationAddress.toLowerCase().contains(query) ||
       item.category.toLowerCase().contains(query)
     ).toList();
   }
-  
+
+  // 6. Sort strictly by actual distance ascending (nearest first)
+  list.sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+
   return list;
 });
 
@@ -129,3 +141,4 @@ final foodDetailProvider = Provider.family<FoodListing?, String>((ref, id) {
     return null;
   }
 });
+

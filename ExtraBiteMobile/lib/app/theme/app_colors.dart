@@ -15,6 +15,9 @@ class AppColors {
   
   static const Color border = Color(0xFFE0E6E0);
   static const Color error = Color(0xFFC62828);
+  static const Color errorLight = Color(0xFFFFEBEE);
+  static const Color warning = Color(0xFFE65100);
+  static const Color warningLight = Color(0xFFFFF3E0);
   static const Color success = Color(0xFF2E7D32);
   
   // Veg/Non-Veg indicators

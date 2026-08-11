@@ -226,9 +226,9 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             ),
             const Divider(color: AppColors.border, height: 1),
             ListTile(
-              title: const Text('Saved Pickup Location'),
-              subtitle: Text(ref.watch(locationProvider)),
-              trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary),
+              title: const Text('Live GPS Location'),
+              subtitle: Text(ref.watch(locationProvider).localityLabel),
+              trailing: const Icon(Icons.my_location, color: AppColors.primary),
               onTap: () {
                 _showLocationPicker(context);
               },
@@ -384,46 +384,43 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   }
 
   void _showLocationPicker(BuildContext context) {
-    final current = ref.read(locationProvider);
-    final textController = TextEditingController(text: current);
+    final locationState = ref.read(locationProvider);
+    final textController = TextEditingController(text: locationState.localityLabel);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.location_on, color: AppColors.primary),
+            Icon(Icons.my_location, color: AppColors.primary),
             SizedBox(width: 8),
-            Text('Saved Location'),
+            Text('GPS Location Status'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Enter your default campus or hostel location:'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: textController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'e.g. Near VIT-AP University Gate 2',
-              ),
+            Text('Current: ${locationState.localityLabel}'),
+            const SizedBox(height: 4),
+            Text(
+              'Within ${locationState.radiusKm.toStringAsFixed(0)} km search radius',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Re-fetch GPS Location'),
+              onPressed: () {
+                ref.read(locationProvider.notifier).requestAndFetchGPSLocation();
+                Navigator.pop(context);
+              },
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final newLoc = textController.text.trim();
-              if (newLoc.isNotEmpty) {
-                ref.read(locationProvider.notifier).updateLocation(newLoc);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
         ],
       ),
     );

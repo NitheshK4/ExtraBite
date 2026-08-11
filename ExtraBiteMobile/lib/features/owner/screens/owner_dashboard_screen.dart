@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../models/food_listing.dart';
 import '../../../models/reservation.dart';
@@ -422,7 +424,8 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _locationController = TextEditingController(text: 'Near VIT-AP University Gate 2');
-  final _distanceController = TextEditingController(text: '0.8');
+  final _latController = TextEditingController(text: '16.4950');
+  final _lngController = TextEditingController(text: '80.5000');
   final _descriptionController = TextEditingController();
   final _originalPriceController = TextEditingController();
   final _sellingPriceController = TextEditingController();
@@ -431,19 +434,234 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
   String _category = 'Dinner';
   bool _isVeg = true;
   int _pickupHours = 2;
+  bool _isAcquiringGps = false;
+  bool _showSuggestions = false;
+  List<Map<String, dynamic>> _filteredSuggestions = [];
 
-  final _categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+  // Popular and preset locations with exact verified coordinates
+  final List<Map<String, dynamic>> _allLocations = [
+    {
+      'title': 'Near VIT-AP University Gate 2',
+      'subtitle': 'Inavolu, Amaravati, AP',
+      'lat': 16.4950,
+      'lng': 80.5000,
+      'tag': 'VIT-AP',
+    },
+    {
+      'title': 'Near VIT-AP Main Campus & Hostels',
+      'subtitle': 'Beside Academic Block, Amaravati',
+      'lat': 16.4975,
+      'lng': 80.5025,
+      'tag': 'VIT-AP',
+    },
+    {
+      'title': 'Near SRM University-AP Campus',
+      'subtitle': 'Neerukonda, Mangalagiri, AP',
+      'lat': 16.4682,
+      'lng': 80.5085,
+      'tag': 'SRM-AP',
+    },
+    {
+      'title': 'Inavolu Village Center',
+      'subtitle': 'Amaravati Capital Region',
+      'lat': 16.4920,
+      'lng': 80.4950,
+      'tag': 'Inavolu',
+    },
+    {
+      'title': 'Thullur Bus Station & Market',
+      'subtitle': 'Thullur, Amaravati',
+      'lat': 16.5350,
+      'lng': 80.4850,
+      'tag': 'Thullur',
+    },
+    {
+      'title': 'Mangalagiri Highway Junction',
+      'subtitle': 'Near Main Road, Mangalagiri',
+      'lat': 16.4350,
+      'lng': 80.5600,
+      'tag': 'Mangalagiri',
+    },
+    {
+      'title': 'Vijayawada Benz Circle Area',
+      'subtitle': 'MG Road, Vijayawada',
+      'lat': 16.5062,
+      'lng': 80.6480,
+      'tag': 'Vijayawada',
+    },
+    {
+      'title': 'KL University / Vaddeswaram Area',
+      'subtitle': 'Green Fields, Tadepalli',
+      'lat': 16.4440,
+      'lng': 80.6210,
+      'tag': 'KLU',
+    },
+  ];
+
+  final List<String> _categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredSuggestions = List.from(_allLocations);
+    _locationController.addListener(_onLocationInputChanged);
+  }
+
+  void _onLocationInputChanged() {
+    final query = _locationController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      setState(() {
+        _filteredSuggestions = List.from(_allLocations);
+      });
+      return;
+    }
+
+    final matched = _allLocations.where((loc) {
+      final title = (loc['title'] as String).toLowerCase();
+      final sub = (loc['subtitle'] as String).toLowerCase();
+      final tag = (loc['tag'] as String).toLowerCase();
+      return title.contains(query) || sub.contains(query) || tag.contains(query);
+    }).toList();
+
+    setState(() {
+      _filteredSuggestions = matched;
+    });
+
+    // Try forward geocoding in background if query is descriptive
+    _attemptForwardGeocoding(query);
+  }
+
+  Future<void> _attemptForwardGeocoding(String address) async {
+    if (address.length < 4) return;
+    try {
+      final locations = await locationFromAddress(address).timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => <Location>[],
+      );
+      if (locations.isNotEmpty && mounted) {
+        final first = locations.first;
+        _latController.text = first.latitude.toStringAsFixed(6);
+        _lngController.text = first.longitude.toStringAsFixed(6);
+      }
+    } catch (_) {}
+  }
+
+  void _selectLocationPreset(Map<String, dynamic> loc) {
+    setState(() {
+      _locationController.text = loc['title'] as String;
+      _latController.text = (loc['lat'] as double).toStringAsFixed(6);
+      _lngController.text = (loc['lng'] as double).toStringAsFixed(6);
+      _showSuggestions = false;
+    });
+    FocusScope.of(context).unfocus();
+  }
 
   @override
   void dispose() {
+    _locationController.removeListener(_onLocationInputChanged);
     _nameController.dispose();
     _locationController.dispose();
-    _distanceController.dispose();
+    _latController.dispose();
+    _lngController.dispose();
     _descriptionController.dispose();
     _originalPriceController.dispose();
     _sellingPriceController.dispose();
     _portionsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchOwnerGPSLocation() async {
+    setState(() => _isAcquiringGps = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
+
+      if (!serviceEnabled) {
+        // Fallback to default coordinates or last known
+        _latController.text = '16.495000';
+        _lngController.text = '80.500000';
+        _locationController.text = 'Near VIT-AP University (Default GPS Anchor)';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('📍 Location services disabled. Set to Near VIT-AP University anchor.'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+        }
+        return;
+      }
+
+      LocationPermission perm = await Geolocator.checkPermission().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => LocationPermission.denied,
+      );
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission().timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => LocationPermission.denied,
+        );
+      }
+
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 5),
+          ),
+        ).timeout(const Duration(seconds: 5));
+      } catch (_) {
+        pos = await Geolocator.getLastKnownPosition();
+      }
+
+      final lat = pos?.latitude ?? 16.4950;
+      final lng = pos?.longitude ?? 80.5000;
+
+      _latController.text = lat.toStringAsFixed(6);
+      _lngController.text = lng.toStringAsFixed(6);
+
+      // Attempt reverse geocoding
+      String resolvedName = 'Near Current PG Location, Amaravati';
+      try {
+        final placemarks = await placemarkFromCoordinates(lat, lng).timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => <Placemark>[],
+        );
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final name = p.name ?? p.subLocality ?? p.locality ?? 'PG Location';
+          resolvedName = 'Near $name, ${p.locality ?? 'Amaravati'}';
+        }
+      } catch (_) {}
+
+      _locationController.text = resolvedName;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('📍 GPS location locked: $resolvedName'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      _latController.text = '16.495000';
+      _lngController.text = '80.500000';
+      _locationController.text = 'Near VIT-AP University Gate 2';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📍 GPS locked to Near VIT-AP University anchor.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAcquiringGps = false);
+    }
   }
 
   void _submit() {
@@ -456,7 +674,8 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
       final location = _locationController.text.trim().isNotEmpty
           ? _locationController.text.trim()
           : 'Near VIT-AP University';
-      final distance = double.tryParse(_distanceController.text) ?? 0.8;
+      final lat = double.tryParse(_latController.text) ?? 16.4950;
+      final lng = double.tryParse(_lngController.text) ?? 80.5000;
       final desc = _descriptionController.text.trim();
 
       final newListing = FoodListing(
@@ -468,7 +687,9 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
         propertyId: widget.user.id,
         propertyName: widget.user.propertyName ?? widget.user.name,
         locationAddress: location,
-        distanceKm: distance,
+        latitude: lat,
+        longitude: lng,
+        distanceKm: 0.5,
         category: _category,
         isVegetarian: _isVeg,
         originalPrice: origPrice,
@@ -488,7 +709,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.primary,
-          content: Text('🎉 "$foodName" listed live! Available for customer reservations.'),
+          content: Text('🎉 "$foodName" listed live! Visible to customers within radius.'),
         ),
       );
     }
@@ -535,7 +756,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Meal Name *',
-                  hintText: 'e.g. Chicken Rice, Veg Thali, Idli Sambar',
+                  hintText: 'e.g. Chicken Fried Rice, Veg Thali, Idli Sambar',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.fastfood_outlined),
                 ),
@@ -543,16 +764,148 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Location / Landmark Address
+              // Pickup Location / Landmark Address with Live Auto-Suggestions
               TextFormField(
                 controller: _locationController,
-                decoration: const InputDecoration(
+                onTap: () {
+                  setState(() => _showSuggestions = true);
+                },
+                decoration: InputDecoration(
                   labelText: 'Pickup Location / Landmark *',
-                  hintText: 'e.g. Near Gate 2, VIT-AP University, Inavolu',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on_outlined),
+                  hintText: 'Type campus, area, or PG address...',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.primary),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _showSuggestions ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                      color: AppColors.primary,
+                    ),
+                    onPressed: () {
+                      setState(() => _showSuggestions = !_showSuggestions);
+                    },
+                  ),
                 ),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Please enter pickup location' : null,
+              ),
+
+              // Quick Location Presets Chips Bar
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ..._allLocations.take(4).map((loc) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6.0),
+                        child: ActionChip(
+                          avatar: const Icon(Icons.place, size: 14, color: AppColors.primary),
+                          label: Text(
+                            loc['tag'] as String,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                          ),
+                          backgroundColor: AppColors.primaryLight,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _selectLocationPreset(loc),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              // Suggestions Dropdown List (Pops out when typing or tapping field)
+              if (_showSuggestions && _filteredSuggestions.isNotEmpty) ...[
+                Container(
+                  margin: const EdgeInsets.only(top: 6, bottom: 8),
+                  constraints: const BoxConstraints(maxHeight: 180),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: _filteredSuggestions.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = _filteredSuggestions[index];
+                      return ListTile(
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        leading: const Icon(Icons.location_on, color: AppColors.primary, size: 18),
+                        title: Text(
+                          item['title'] as String,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        subtitle: Text(
+                          item['subtitle'] as String,
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                        onTap: () => _selectLocationPreset(item),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 6),
+
+              // "Set PG location from current GPS" button
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  backgroundColor: AppColors.primaryLight.withOpacity(0.3),
+                ),
+                icon: _isAcquiringGps
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                    : const Icon(Icons.my_location, size: 18),
+                label: Text(
+                  _isAcquiringGps ? 'Locking GPS Coordinates...' : 'Set PG location from my current GPS location',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                onPressed: _isAcquiringGps ? null : _fetchOwnerGPSLocation,
+              ),
+              const SizedBox(height: 10),
+
+              // Latitude & Longitude display/editable fields
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _latController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'PG Latitude',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.map, size: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lngController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'PG Longitude',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.explore, size: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
 
@@ -585,7 +938,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Prices, Portions & Distance
+              // Prices & Portions
               Row(
                 children: [
                   Expanded(
@@ -626,35 +979,27 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                       validator: (v) => v == null || int.tryParse(v) == null ? 'Count' : null,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _distanceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Dist (km)',
-                        hintText: '0.8',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // Pickup Window Hours
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Pickup Window Hours (Cleanly wrapped column, no overflow!)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Pickup available for next:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(value: 1, label: Text('1 hr')),
-                      ButtonSegment(value: 2, label: Text('2 hrs')),
-                      ButtonSegment(value: 3, label: Text('3 hrs')),
-                    ],
-                    selected: {_pickupHours},
-                    onSelectionChanged: (set) => setState(() => _pickupHours = set.first),
+                  const Text('Pickup available for next:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 1, label: Text('1 hr')),
+                        ButtonSegment(value: 2, label: Text('2 hrs')),
+                        ButtonSegment(value: 3, label: Text('3 hrs')),
+                      ],
+                      selected: {_pickupHours},
+                      onSelectionChanged: (set) => setState(() => _pickupHours = set.first),
+                    ),
                   ),
                 ],
               ),

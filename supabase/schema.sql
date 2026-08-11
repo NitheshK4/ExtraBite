@@ -1,6 +1,9 @@
 -- ExtraBite Supabase PostgreSQL Schema
 -- Surplus Food Discovery & Reservation Platform for PGs and Hostels
 
+-- 0. Enable PostGIS Extension
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- 1. Custom Types
 CREATE TYPE user_role AS ENUM ('customer', 'pg_owner', 'admin');
 CREATE TYPE dietary_type AS ENUM ('vegetarian', 'non_vegetarian', 'vegan', 'egg');
@@ -33,6 +36,7 @@ CREATE TABLE IF NOT EXISTS pg_profiles (
     city TEXT NOT NULL DEFAULT 'Bengaluru',
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
+    location_geom GEOGRAPHY(Point, 4326),
     contact_phone TEXT NOT NULL,
     fssai_license_number TEXT,
     is_approved BOOLEAN DEFAULT false,
@@ -42,6 +46,9 @@ CREATE TABLE IF NOT EXISTS pg_profiles (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Spatial GIST index for high-speed PostGIS distance queries
+CREATE INDEX IF NOT EXISTS idx_pg_profiles_location_gist ON pg_profiles USING GIST (location_geom);
 
 -- 4. Food Listings Table
 CREATE TABLE IF NOT EXISTS food_listings (
@@ -160,3 +167,94 @@ CREATE TRIGGER trigger_restore_portions_on_cancel
 AFTER UPDATE ON reservations
 FOR EACH ROW
 EXECUTE FUNCTION restore_listing_portions_on_cancellation();
+
+-- 10. Automatically Synchronize PostGIS location_geom from latitude & longitude
+CREATE OR REPLACE FUNCTION sync_pg_location_geom()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.location_geom := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326)::geography;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_sync_pg_location_geom
+BEFORE INSERT OR UPDATE OF latitude, longitude ON pg_profiles
+FOR EACH ROW
+EXECUTE FUNCTION sync_pg_location_geom();
+
+-- 11. GPS-First Nearby Active Listings PostGIS RPC
+-- Filters active surplus listings strictly within radius_meters using ST_DWithin and returns distance_meters
+CREATE OR REPLACE FUNCTION get_nearby_active_listings(
+    user_latitude DOUBLE PRECISION,
+    user_longitude DOUBLE PRECISION,
+    radius_meters DOUBLE PRECISION DEFAULT 2000
+)
+RETURNS TABLE (
+    listing_id UUID,
+    pg_id UUID,
+    pg_name TEXT,
+    pg_address TEXT,
+    pg_latitude DOUBLE PRECISION,
+    pg_longitude DOUBLE PRECISION,
+    distance_meters DOUBLE PRECISION,
+    title TEXT,
+    description TEXT,
+    category TEXT,
+    image_url TEXT,
+    original_price DECIMAL(10,2),
+    discounted_price DECIMAL(10,2),
+    total_portions INTEGER,
+    available_portions INTEGER,
+    dietary_type dietary_type,
+    allergens TEXT[],
+    pickup_start_time TIMESTAMPTZ,
+    pickup_end_time TIMESTAMPTZ,
+    pickup_instructions TEXT,
+    status listing_status,
+    is_featured BOOLEAN,
+    is_approved BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        fl.id AS listing_id,
+        pg.id AS pg_id,
+        pg.pg_name,
+        pg.address AS pg_address,
+        pg.latitude AS pg_latitude,
+        pg.longitude AS pg_longitude,
+        ST_Distance(
+            pg.location_geom,
+            ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)::geography
+        ) AS distance_meters,
+        fl.title,
+        fl.description,
+        fl.category,
+        fl.image_url,
+        fl.original_price,
+        fl.discounted_price,
+        fl.total_portions,
+        fl.available_portions,
+        fl.dietary_type,
+        fl.allergens,
+        fl.pickup_start_time,
+        fl.pickup_end_time,
+        fl.pickup_instructions,
+        fl.status,
+        fl.is_featured,
+        pg.is_approved
+    FROM food_listings fl
+    JOIN pg_profiles pg ON fl.pg_id = pg.id
+    WHERE fl.status = 'active'
+      AND fl.available_portions > 0
+      AND fl.pickup_end_time > NOW()
+      AND pg.is_active = true
+      AND ST_DWithin(
+          pg.location_geom,
+          ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)::geography,
+          radius_meters
+      )
+    ORDER BY distance_meters ASC;
+END;
+$$ LANGUAGE plpgsql STABLE;
+

@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ExtraBite uses your location to discover surplus meals within 2 km of your current PG, hostel, or campus.</string>
 </dict>
 </plist>
