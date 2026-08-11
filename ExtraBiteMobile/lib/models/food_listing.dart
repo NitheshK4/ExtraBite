@@ -18,6 +18,9 @@ class FoodListing {
   final List<String> allergens;
   final String verificationStatus; // e.g. "verified", "unverified"
 
+  final double latitude;
+  final double longitude;
+
   FoodListing({
     required this.id,
     required this.foodName,
@@ -37,6 +40,8 @@ class FoodListing {
     required this.ingredients,
     required this.allergens,
     required this.verificationStatus,
+    required this.latitude,
+    required this.longitude,
   });
 
   double get discountPercentage {
@@ -52,5 +57,31 @@ class FoodListing {
   bool get isPickupActive {
     final now = DateTime.now();
     return now.isAfter(pickupStarts) && now.isBefore(pickupEnds);
+  }
+
+  FoodListing copyWith({
+    double? distanceKm,
+  }) {
+    return FoodListing(
+      id: id,
+      foodName: foodName,
+      description: description,
+      propertyId: propertyId,
+      propertyName: propertyName,
+      distanceKm: distanceKm ?? this.distanceKm,
+      category: category,
+      isVegetarian: isVegetarian,
+      originalPrice: originalPrice,
+      sellingPrice: sellingPrice,
+      availablePortions: availablePortions,
+      preparedTime: preparedTime,
+      pickupStarts: pickupStarts,
+      pickupEnds: pickupEnds,
+      ingredients: ingredients,
+      allergens: allergens,
+      verificationStatus: verificationStatus,
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 }

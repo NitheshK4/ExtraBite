@@ -227,7 +227,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             const Divider(color: AppColors.border, height: 1),
             ListTile(
               title: const Text('Saved Pickup Location'),
-              subtitle: Text(ref.watch(locationProvider)),
+              subtitle: Text(ref.watch(locationProvider).displayName),
               trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary),
               onTap: () {
                 _showLocationPicker(context);
@@ -384,7 +384,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   }
 
   void _showLocationPicker(BuildContext context) {
-    final current = ref.read(locationProvider);
+    final current = ref.read(locationProvider).displayName;
     final textController = TextEditingController(text: current);
 
     showDialog(

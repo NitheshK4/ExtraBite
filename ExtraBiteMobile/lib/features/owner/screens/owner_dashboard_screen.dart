@@ -459,6 +459,23 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
       final distance = double.tryParse(_distanceController.text) ?? 0.8;
       final desc = _descriptionController.text.trim();
 
+      double lat = 16.4971;
+      double lon = 80.5005;
+      final locLower = location.toLowerCase();
+      if (locLower.contains('srm')) {
+        lat = 16.4710;
+        lon = 80.5100;
+      } else if (locLower.contains('thullur')) {
+        lat = 16.5300;
+        lon = 80.4700;
+      } else if (locLower.contains('mangalagiri')) {
+        lat = 16.4300;
+        lon = 80.5600;
+      } else if (locLower.contains('benz') || locLower.contains('vijayawada')) {
+        lat = 16.5000;
+        lon = 80.6400;
+      }
+
       final newListing = FoodListing(
         id: 'fl_${now.millisecondsSinceEpoch}',
         foodName: foodName,
@@ -480,6 +497,8 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
         ingredients: _isVeg ? ['Rice', 'Vegetables', 'Spices'] : ['Basmati Rice', 'Chicken', 'Spices'],
         allergens: const [],
         verificationStatus: 'verified',
+        latitude: lat,
+        longitude: lon,
       );
 
       widget.ref.read(foodProvider.notifier).addListing(newListing);
@@ -687,4 +706,3 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
     );
   }
 }
-

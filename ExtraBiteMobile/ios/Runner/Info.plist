@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ExtraBite uses your location to discover and show surplus food available near you.</string>
 </dict>
 </plist>
