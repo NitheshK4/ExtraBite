@@ -90,11 +90,15 @@ void main() {
       await tester.tap(find.text('Create Personal User Account'));
       await tester.pumpAndSettle();
 
-      // Navigate to Profile tab
-      await tester.tap(find.byIcon(Icons.person_outline));
+      // On Home screen, header must show dynamic initials 'AS' and not 'PK'
+      expect(find.text('AS'), findsOneWidget);
+      expect(find.text('PK'), findsNothing);
+
+      // Tap on the header avatar to navigate to Profile
+      await tester.tap(find.text('AS'));
       await tester.pumpAndSettle();
 
-      // Verify User A's data is displayed
+      // Verify User A's data is displayed on Profile
       expect(find.text('Alice Smith'), findsOneWidget);
       expect(find.text('alice@example.com'), findsOneWidget);
       expect(find.text('+91 9111111111'), findsOneWidget);

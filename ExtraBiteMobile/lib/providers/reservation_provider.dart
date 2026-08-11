@@ -4,49 +4,8 @@ import '../models/reservation.dart';
 import '../models/food_listing.dart';
 
 class ReservationNotifier extends StateNotifier<List<Reservation>> {
-  ReservationNotifier() : super(_getInitialMockReservations());
-
-  static List<Reservation> _getInitialMockReservations() {
-    final now = DateTime.now();
-    return [
-      Reservation(
-        id: 'EB10293',
-        foodListingId: '4',
-        foodName: 'Paneer Rice',
-        propertyName: 'Stanza Living Delhi PG',
-        quantity: 2,
-        amountToCollect: 100.0,
-        pickupStarts: now.subtract(const Duration(hours: 1)),
-        pickupEnds: now.add(const Duration(hours: 2, minutes: 30)),
-        reservedAt: now.subtract(const Duration(minutes: 45)),
-        status: ReservationStatus.reserved,
-      ),
-      Reservation(
-        id: 'EB09821',
-        foodListingId: '1',
-        foodName: 'Veg Meals',
-        propertyName: 'Sri Sai Deluxe PG',
-        quantity: 1,
-        amountToCollect: 40.0,
-        pickupStarts: now.subtract(const Duration(days: 1, hours: 2)),
-        pickupEnds: now.subtract(const Duration(days: 1)),
-        reservedAt: now.subtract(const Duration(days: 1, hours: 2, minutes: 15)),
-        status: ReservationStatus.completed,
-      ),
-      Reservation(
-        id: 'EB09124',
-        foodListingId: '3',
-        foodName: 'Idli & Vada Combo',
-        propertyName: 'Green Gardens PG',
-        quantity: 3,
-        amountToCollect: 75.0,
-        pickupStarts: now.subtract(const Duration(days: 3, hours: 4)),
-        pickupEnds: now.subtract(const Duration(days: 3, hours: 2)),
-        reservedAt: now.subtract(const Duration(days: 3, hours: 4, minutes: 10)),
-        status: ReservationStatus.cancelled,
-      ),
-    ];
-  }
+  // Starts with clean empty reservations for real-time order flows
+  ReservationNotifier() : super(const []);
 
   Reservation createReservation({
     required FoodListing listing,
