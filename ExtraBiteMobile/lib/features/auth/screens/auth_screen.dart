@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../models/user_role.dart';
 import '../../../providers/auth_provider.dart';
@@ -46,6 +47,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
     super.dispose();
   }
 
+  void _handleBackNavigation() {
+    ref.read(authProvider.notifier).resetToRoleSelection();
+    if (mounted) {
+      context.go('/auth/role-selection');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -53,122 +61,128 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
     final isOwner = selectedRole == UserRole.owner;
     final isLoading = authState.status == AuthStatus.authenticating;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () {
-            ref.read(authProvider.notifier).resetToRoleSelection();
-          },
-        ),
-        title: Text(
-          isOwner ? 'Hostel / PG Owner Auth' : 'Personal User Auth',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            tooltip: 'Back to role selection',
+            onPressed: _handleBackNavigation,
+          ),
+          title: Text(
+            isOwner ? 'Hostel / PG Owner Auth' : 'Personal User Auth',
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Role Badge Header
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isOwner ? Icons.storefront : Icons.person,
-                      color: AppColors.primary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            selectedRole.displayName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            isOwner
-                                ? 'Register your PG/Hostel to list surplus food'
-                                : 'Sign in to reserve surplus meals near you',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        ref.read(authProvider.notifier).resetToRoleSelection();
-                      },
-                      child: const Text('Change', style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Error banner if any
-              if (authState.errorMessage != null) ...[
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Role Badge Header
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                   ),
-                  child: Text(
-                    authState.errorMessage!,
-                    style: const TextStyle(color: AppColors.error, fontSize: 13),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isOwner ? Icons.storefront : Icons.person,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selectedRole.displayName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              isOwner
+                                  ? 'Register your PG/Hostel to list surplus food'
+                                  : 'Sign in to reserve surplus meals near you',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _handleBackNavigation,
+                        child: const Text('Change', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
+                const SizedBox(height: 24),
 
-              // Tab Bar
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
+                // Error banner if any
+                if (authState.errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      authState.errorMessage!,
+                      style: const TextStyle(color: AppColors.error, fontSize: 13),
+                    ),
                   ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  tabs: const [
-                    Tab(text: 'Log In'),
-                    Tab(text: 'Sign Up'),
-                  ],
+                  const SizedBox(height: 16),
+                ],
+
+                // Tab Bar
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    indicator: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    tabs: const [
+                      Tab(text: 'Log In'),
+                      Tab(text: 'Sign Up'),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
               // Form View
               SizedBox(
@@ -185,8 +199,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLoginForm(bool isLoading, UserRole role) {
     return Form(
