@@ -249,6 +249,20 @@ class OwnerDashboardScreen extends ConsumerWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on, size: 14, color: AppColors.primary),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '${item.locationAddress} (${item.distanceKm.toStringAsFixed(1)} km)',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -407,6 +421,8 @@ class _AddMealBottomSheet extends StatefulWidget {
 class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _locationController = TextEditingController(text: 'Near VIT-AP University Gate 2');
+  final _distanceController = TextEditingController(text: '0.8');
   final _descriptionController = TextEditingController();
   final _originalPriceController = TextEditingController();
   final _sellingPriceController = TextEditingController();
@@ -421,6 +437,8 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _locationController.dispose();
+    _distanceController.dispose();
     _descriptionController.dispose();
     _originalPriceController.dispose();
     _sellingPriceController.dispose();
@@ -435,6 +453,10 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
       final sellPrice = double.tryParse(_sellingPriceController.text) ?? (origPrice / 2);
       final portions = int.tryParse(_portionsController.text) ?? 5;
       final foodName = _nameController.text.trim();
+      final location = _locationController.text.trim().isNotEmpty
+          ? _locationController.text.trim()
+          : 'Near VIT-AP University';
+      final distance = double.tryParse(_distanceController.text) ?? 0.8;
       final desc = _descriptionController.text.trim();
 
       final newListing = FoodListing(
@@ -445,7 +467,8 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
             : 'Fresh surplus $_category meal prepared at ${widget.user.propertyName ?? widget.user.name}.',
         propertyId: widget.user.id,
         propertyName: widget.user.propertyName ?? widget.user.name,
-        distanceKm: 0.8,
+        locationAddress: location,
+        distanceKm: distance,
         category: _category,
         isVegetarian: _isVeg,
         originalPrice: origPrice,
@@ -514,8 +537,22 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                   labelText: 'Meal Name *',
                   hintText: 'e.g. Chicken Rice, Veg Thali, Idli Sambar',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.fastfood_outlined),
                 ),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Please enter meal name' : null,
+              ),
+              const SizedBox(height: 12),
+
+              // Location / Landmark Address
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Pickup Location / Landmark *',
+                  hintText: 'e.g. Near Gate 2, VIT-AP University, Inavolu',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                ),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter pickup location' : null,
               ),
               const SizedBox(height: 12),
 
@@ -548,7 +585,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Prices & Portions
+              // Prices, Portions & Distance
               Row(
                 children: [
                   Expanded(
@@ -560,10 +597,10 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                         hintText: '100',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) => v == null || double.tryParse(v) == null ? 'Enter valid price' : null,
+                      validator: (v) => v == null || double.tryParse(v) == null ? 'Enter price' : null,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: TextFormField(
                       controller: _sellingPriceController,
@@ -573,10 +610,10 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                         hintText: '50',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) => v == null || double.tryParse(v) == null ? 'Enter valid price' : null,
+                      validator: (v) => v == null || double.tryParse(v) == null ? 'Enter price' : null,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: TextFormField(
                       controller: _portionsController,
@@ -586,7 +623,19 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                         hintText: '8',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) => v == null || int.tryParse(v) == null ? 'Portions count' : null,
+                      validator: (v) => v == null || int.tryParse(v) == null ? 'Count' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _distanceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Dist (km)',
+                        hintText: '0.8',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                 ],
@@ -617,7 +666,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'Description / Notes (Optional)',
-                  hintText: 'e.g. Includes sambar, chutney, freshly made.',
+                  hintText: 'e.g. Freshly cooked, includes curd & pickle.',
                   border: OutlineInputBorder(),
                 ),
               ),

@@ -186,14 +186,33 @@ class FoodCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   
-                  // Property Name
-                  Text(
-                    food.propertyName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  // Property Name & Location
+                  Row(
+                    children: [
+                      Text(
+                        food.propertyName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('•', style: TextStyle(color: AppColors.textLight)),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.location_on, size: 12, color: AppColors.primary),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          food.locationAddress,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   

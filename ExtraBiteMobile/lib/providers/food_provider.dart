@@ -52,6 +52,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
             description: item.description,
             propertyId: item.propertyId,
             propertyName: item.propertyName,
+            locationAddress: item.locationAddress,
             distanceKm: item.distanceKm,
             category: item.category,
             isVegetarian: item.isVegetarian,
