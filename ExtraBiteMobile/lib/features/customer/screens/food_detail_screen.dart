@@ -282,6 +282,17 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   }
 
   Widget _buildReservationPanel(BuildContext context, FoodListing food) {
+    final available = food.availablePortions;
+    final isSoldOut = available <= 0;
+
+    // Dynamically clamp portion count to match availability
+    int displayPortions = _portionsToReserve;
+    if (isSoldOut) {
+      displayPortions = 0;
+    } else if (displayPortions > available) {
+      displayPortions = available;
+    }
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -309,18 +320,18 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: _portionsToReserve > 1 
-                        ? () => setState(() => _portionsToReserve--) 
+                    onPressed: !isSoldOut && _portionsToReserve > 1
+                        ? () => setState(() => _portionsToReserve--)
                         : null,
                     icon: const Icon(Icons.remove_circle_outline),
                   ),
                   Text(
-                    '$_portionsToReserve',
+                    '$displayPortions',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
-                    onPressed: _portionsToReserve < food.availablePortions 
-                        ? () => setState(() => _portionsToReserve++) 
+                    onPressed: !isSoldOut && _portionsToReserve < available
+                        ? () => setState(() => _portionsToReserve++)
                         : null,
                     icon: const Icon(Icons.add_circle_outline),
                   ),
@@ -339,7 +350,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   const Text('Total Price', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
                   const SizedBox(height: 2),
                   Text(
-                    '₹${(food.sellingPrice * _portionsToReserve).toStringAsFixed(0)}',
+                    '₹${(food.sellingPrice * displayPortions).toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
@@ -351,12 +362,16 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: food.isExpired
+                  onPressed: food.isExpired || isSoldOut
                       ? null
                       : () {
                           _triggerReservation(context, food);
                         },
-                  child: Text(food.isExpired ? 'Pickup Expired' : 'Reserve Meal'),
+                  child: Text(
+                    food.isExpired
+                        ? 'Pickup Expired'
+                        : (isSoldOut ? 'Sold Out' : 'Reserve Meal'),
+                  ),
                 ),
               ),
             ],
@@ -367,13 +382,22 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   }
 
   void _triggerReservation(BuildContext context, FoodListing food) {
+    final available = food.availablePortions;
+    if (available <= 0) return; // Prevent zero-portions reservation
+
+    int portions = _portionsToReserve;
+    if (portions > available) {
+      portions = available;
+    }
+    if (portions <= 0) return;
+
     // Decrement available portions in real-time
-    ref.read(foodProvider.notifier).decrementPortions(food.id, _portionsToReserve);
+    ref.read(foodProvider.notifier).decrementPortions(food.id, portions);
 
     // Call state notifier to add reservation state
     final reservation = ref.read(reservationProvider.notifier).createReservation(
       listing: food,
-      quantity: _portionsToReserve,
+      quantity: portions,
     );
 
     // Show Confirmation modal

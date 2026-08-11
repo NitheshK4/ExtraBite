@@ -55,7 +55,9 @@ CREATE TABLE IF NOT EXISTS food_listings (
     discounted_price DECIMAL(10,2) NOT NULL, -- ExtraBite Price (Pay at pickup)
     total_portions INTEGER NOT NULL CHECK (total_portions > 0),
     available_portions INTEGER NOT NULL CHECK (available_portions >= 0),
+    CONSTRAINT check_available_portions_bound CHECK (available_portions <= total_portions),
     dietary_type dietary_type NOT NULL DEFAULT 'vegetarian',
+    ingredients TEXT[] DEFAULT '{}',
     allergens TEXT[] DEFAULT '{}',
     pickup_start_time TIMESTAMPTZ NOT NULL,
     pickup_end_time TIMESTAMPTZ NOT NULL,
@@ -122,17 +124,63 @@ ALTER TABLE reservations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE listing_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Public read, self update
+-- Profiles: Public read, self update (with trigger enforcing column protections)
 CREATE POLICY "Profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update their own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Food Listings: Viewable by anyone if active, manageable by PG owner
-CREATE POLICY "Active listings are viewable by everyone" ON food_listings FOR SELECT USING (status != 'removed');
-CREATE POLICY "PG owners can manage their listings" ON food_listings FOR ALL USING (
-    pg_id IN (SELECT id FROM pg_profiles WHERE owner_id = auth.uid())
-);
+-- pg_profiles: Customers select active/approved, Owners manage own, Admins manage all
+CREATE POLICY "Approved active PGs are viewable by everyone" ON pg_profiles 
+    FOR SELECT USING (is_approved = true AND is_active = true);
+CREATE POLICY "Owners view own PG profiles" ON pg_profiles 
+    FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "Owners insert own PG profile" ON pg_profiles 
+    FOR INSERT WITH CHECK (
+        owner_id = auth.uid() AND 
+        is_approved = false AND
+        EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'pg_owner'
+        )
+    );
+CREATE POLICY "Owners update own PG profile" ON pg_profiles 
+    FOR UPDATE USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid() AND is_approved = OLD.is_approved);
+CREATE POLICY "Owners delete own PG profile" ON pg_profiles 
+    FOR DELETE USING (owner_id = auth.uid());
+CREATE POLICY "Admins manage all PG profiles" ON pg_profiles 
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
 
--- Reservations: Viewable by customer and PG owner
+-- Food Listings: Customers view active approved, Owners manage own, Admins manage all
+CREATE POLICY "Customers view active approved listings" ON food_listings
+    FOR SELECT USING (
+        status != 'removed' AND
+        pg_id IN (
+            SELECT id FROM pg_profiles WHERE is_approved = true AND is_active = true
+        )
+    );
+CREATE POLICY "Owners view listings for their PGs" ON food_listings
+    FOR SELECT USING (
+        pg_id IN (SELECT id FROM pg_profiles WHERE owner_id = auth.uid())
+    );
+CREATE POLICY "Owners manage listings for their PGs" ON food_listings
+    FOR ALL USING (
+        pg_id IN (SELECT id FROM pg_profiles WHERE owner_id = auth.uid())
+    ) WITH CHECK (
+        pg_id IN (SELECT id FROM pg_profiles WHERE owner_id = auth.uid())
+    );
+CREATE POLICY "Admins manage all listings" ON food_listings
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Reservations: Customers view/create/cancel own, Owners view/update status for own listings, Admins manage all
 CREATE POLICY "Customers view own reservations" ON reservations FOR SELECT USING (customer_id = auth.uid());
 CREATE POLICY "Owners view reservations for their listings" ON reservations FOR SELECT USING (
     listing_id IN (
@@ -141,6 +189,40 @@ CREATE POLICY "Owners view reservations for their listings" ON reservations FOR 
         WHERE pg.owner_id = auth.uid()
     )
 );
+CREATE POLICY "Customers cancel own reservations" ON reservations
+    FOR UPDATE USING (customer_id = auth.uid())
+    WITH CHECK (
+        customer_id = auth.uid() AND
+        status = 'cancelled'::reservation_status AND
+        OLD.status = 'confirmed'::reservation_status AND
+        portions_count = OLD.portions_count AND
+        listing_id = OLD.listing_id AND
+        unit_price = OLD.unit_price AND
+        total_amount = OLD.total_amount
+    );
+CREATE POLICY "Owners update status of reservations for their listings" ON reservations
+    FOR UPDATE USING (
+        listing_id IN (
+            SELECT fl.id FROM food_listings fl
+            JOIN pg_profiles pg ON fl.pg_id = pg.id
+            WHERE pg.owner_id = auth.uid()
+        )
+    )
+    WITH CHECK (
+        customer_id = OLD.customer_id AND
+        listing_id = OLD.listing_id AND
+        portions_count = OLD.portions_count AND
+        unit_price = OLD.unit_price AND
+        total_amount = OLD.total_amount AND
+        status IN ('ready_for_pickup'::reservation_status, 'picked_up'::reservation_status, 'no_show'::reservation_status, 'rejected'::reservation_status)
+    );
+CREATE POLICY "Admins manage all reservations" ON reservations
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
 
 -- 9. Automatic Inventory Trigger on Reservation Cancellation
 CREATE OR REPLACE FUNCTION restore_listing_portions_on_cancellation()
@@ -148,7 +230,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (OLD.status = 'confirmed' OR OLD.status = 'ready_for_pickup') AND NEW.status = 'cancelled' THEN
         UPDATE food_listings
-        SET available_portions = available_portions + OLD.portions_count,
+        SET available_portions = least(available_portions + OLD.portions_count, total_portions),
             status = CASE WHEN status = 'sold_out' THEN 'active'::listing_status ELSE status END
         WHERE id = OLD.listing_id;
     END IF;
@@ -156,7 +238,175 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_restore_portions_on_cancel
+CREATE OR REPLACE TRIGGER trigger_restore_portions_on_cancel
 AFTER UPDATE ON reservations
 FOR EACH ROW
 EXECUTE FUNCTION restore_listing_portions_on_cancellation();
+
+-- 10. Profile Creation Trigger on Auth User Creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+    input_role TEXT;
+    final_role user_role;
+BEGIN
+    input_role := new.raw_user_meta_data->>'role';
+    
+    IF input_role = 'pg_owner' THEN
+        final_role := 'pg_owner'::user_role;
+    ELSE
+        final_role := 'customer'::user_role;
+    END IF;
+
+    INSERT INTO public.profiles (id, email, full_name, phone_number, role)
+    VALUES (
+        new.id,
+        new.email,
+        coalesce(new.raw_user_meta_data->>'full_name', ''),
+        coalesce(new.raw_user_meta_data->>'phone_number', ''),
+        final_role
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 11. Profile Role Update Protection Trigger
+CREATE OR REPLACE FUNCTION public.check_profile_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.role IS DISTINCT FROM NEW.role OR
+       OLD.is_verified IS DISTINCT FROM NEW.is_verified OR
+       OLD.is_suspended IS DISTINCT FROM NEW.is_suspended THEN
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        ) THEN
+            NEW.role := OLD.role;
+            NEW.is_verified := OLD.is_verified;
+            NEW.is_suspended := OLD.is_suspended;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+CREATE OR REPLACE TRIGGER before_profile_updated
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.check_profile_updates();
+
+-- 12. Atomic Reservation RPC Function
+CREATE OR REPLACE FUNCTION public.reserve_food(
+    p_listing_id UUID,
+    p_quantity INTEGER
+)
+RETURNS public.reservations AS $$
+DECLARE
+    v_listing public.food_listings;
+    v_pg public.pg_profiles;
+    v_reservation public.reservations;
+    v_readable_id TEXT;
+BEGIN
+    -- Verify customer is authenticated
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    -- Verify customer role
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'customer'
+    ) THEN
+        RAISE EXCEPTION 'Only customers can reserve food';
+    END IF;
+
+    -- Verify quantity
+    IF p_quantity <= 0 THEN
+        RAISE EXCEPTION 'Quantity must be greater than zero';
+    END IF;
+
+    -- Lock food listing row and retrieve details
+    SELECT * INTO v_listing
+    FROM public.food_listings
+    WHERE id = p_listing_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Food listing not found';
+    END IF;
+
+    -- Verify listing status
+    IF v_listing.status != 'active' THEN
+        RAISE EXCEPTION 'Food listing is not active';
+    END IF;
+
+    -- Verify pickup window
+    IF now() > v_listing.pickup_end_time THEN
+        RAISE EXCEPTION 'Pickup window has already closed';
+    END IF;
+
+    -- Verify PG profile status
+    SELECT * INTO v_pg
+    FROM public.pg_profiles
+    WHERE id = v_listing.pg_id;
+
+    IF NOT FOUND OR NOT v_pg.is_approved OR NOT v_pg.is_active THEN
+        RAISE EXCEPTION 'Associated PG is not approved or active';
+    END IF;
+
+    -- Verify portion availability
+    IF v_listing.available_portions < p_quantity THEN
+        RAISE EXCEPTION 'Insufficient portions available';
+    END IF;
+
+    -- Generate readable reservation ID
+    v_readable_id := 'EB-' || floor(random() * 90000 + 10000)::TEXT;
+    WHILE EXISTS (SELECT 1 FROM public.reservations WHERE readable_id = v_readable_id) LOOP
+        v_readable_id := 'EB-' || floor(random() * 90000 + 10000)::TEXT;
+    END LOOP;
+
+    -- Decrement available portions and update listing status if sold out
+    UPDATE public.food_listings
+    SET available_portions = available_portions - p_quantity,
+        status = CASE WHEN available_portions - p_quantity = 0 THEN 'sold_out'::listing_status ELSE status END
+    WHERE id = p_listing_id;
+
+    -- Insert reservation
+    INSERT INTO public.reservations (
+        readable_id,
+        listing_id,
+        customer_id,
+        portions_count,
+        unit_price,
+        total_amount,
+        payment_method,
+        status,
+        pickup_token,
+        qr_payload,
+        pickup_deadline
+    )
+    VALUES (
+        v_readable_id,
+        p_listing_id,
+        auth.uid(),
+        p_quantity,
+        v_listing.discounted_price,
+        v_listing.discounted_price * p_quantity,
+        'pay_at_pickup',
+        'confirmed'::reservation_status,
+        md5(random()::text),
+        v_readable_id || '|' || md5(random()::text),
+        v_listing.pickup_end_time
+    )
+    RETURNING * INTO v_reservation;
+
+    RETURN v_reservation;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+-- 13. Enable Supabase Realtime for food_listings
+ALTER PUBLICATION supabase_realtime ADD TABLE public.food_listings;
