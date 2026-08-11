@@ -27,6 +27,44 @@ void main() {
       expect(find.text('+91 9876543210'), findsNothing);
     });
 
+    testWidgets('1b. Back button and Change button on Auth Screen navigate back to Role Selection', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: ExtraBiteApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Select Personal User role
+      await tester.tap(find.text('Personal User'));
+      await tester.pumpAndSettle();
+
+      // We are on Auth Screen
+      expect(find.text('Personal User Auth'), findsOneWidget);
+
+      // Tap AppBar back button
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      // Must be back on Role Selection screen
+      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Personal User'), findsOneWidget);
+
+      // Select Owner role
+      await tester.tap(find.text('Hostel / PG Owner'));
+      await tester.pumpAndSettle();
+
+      // We are on Owner Auth Screen
+      expect(find.text('Hostel / PG Owner Auth'), findsOneWidget);
+
+      // Tap 'Change' button
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      // Must be back on Role Selection screen
+      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+    });
+
     testWidgets('2. User A logs in and sees only User A\'s authenticated data', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
