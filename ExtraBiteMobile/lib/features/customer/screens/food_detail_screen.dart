@@ -331,7 +331,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   }
 
   void _triggerReservation(BuildContext context, FoodListing food) {
-    // Call state notifier to add reservation mock state
+    // Decrement available portions in real-time
+    ref.read(foodProvider.notifier).decrementPortions(food.id, _portionsToReserve);
+
+    // Call state notifier to add reservation state
     final reservation = ref.read(reservationProvider.notifier).createReservation(
       listing: food,
       quantity: _portionsToReserve,
