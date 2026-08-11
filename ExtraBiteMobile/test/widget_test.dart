@@ -6,6 +6,9 @@ import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/models/reservation.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
+import 'package:extrabite_mobile/providers/location_provider.dart';
+import 'package:extrabite_mobile/core/location/location_state.dart';
+import 'mocks.dart';
 
 void main() {
   group('1. FoodListing Model Tests', () {
@@ -28,6 +31,8 @@ void main() {
         ingredients: [],
         allergens: [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
       expect(listing.discountPercentage, equals(25.0));
     });
@@ -51,6 +56,8 @@ void main() {
         ingredients: [],
         allergens: [],
         verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
       );
       expect(expiredListing.isExpired, isTrue);
     });
@@ -58,7 +65,7 @@ void main() {
 
   group('2. Food Provider & Filtering Tests', () {
     test('Initializes with verified mock listings only in filtered provider', () {
-      final container = ProviderContainer();
+      final container = createMockLocationContainer();
       final filteredList = container.read(filteredFoodProvider);
       
       for (final item in filteredList) {
@@ -67,7 +74,7 @@ void main() {
     });
 
     test('Filters listings correctly by Category Selection', () {
-      final container = ProviderContainer();
+      final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
       
       notifier.updateCategory('Breakfast');
@@ -84,7 +91,7 @@ void main() {
     });
 
     test('Filters listings correctly by Search Query', () {
-      final container = ProviderContainer();
+      final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
       
       notifier.updateSearchQuery('Biryani');
@@ -102,7 +109,7 @@ void main() {
 
   group('3. Reservation Creation & State Tests', () {
     test('Creates new active reservations and updates lists correctly', () {
-      final container = ProviderContainer();
+      final container = createMockLocationContainer();
       final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
 
@@ -125,7 +132,7 @@ void main() {
     });
 
     test('Cancels active reservations correctly', () {
-      final container = ProviderContainer();
+      final container = createMockLocationContainer();
       final reservationNotifier = container.read(reservationProvider.notifier);
       final activeList = container.read(activeReservationsProvider);
       
@@ -145,8 +152,16 @@ void main() {
   group('4. UI Navigation & Smoke Tests', () {
     testWidgets('App UI Smoke & Navigation Test', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: ExtraBiteApp(),
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                MockLocationService(),
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+          ],
+          child: const ExtraBiteApp(),
         ),
       );
       await tester.pumpAndSettle();

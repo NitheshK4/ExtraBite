@@ -5,13 +5,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:extrabite_mobile/app/app.dart';
 import 'package:extrabite_mobile/models/user_role.dart';
 import 'package:extrabite_mobile/providers/auth_provider.dart';
+import 'package:extrabite_mobile/providers/location_provider.dart';
+import 'package:extrabite_mobile/core/location/location_state.dart';
+import 'mocks.dart';
 
 void main() {
   group('Privacy & User Data Isolation Tests', () {
     testWidgets('1. Fresh install shows Role Selection, not a hardcoded profile', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: ExtraBiteApp(),
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                MockLocationService(),
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+          ],
+          child: const ExtraBiteApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -29,8 +40,16 @@ void main() {
 
     testWidgets('2. User A logs in and sees only User A\'s authenticated data', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: ExtraBiteApp(),
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                MockLocationService(),
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+          ],
+          child: const ExtraBiteApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -132,8 +151,16 @@ void main() {
 
     testWidgets('5. Owner Role onboarding loads Owner Dashboard', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: ExtraBiteApp(),
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                MockLocationService(),
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+          ],
+          child: const ExtraBiteApp(),
         ),
       );
       await tester.pumpAndSettle();

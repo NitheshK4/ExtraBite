@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_listing.dart';
+import '../core/location/location_state.dart';
+import '../core/utils/haversine.dart';
+import 'location_provider.dart';
 
 class FoodState {
   final List<FoodListing> listings;
@@ -49,6 +52,8 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Lentils', 'Mixed Vegetables', 'Curd', 'Coconut'],
         allergens: ['Mustard', 'Dairy'],
         verificationStatus: 'verified',
+        latitude: 16.4950,
+        longitude: 80.5070,
       ),
       FoodListing(
         id: '2',
@@ -68,6 +73,8 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Basmati Rice', 'Chicken', 'Yogurt', 'Onions', 'Spices'],
         allergens: ['Dairy'],
         verificationStatus: 'verified',
+        latitude: 16.4920,
+        longitude: 80.5100,
       ),
       FoodListing(
         id: '3',
@@ -87,6 +94,8 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Urad Dal', 'Coconut', 'Tamarind', 'Spices'],
         allergens: ['Mustard'],
         verificationStatus: 'verified',
+        latitude: 16.4990,
+        longitude: 80.4960,
       ),
       FoodListing(
         id: '4',
@@ -106,6 +115,8 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Paneer', 'Capsicum', 'Spring Onion', 'Soy Sauce'],
         allergens: ['Dairy', 'Soy', 'Gluten'],
         verificationStatus: 'verified',
+        latitude: 16.4850,
+        longitude: 80.4850,
       ),
       FoodListing(
         id: '5',
@@ -125,6 +136,8 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Wheat Flour', 'Potatoes', 'Carrots', 'Beans', 'Coconut Milk'],
         allergens: ['Gluten'],
         verificationStatus: 'verified',
+        latitude: 16.4950,
+        longitude: 80.5070,
       ),
       FoodListing(
         id: '6',
@@ -140,10 +153,12 @@ class FoodNotifier extends StateNotifier<FoodState> {
         availablePortions: 5,
         preparedTime: now.subtract(const Duration(hours: 3)),
         pickupStarts: now.subtract(const Duration(hours: 2)),
-        pickupEnds: now.add(const Duration(minutes: 30)), // Ending Soon
+        pickupEnds: now.add(const Duration(minutes: 30)),
         ingredients: ['Rice', 'Lemon Juice', 'Peanuts', 'Curry Leaves', 'Turmeric'],
         allergens: ['Peanuts', 'Mustard'],
         verificationStatus: 'verified',
+        latitude: 16.5050,
+        longitude: 80.5120,
       ),
       FoodListing(
         id: '7',
@@ -159,10 +174,12 @@ class FoodNotifier extends StateNotifier<FoodState> {
         availablePortions: 7,
         preparedTime: now.subtract(const Duration(hours: 4)),
         pickupStarts: now.subtract(const Duration(hours: 3, minutes: 30)),
-        pickupEnds: now.subtract(const Duration(minutes: 10)), // Expired
+        pickupEnds: now.subtract(const Duration(minutes: 10)),
         ingredients: ['Basmati Rice', 'Carrots', 'Green Peas', 'Yogurt', 'Spices'],
         allergens: ['Dairy'],
         verificationStatus: 'verified',
+        latitude: 16.5200,
+        longitude: 80.5200,
       ),
       FoodListing(
         id: '8',
@@ -182,8 +199,9 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Eggs', 'Onion', 'Bell Pepper', 'Spices'],
         allergens: ['Egg'],
         verificationStatus: 'verified',
+        latitude: 16.4920,
+        longitude: 80.5100,
       ),
-      // Unverified listing (Should be filtered out)
       FoodListing(
         id: '9',
         foodName: 'Unverified Biryani',
@@ -202,6 +220,8 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice'],
         allergens: [],
         verificationStatus: 'unverified',
+        latitude: 16.4900,
+        longitude: 80.4950,
       ),
     ];
   }
@@ -221,11 +241,30 @@ final foodProvider = StateNotifierProvider<FoodNotifier, FoodState>((ref) {
 
 final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
   final state = ref.watch(foodProvider);
-  
-  // Filter out unverified properties
+  final locationState = ref.watch(locationProvider);
+  final selectedRadius = ref.watch(radiusProvider);
+
+  // 1. Filter out unverified properties
   var list = state.listings.where((item) => item.verificationStatus == 'verified').toList();
-  
-  // Apply Category Filter
+
+  // 2. Filter by distance (if location is available)
+  if (locationState.status == LocationStateStatus.available) {
+    final lat = locationState.latitude!;
+    final lon = locationState.longitude!;
+
+    list = list
+        .map((item) {
+          final distance = Haversine.calculateDistance(lat, lon, item.latitude, item.longitude);
+          return item.copyWith(distanceKm: distance);
+        })
+        .where((item) => item.distanceKm <= selectedRadius)
+        .toList();
+  } else {
+    // Return empty list if location details are not verified/available
+    return [];
+  }
+
+  // 3. Apply Category Filter
   if (state.selectedCategory != 'All') {
     if (state.selectedCategory == 'Vegetarian') {
       list = list.where((item) => item.isVegetarian).toList();
@@ -237,8 +276,8 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
       list = list.where((item) => item.category.toLowerCase() == state.selectedCategory.toLowerCase()).toList();
     }
   }
-  
-  // Apply Search Query Filter
+
+  // 4. Apply Search Query Filter
   if (state.searchQuery.isNotEmpty) {
     final query = state.searchQuery.toLowerCase();
     list = list.where((item) =>
@@ -247,14 +286,28 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
       item.category.toLowerCase().contains(query)
     ).toList();
   }
-  
+
+  // Optional: Sort by distance
+  list.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+
   return list;
 });
 
 final foodDetailProvider = Provider.family<FoodListing?, String>((ref, id) {
   final state = ref.watch(foodProvider);
+  final locationState = ref.watch(locationProvider);
   try {
-    return state.listings.firstWhere((item) => item.id == id);
+    final item = state.listings.firstWhere((item) => item.id == id);
+    if (locationState.status == LocationStateStatus.available) {
+      final distance = Haversine.calculateDistance(
+        locationState.latitude!,
+        locationState.longitude!,
+        item.latitude,
+        item.longitude,
+      );
+      return item.copyWith(distanceKm: distance);
+    }
+    return item;
   } catch (_) {
     return null;
   }
