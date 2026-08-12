@@ -230,6 +230,9 @@ void main() {
       expect(reservation.foodName, equals(targetFood.foodName));
       expect(reservation.quantity, equals(2));
       expect(reservation.amountToCollect, equals(targetFood.sellingPrice * 2));
+      expect(reservation.amountPaid, equals(targetFood.sellingPrice * 2));
+      expect(reservation.isPrepaid, isTrue);
+      expect(reservation.paymentStatus, equals('paid'));
       expect(reservation.status, equals(ReservationStatus.reserved));
 
       final activeList = container.read(activeReservationsProvider);
@@ -303,6 +306,9 @@ void main() {
       expect(reservation.foodName, equals('Chapati & Curry'));
       expect(reservation.quantity, equals(3));
       expect(reservation.amountToCollect, equals(90.0));
+      expect(reservation.amountPaid, equals(90.0));
+      expect(reservation.isPrepaid, isTrue);
+      expect(reservation.paymentStatus, equals('paid'));
       expect(reservation.status, equals(ReservationStatus.reserved));
 
       final activeList = container.read(activeReservationsProvider);
@@ -370,6 +376,94 @@ void main() {
       // Verify the ElevatedButton is disabled (onPressed is null)
       final elevatedButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(elevatedButton.onPressed, isNull);
+    });
+
+    testWidgets('Online Pre-Payment flow shows bottom sheet, methods, and confirms paid reservation', (WidgetTester tester) async {
+      final mockService = MockLocationService();
+
+      final availableListing = FoodListing(
+        id: 'item_online_pay',
+        foodName: 'Chicken Biryani Plate',
+        description: 'Fresh parcel',
+        propertyId: 'p1',
+        propertyName: 'Sri Sai PG',
+        distanceKm: 0.5,
+        category: 'Dinner',
+        isVegetarian: false,
+        originalPrice: 120.0,
+        sellingPrice: 65.0,
+        availablePortions: 5,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const ['Rice', 'Chicken'],
+        allergens: const [],
+        verificationStatus: 'verified',
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                mockService,
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+            foodProvider.overrideWith((ref) {
+              final notifier = FoodNotifier();
+              notifier.clearAll();
+              notifier.addListing(availableListing);
+              return notifier;
+            }),
+          ],
+          child: const MaterialApp(
+            home: FoodDetailScreen(foodId: 'item_online_pay'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Initially prompt to select order option
+      expect(find.text('Select Order Option'), findsOneWidget);
+
+      // Select Take Away option
+      await tester.tap(find.text('Take Away'));
+      await tester.pumpAndSettle();
+
+      // CTA button now indicates pre-paid online payment
+      expect(find.text('Pay ₹65 Online & Reserve'), findsOneWidget);
+
+      // Tap to open Online Payment sheet
+      await tester.tap(find.text('Pay ₹65 Online & Reserve'));
+      await tester.pumpAndSettle();
+
+      // Verify Online Payment Sheet content
+      expect(find.text('Online Pre-Payment'), findsOneWidget);
+      expect(find.text('100% Pre-paid Online • Zero Payment on Pickup'), findsOneWidget);
+      expect(find.text('UPI (GPay / PhonePe / Paytm / BHIM)'), findsOneWidget);
+      expect(find.text('Credit / Debit Cards'), findsOneWidget);
+      expect(find.text('Net Banking'), findsOneWidget);
+      expect(find.text('Digital Wallets'), findsOneWidget);
+      expect(find.text('Pay ₹65 Securely Online'), findsOneWidget);
+
+      // Tap Pay Securely
+      await tester.ensureVisible(find.text('Pay ₹65 Securely Online'));
+      await tester.tap(find.text('Pay ₹65 Securely Online'));
+      await tester.pumpAndSettle();
+
+      // Verify Confirmation Dialog with Pre-paid Online status
+      expect(find.text('Payment & Reservation Confirmed'), findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text('Chicken Biryani Plate')),
+        findsOneWidget,
+      );
+      expect(find.text('₹65 (Paid Online)'), findsOneWidget);
+      expect(find.text('✓ Pre-paid Online (Zero Payment on Pickup)'), findsOneWidget);
+      expect(find.text('View Active Reservations & QR'), findsOneWidget);
     });
   });
 

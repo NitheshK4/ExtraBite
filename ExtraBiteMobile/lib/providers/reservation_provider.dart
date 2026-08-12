@@ -56,6 +56,7 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
     required FoodListing listing,
     required int quantity,
     required OrderType orderType,
+    String paymentMethod = 'Online Platform (UPI / Card)',
   }) {
     final now = DateTime.now();
     final randomId = 'EB${10000 + Random().nextInt(90000)}';
@@ -72,6 +73,8 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
       reservedAt: now,
       status: ReservationStatus.reserved,
       orderType: orderType,
+      paymentStatus: 'paid',
+      paymentMethod: paymentMethod,
     );
 
     state = [newReservation, ...state];
@@ -93,6 +96,8 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
           reservedAt: res.reservedAt,
           status: ReservationStatus.cancelled,
           orderType: res.orderType,
+          paymentStatus: res.paymentStatus,
+          paymentMethod: res.paymentMethod,
         );
       }
       return res;
@@ -114,6 +119,8 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
           reservedAt: res.reservedAt,
           status: ReservationStatus.completed,
           orderType: res.orderType,
+          paymentStatus: res.paymentStatus,
+          paymentMethod: res.paymentMethod,
         );
       }
       return res;

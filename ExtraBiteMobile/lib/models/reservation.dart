@@ -18,6 +18,8 @@ class Reservation {
   final DateTime reservedAt;
   final ReservationStatus status;
   final OrderType? orderType; // Nullable for legacy backward compatibility
+  final String paymentStatus; // 'paid', 'refunded', etc.
+  final String paymentMethod; // 'Online (UPI)', 'Online (Card)', 'Online Platform (Prepaid)', etc.
 
   Reservation({
     required this.id,
@@ -31,7 +33,13 @@ class Reservation {
     required this.reservedAt,
     required this.status,
     this.orderType,
+    this.paymentStatus = 'paid',
+    this.paymentMethod = 'Online Platform (Prepaid)',
   });
+
+  double get amountPaid => amountToCollect;
+
+  bool get isPrepaid => paymentStatus.toLowerCase() == 'paid';
 
   String get orderTypeDisplayName {
     if (orderType == null) return 'Legacy Order';
@@ -46,11 +54,14 @@ class Reservation {
       'property_name': propertyName,
       'quantity': quantity,
       'amount_to_collect': amountToCollect,
+      'amount_paid': amountPaid,
       'pickup_starts': pickupStarts.toIso8601String(),
       'pickup_ends': pickupEnds.toIso8601String(),
       'reserved_at': reservedAt.toIso8601String(),
       'status': status.name,
       'order_type': orderType?.code,
+      'payment_status': paymentStatus,
+      'payment_method': paymentMethod,
     };
   }
 
@@ -61,7 +72,7 @@ class Reservation {
       foodName: map['food_name'] as String? ?? map['title'] as String? ?? 'Surplus Meal',
       propertyName: map['property_name'] as String? ?? map['pg_name'] as String? ?? 'PG / Hostel',
       quantity: (map['quantity'] as num? ?? map['portions_count'] as num? ?? 1).toInt(),
-      amountToCollect: (map['amount_to_collect'] as num? ?? map['total_amount'] as num? ?? 0.0).toDouble(),
+      amountToCollect: (map['amount_to_collect'] as num? ?? map['amount_paid'] as num? ?? map['total_amount'] as num? ?? 0.0).toDouble(),
       pickupStarts: map['pickup_starts'] != null
           ? DateTime.parse(map['pickup_starts'] as String)
           : DateTime.now(),
@@ -80,6 +91,8 @@ class Reservation {
         orElse: () => ReservationStatus.reserved,
       ),
       orderType: OrderTypeExtension.fromCode(map['order_type'] as String?),
+      paymentStatus: map['payment_status'] as String? ?? 'paid',
+      paymentMethod: map['payment_method'] as String? ?? 'Online Platform (Prepaid)',
     );
   }
 }

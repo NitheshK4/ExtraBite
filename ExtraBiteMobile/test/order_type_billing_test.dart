@@ -75,6 +75,36 @@ void main() {
       expect(legacyRes.orderType, isNull);
       expect(legacyRes.orderTypeDisplayName, equals('Legacy Order'));
       expect(legacyRes.toMap()['order_type'], isNull);
+      expect(legacyRes.isPrepaid, isTrue);
+      expect(legacyRes.amountPaid, equals(50.0));
+      expect(legacyRes.paymentStatus, equals('paid'));
+    });
+
+    test('Reservation model supports and serializes prepaid online payment method and status', () {
+      final now = DateTime.now();
+
+      final onlineMap = {
+        'readable_id': 'EB-20001',
+        'listing_id': 'fl_99',
+        'title': 'Butter Chicken',
+        'pg_name': 'Green PG',
+        'portions_count': 2,
+        'amount_paid': 150.0,
+        'order_type': 'take_away',
+        'payment_status': 'paid',
+        'payment_method': 'UPI (Google Pay / PhonePe / Paytm)',
+        'status': 'reserved',
+        'created_at': now.toIso8601String(),
+      };
+
+      final res = Reservation.fromMap(onlineMap);
+      expect(res.isPrepaid, isTrue);
+      expect(res.paymentStatus, equals('paid'));
+      expect(res.paymentMethod, equals('UPI (Google Pay / PhonePe / Paytm)'));
+      expect(res.amountPaid, equals(150.0));
+      expect(res.toMap()['payment_status'], equals('paid'));
+      expect(res.toMap()['payment_method'], equals('UPI (Google Pay / PhonePe / Paytm)'));
+      expect(res.toMap()['amount_paid'], equals(150.0));
     });
   });
 }

@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS food_listings (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Reservations Table (Strictly Pay at Pickup)
+-- 5. Reservations Table (Strictly 100% Pre-paid Online Platform)
 CREATE TABLE IF NOT EXISTS reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     readable_id TEXT UNIQUE NOT NULL, -- e.g. EB-84920
@@ -77,7 +77,8 @@ CREATE TABLE IF NOT EXISTS reservations (
     portions_count INTEGER NOT NULL CHECK (portions_count > 0),
     unit_price DECIMAL(10,2) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
-    payment_method TEXT NOT NULL DEFAULT 'pay_at_pickup', -- Invariant: 'pay_at_pickup' only
+    payment_method TEXT NOT NULL DEFAULT 'online_prepaid', -- 'online_prepaid', 'upi', 'card', 'netbanking'
+    payment_status TEXT NOT NULL DEFAULT 'paid', -- 'paid', 'refunded'
     order_type TEXT CHECK (order_type IN ('dine_in', 'take_away') OR order_type IS NULL),
     status reservation_status NOT NULL DEFAULT 'confirmed',
     pickup_token TEXT NOT NULL,

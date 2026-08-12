@@ -326,9 +326,28 @@ class OwnerDashboardScreen extends ConsumerWidget {
                                 'Quantity: ${res.quantity} portion(s)',
                                 style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                               ),
-                              const Text(
-                                'Pay at Pickup',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.verified, size: 12, color: AppColors.primary),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Prepaid Online',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -345,12 +364,12 @@ class OwnerDashboardScreen extends ConsumerWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     backgroundColor: AppColors.primary,
-                                    content: Text('✓ Verified pickup for Order #${res.id} (${res.orderTypeDisplayName}). Payment collected!'),
+                                    content: Text('✓ Verified Order #${res.id} (${res.orderTypeDisplayName}). Prepaid meal handed over!'),
                                   ),
                                 );
                               },
                               icon: const Icon(Icons.check_circle_outline, size: 18),
-                              label: const Text('Verify & Confirm Pickup'),
+                              label: const Text('Verify & Handover Meal'),
                             ),
                           ),
                         ],

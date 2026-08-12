@@ -258,7 +258,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             ListTile(
               leading: const Icon(Icons.help_outline, color: AppColors.primary),
               title: const Text('Help & Support FAQ'),
-              subtitle: const Text('Learn how pickup reservation and physical payments work.'),
+              subtitle: const Text('Learn how surplus meal reservations and online pre-payments work.'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 _showFAQDialog(context);
@@ -369,7 +369,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Q: How do I pay?', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text('A: Payment is strictly physical at pickup directly to the property owners using Cash or personal UPI.'),
+              Text('A: ExtraBite is 100% pre-paid online. You complete payment securely via UPI, Cards, Net Banking, or Wallets during reservation. No cash or physical payment is accepted at pickup.'),
               SizedBox(height: 12),
               Text('Q: Can I cancel a reservation?', style: TextStyle(fontWeight: FontWeight.bold)),
               Text('A: Yes, you can cancel an active reservation from the Reservations tab anytime before the pickup window starts.'),
