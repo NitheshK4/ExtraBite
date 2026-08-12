@@ -804,7 +804,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
         longitude: lon,
       );
 
-      debugPrint('[ExtraBite Debug] PG Owner Added Food Success: ID=${newListing.id}, Title="${newListing.foodName}", Property="${newListing.propertyName}" (PropertyID=${newListing.propertyId}), Portions=${newListing.availablePortions}, Status=${newListing.status}');
+      debugPrint('[SavourE Debug] PG Owner Added Food Success: ID=${newListing.id}, Title="${newListing.foodName}", Property="${newListing.propertyName}" (PropertyID=${newListing.propertyId}), Portions=${newListing.availablePortions}, Status=${newListing.status}');
 
 
       widget.ref.read(foodProvider.notifier).addListing(newListing);

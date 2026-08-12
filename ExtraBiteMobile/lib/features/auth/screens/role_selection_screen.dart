@@ -37,7 +37,7 @@ class RoleSelectionScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Welcome to ExtraBite',
+                      'Welcome to SavourE',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -46,7 +46,7 @@ class RoleSelectionScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Choose how you want to use ExtraBite today',
+                      'Choose how you want to use SavourE today',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
@@ -142,7 +142,10 @@ class RoleSelectionScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         Text(
                           title,
@@ -152,7 +155,6 @@ class RoleSelectionScreen extends ConsumerWidget {
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(

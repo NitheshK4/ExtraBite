@@ -22,13 +22,13 @@ void main() {
               );
             }),
           ],
-          child: const ExtraBiteApp(),
+          child: const SavourEApp(),
         ),
       );
       await tester.pumpAndSettle();
 
       // Must show role selection screen
-      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Welcome to SavourE'), findsOneWidget);
       expect(find.text('Personal User'), findsOneWidget);
       expect(find.text('Hostel / PG Owner'), findsOneWidget);
 
@@ -41,7 +41,7 @@ void main() {
     testWidgets('1b. Back button and Change button on Auth Screen navigate back to Role Selection', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
-          child: ExtraBiteApp(),
+          child: SavourEApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -58,7 +58,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Must be back on Role Selection screen
-      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Welcome to SavourE'), findsOneWidget);
       expect(find.text('Personal User'), findsOneWidget);
 
       // Select Owner role
@@ -73,7 +73,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Must be back on Role Selection screen
-      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Welcome to SavourE'), findsOneWidget);
     });
 
     testWidgets('2. User A logs in and sees only User A\'s authenticated data', (WidgetTester tester) async {
@@ -87,7 +87,7 @@ void main() {
               );
             }),
           ],
-          child: const ExtraBiteApp(),
+          child: const SavourEApp(),
         ),
       );
       await tester.pumpAndSettle();
@@ -202,7 +202,7 @@ void main() {
               );
             }),
           ],
-          child: const ExtraBiteApp(),
+          child: const SavourEApp(),
         ),
       );
       await tester.pumpAndSettle();

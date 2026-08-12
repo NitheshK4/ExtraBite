@@ -100,7 +100,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'ExtraBite v1.0.0',
+                    'SavourE v1.0.0',
                     style: TextStyle(
                       color: AppColors.textLight,
                       fontSize: 12,
@@ -267,7 +267,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             const Divider(color: AppColors.border, height: 1),
             const ListTile(
               leading: Icon(Icons.info_outline, color: AppColors.textSecondary),
-              title: Text('About ExtraBite'),
+              title: Text('About SavourE'),
               subtitle: Text('Version 1.0.0 • Marketplace Foundation'),
             ),
           ],
@@ -369,7 +369,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Q: How do I pay?', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text('A: ExtraBite is 100% pre-paid online. You complete payment securely via UPI, Cards, Net Banking, or Wallets during reservation. No cash or physical payment is accepted at pickup.'),
+              Text('A: SavourE is 100% pre-paid online. You complete payment securely via UPI, Cards, Net Banking, or Wallets during reservation. No cash or physical payment is accepted at pickup.'),
               SizedBox(height: 12),
               Text('Q: Can I cancel a reservation?', style: TextStyle(fontWeight: FontWeight.bold)),
               Text('A: Yes, you can cancel an active reservation from the Reservations tab anytime before the pickup window starts.'),

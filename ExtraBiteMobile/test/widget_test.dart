@@ -479,13 +479,13 @@ void main() {
               );
             }),
           ],
-          child: const ExtraBiteApp(),
+          child: const SavourEApp(),
         ),
       );
       await tester.pumpAndSettle();
 
       // 1. Initial screen must be Role Selection screen
-      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
+      expect(find.text('Welcome to SavourE'), findsOneWidget);
       expect(find.text('Personal User'), findsOneWidget);
       expect(find.text('Hostel / PG Owner'), findsOneWidget);
 
