@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.extrabite" "\0"
-            VALUE "FileDescription", "ExtraBite" "\0"
+            VALUE "FileDescription", "SavourE" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "ExtraBite" "\0"
+            VALUE "InternalName", "SavourE" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.extrabite. All rights reserved." "\0"
             VALUE "OriginalFilename", "extrabite_mobile.exe" "\0"
-            VALUE "ProductName", "ExtraBite" "\0"
+            VALUE "ProductName", "SavourE" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

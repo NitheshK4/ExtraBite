@@ -139,6 +139,40 @@ class FoodCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                // Dine In vs Takeaway Indicator
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: food.allowsDineIn
+                          ? Colors.teal.shade900.withOpacity(0.85)
+                          : Colors.deepOrange.shade900.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          food.allowsDineIn ? Icons.restaurant : Icons.takeout_dining,
+                          color: Colors.white,
+                          size: 11,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          food.allowsDineIn ? 'Dine In / Takeaway' : 'Takeaway Only',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
 
@@ -213,6 +247,39 @@ class FoodCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Dining Option Badge Row
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: food.allowsDineIn ? Colors.teal.shade50 : Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: food.allowsDineIn ? Colors.teal.shade200 : Colors.amber.shade300,
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          food.allowsDineIn ? Icons.restaurant : Icons.takeout_dining,
+                          size: 12,
+                          color: food.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          food.allowsDineIn ? 'Dine In & Takeaway Available' : 'Takeaway Only (No Dine-in at PG)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: food.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   

@@ -7,15 +7,15 @@ allprojects {
 
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
-        .dir("../build")
+        .dir("../../build")
         .get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 extra.set("flutter", mapOf(
-    "compileSdkVersion" to 35,
+    "compileSdkVersion" to 36,
     "minSdkVersion" to 21,
-    "targetSdkVersion" to 35,
-    "ndkVersion" to "27.0.12077973"
+    "targetSdkVersion" to 36,
+    "ndkVersion" to "28.2.13676358"
 ))
 
 subprojects {

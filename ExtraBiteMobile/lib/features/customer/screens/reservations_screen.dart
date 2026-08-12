@@ -134,9 +134,9 @@ class ReservationsScreen extends ConsumerWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text('Amount to Collect', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                          const Text('Amount Paid', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
                           const SizedBox(height: 4),
-                          Text('₹${res.amountToCollect.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary)),
+                          Text('₹${res.amountPaid.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary)),
                         ],
                       ),
                     ],
@@ -176,21 +176,22 @@ class ReservationsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Pay at Pickup Callout + View Details indicator
+                  // Prepaid Online Callout + View Details indicator
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.receipt_long, size: 16, color: AppColors.primary),
+                        Icon(Icons.verified, size: 16, color: AppColors.primary),
                         SizedBox(width: 8),
                         Text(
-                          '💳 Pay at Pickup • Tap for Full Invoice',
+                          '✓ Paid Online (Prepaid) • Tap for QR & Invoice',
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -259,7 +260,7 @@ class ReservationsScreen extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  '₹${res.amountToCollect.toStringAsFixed(0)}',
+                  '₹${res.amountPaid.toStringAsFixed(0)}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: isCompleted ? AppColors.primary : Colors.grey,
@@ -279,9 +280,20 @@ class ReservationsScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  dateFormat.format(res.reservedAt),
-                  style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                Row(
+                  children: [
+                    Text(
+                      dateFormat.format(res.reservedAt),
+                      style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('•', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Paid Online',
+                      style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -377,7 +389,7 @@ class ReservationsScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Bill Invoice #${res.id}',
+                  'Prepaid Order Invoice #${res.id}',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 IconButton(
@@ -398,9 +410,11 @@ class ReservationsScreen extends ConsumerWidget {
                   : 'Legacy / Unspecified',
             ),
             _buildDetailRow('Quantity', '${res.quantity} portion(s)'),
-            _buildDetailRow('Amount to Collect', '₹${res.amountToCollect.toStringAsFixed(0)}'),
-            _buildDetailRow('Reservation Date', dateFormat.format(res.reservedAt)),
-            _buildDetailRow('Status', res.status.name.toUpperCase()),
+            _buildDetailRow('Amount Paid', '₹${res.amountPaid.toStringAsFixed(0)} (Paid Online)'),
+            _buildDetailRow('Payment Mode', res.paymentMethod),
+            _buildDetailRow('Payment Status', 'PAID (Pre-paid Online)'),
+            _buildDetailRow('Order Date', dateFormat.format(res.reservedAt)),
+            _buildDetailRow('Order Status', res.status.name.toUpperCase()),
 
             const SizedBox(height: 16),
             Container(
@@ -421,8 +435,13 @@ class ReservationsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Show this QR / code to PG staff at pickup',
+                    'Show this QR / code to PG staff to verify your prepaid order',
                     style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '✓ 100% Pre-paid • Zero Payment on Collection',
+                    style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),

@@ -1,6 +1,6 @@
-# 🍱 ExtraBite — Native Mobile App
+# 🍱 SavourE — Native Mobile App
 
-ExtraBite is a native mobile application built with Flutter for rescuing surplus food from PGs, hostels, and messes. It connects food providers with nearby residents and students to sell fresh surplus meals at discounted prices.
+SavourE is a native mobile application built with Flutter for rescuing surplus food from PGs, hostels, and messes. It connects food providers with nearby residents and students to sell fresh surplus meals at discounted prices.
 
 ## 🌟 Tagline
 > **Good food shouldn’t go to waste.**
@@ -9,7 +9,7 @@ ExtraBite is a native mobile application built with Flutter for rescuing surplus
 
 ## 🚫 Mandatory Payment Rule
 
-ExtraBite is strictly a **reservation and pay-at-pickup** application.
+SavourE is strictly a **reservation and pay-at-pickup** application.
 - **NO online payment gateway** (No Razorpay, UPI gateway, card forms, or wallets).
 - Every reservation records an `amount_to_collect`.
 - Customers pay the PG/hostel owner **directly in cash or UPI at pickup/collection**.

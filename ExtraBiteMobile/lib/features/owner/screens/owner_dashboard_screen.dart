@@ -326,9 +326,28 @@ class OwnerDashboardScreen extends ConsumerWidget {
                                 'Quantity: ${res.quantity} portion(s)',
                                 style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                               ),
-                              const Text(
-                                'Pay at Pickup',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.verified, size: 12, color: AppColors.primary),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Prepaid Online',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -345,12 +364,12 @@ class OwnerDashboardScreen extends ConsumerWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     backgroundColor: AppColors.primary,
-                                    content: Text('✓ Verified pickup for Order #${res.id} (${res.orderTypeDisplayName}). Payment collected!'),
+                                    content: Text('✓ Verified Order #${res.id} (${res.orderTypeDisplayName}). Prepaid meal handed over!'),
                                   ),
                                 );
                               },
                               icon: const Icon(Icons.check_circle_outline, size: 18),
-                              label: const Text('Verify & Confirm Pickup'),
+                              label: const Text('Verify & Handover Meal'),
                             ),
                           ),
                         ],
@@ -461,16 +480,40 @@ class OwnerDashboardScreen extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  item.category,
-                                  style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
-                                ),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: item.allowsDineIn ? Colors.teal.shade50 : Colors.amber.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: item.allowsDineIn ? Colors.teal.shade200 : Colors.amber.shade300,
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      item.allowsDineIn ? '🍽️ Dine-in Allowed' : '🛍️ Takeaway Only',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: item.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryLight,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      item.category,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -713,6 +756,7 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
 
   String _category = 'Dinner';
   bool _isVeg = true;
+  bool _allowsDineIn = true;
   int _pickupHours = 2;
 
   final _categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
@@ -781,11 +825,12 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
         allergens: const [],
         verificationStatus: 'verified',
         status: 'active',
+        allowsDineIn: _allowsDineIn,
         latitude: lat,
         longitude: lon,
       );
 
-      debugPrint('[ExtraBite Debug] PG Owner Added Food Success: ID=${newListing.id}, Title="${newListing.foodName}", Property="${newListing.propertyName}" (PropertyID=${newListing.propertyId}), Portions=${newListing.availablePortions}, Status=${newListing.status}');
+      debugPrint('[SavourE Debug] PG Owner Added Food Success: ID=${newListing.id}, Title="${newListing.foodName}", Property="${newListing.propertyName}" (PropertyID=${newListing.propertyId}), Portions=${newListing.availablePortions}, Status=${newListing.status}');
 
 
       widget.ref.read(foodProvider.notifier).addListing(newListing);
@@ -950,19 +995,86 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Pickup Window Hours
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Dine-In Availability Option for PG / Mess
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _allowsDineIn ? Colors.teal.shade50.withOpacity(0.6) : Colors.amber.shade50.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _allowsDineIn ? Colors.teal.shade200 : Colors.amber.shade300,
+                    width: 1.2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              _allowsDineIn ? Icons.restaurant : Icons.takeout_dining,
+                              color: _allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Dine-in Available at PG?',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Switch.adaptive(
+                          value: _allowsDineIn,
+                          activeColor: Colors.teal.shade700,
+                          onChanged: (val) {
+                            setState(() => _allowsDineIn = val);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _allowsDineIn
+                          ? '✓ Dine-in Allowed: Students can choose to eat inside your mess OR take parcels.'
+                          : '🚫 Takeaway Only: Dining inside PG mess is not allowed. Parcels only.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: _allowsDineIn ? Colors.teal.shade900 : Colors.deepOrange.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Pickup Window Hours (Responsive, overflow-free)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Pickup available for next:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(value: 1, label: Text('1 hr')),
-                      ButtonSegment(value: 2, label: Text('2 hrs')),
-                      ButtonSegment(value: 3, label: Text('3 hrs')),
-                    ],
-                    selected: {_pickupHours},
-                    onSelectionChanged: (set) => setState(() => _pickupHours = set.first),
+                  const Text(
+                    'Pickup Available For:',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 1, label: Text('1 hr')),
+                        ButtonSegment(value: 2, label: Text('2 hrs')),
+                        ButtonSegment(value: 3, label: Text('3 hrs')),
+                      ],
+                      selected: {_pickupHours},
+                      onSelectionChanged: (set) => setState(() => _pickupHours = set.first),
+                    ),
                   ),
                 ],
               ),

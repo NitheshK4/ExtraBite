@@ -104,7 +104,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.location_off_outlined,
           iconColor: AppColors.secondary,
           title: 'Location permission required',
-          subtitle: 'ExtraBite requires foreground location access to show surplus food available near you.',
+          subtitle: 'SavourE requires foreground location access to show surplus food available near you.',
           actionText: 'Enable Location',
           onAction: () => ref.read(locationProvider.notifier).determinePosition(),
         );
@@ -114,7 +114,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.block_outlined,
           iconColor: AppColors.error,
           title: 'Location permission permanently denied',
-          subtitle: 'Please enable location permissions for ExtraBite in your device system settings to discover nearby food.',
+          subtitle: 'Please enable location permissions for SavourE in your device system settings to discover nearby food.',
           actionText: 'Retry',
           onAction: () => ref.read(locationProvider.notifier).determinePosition(),
         );

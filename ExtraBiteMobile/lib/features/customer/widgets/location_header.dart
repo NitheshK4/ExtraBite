@@ -58,7 +58,7 @@ class LocationHeader extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'ExtraBite',
+                        'SavourE',
                         style: TextStyle(
                           color: AppColors.primary,
                           fontSize: 20,

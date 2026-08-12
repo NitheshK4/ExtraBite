@@ -54,6 +54,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Lentils', 'Mixed Vegetables', 'Curd', 'Coconut'],
         allergens: ['Mustard', 'Dairy'],
         verificationStatus: 'verified',
+        allowsDineIn: true,
         latitude: 16.4950,
         longitude: 80.5070,
       ),
@@ -75,6 +76,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Basmati Rice', 'Chicken', 'Yogurt', 'Onions', 'Spices'],
         allergens: ['Dairy'],
         verificationStatus: 'verified',
+        allowsDineIn: true,
         latitude: 16.4920,
         longitude: 80.5100,
       ),
@@ -96,6 +98,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Urad Dal', 'Coconut', 'Tamarind', 'Spices'],
         allergens: ['Mustard'],
         verificationStatus: 'verified',
+        allowsDineIn: false, // Takeaway only
         latitude: 16.4990,
         longitude: 80.4960,
       ),
@@ -117,6 +120,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Paneer', 'Capsicum', 'Spring Onion', 'Soy Sauce'],
         allergens: ['Dairy', 'Soy', 'Gluten'],
         verificationStatus: 'verified',
+        allowsDineIn: false, // Takeaway only
         latitude: 16.4850,
         longitude: 80.4850,
       ),
@@ -138,6 +142,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Wheat Flour', 'Potatoes', 'Carrots', 'Beans', 'Coconut Milk'],
         allergens: ['Gluten'],
         verificationStatus: 'verified',
+        allowsDineIn: true,
         latitude: 16.4950,
         longitude: 80.5070,
       ),
@@ -159,6 +164,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Lemon Juice', 'Peanuts', 'Curry Leaves', 'Turmeric'],
         allergens: ['Peanuts', 'Mustard'],
         verificationStatus: 'verified',
+        allowsDineIn: true,
         latitude: 16.5050,
         longitude: 80.5120,
       ),
@@ -180,6 +186,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Basmati Rice', 'Carrots', 'Green Peas', 'Yogurt', 'Spices'],
         allergens: ['Dairy'],
         verificationStatus: 'verified',
+        allowsDineIn: true,
         latitude: 16.5200,
         longitude: 80.5200,
       ),
@@ -201,6 +208,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         ingredients: ['Rice', 'Eggs', 'Onion', 'Bell Pepper', 'Spices'],
         allergens: ['Egg'],
         verificationStatus: 'verified',
+        allowsDineIn: false, // Takeaway only
         latitude: 16.4920,
         longitude: 80.5100,
       ),
@@ -229,21 +237,21 @@ class FoodNotifier extends StateNotifier<FoodState> {
   }
 
   void addListing(FoodListing listing) {
-    debugPrint('[ExtraBite Debug] Created food listing: ID=${listing.id}, Title="${listing.foodName}", Property="${listing.propertyName}" (ID=${listing.propertyId}), Portions=${listing.availablePortions}, Status=${listing.status}, Verification=${listing.verificationStatus}');
+    debugPrint('[SavourE Debug] Created food listing: ID=${listing.id}, Title="${listing.foodName}", Property="${listing.propertyName}" (ID=${listing.propertyId}), Portions=${listing.availablePortions}, Status=${listing.status}, Verification=${listing.verificationStatus}');
     state = state.copyWith(
       listings: [listing, ...state.listings],
     );
   }
 
   void refreshListings() {
-    debugPrint('[ExtraBite Debug] Refreshing food listings state provider...');
+    debugPrint('[SavourE Debug] Refreshing food listings state provider...');
     state = state.copyWith(
       listings: List.from(state.listings),
     );
   }
 
   void removeListing(String id) {
-    debugPrint('[ExtraBite Debug] Removed food listing: ID=$id');
+    debugPrint('[SavourE Debug] Removed food listing: ID=$id');
     state = state.copyWith(
       listings: state.listings.where((item) => item.id != id).toList(),
     );
@@ -255,7 +263,7 @@ class FoodNotifier extends StateNotifier<FoodState> {
         if (item.id == id) {
           final newPortions = (item.availablePortions - count).clamp(0, 9999);
           final newStatus = newPortions == 0 ? 'sold_out' : item.status;
-          debugPrint('[ExtraBite Debug] Updated portions for ID=$id: ${item.availablePortions} -> $newPortions (Status=$newStatus)');
+          debugPrint('[SavourE Debug] Updated portions for ID=$id: ${item.availablePortions} -> $newPortions (Status=$newStatus)');
           return item.copyWith(
             availablePortions: newPortions,
             status: newStatus,
@@ -288,26 +296,26 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
   final locationState = ref.watch(locationProvider);
   final selectedRadius = ref.watch(radiusProvider);
 
-  debugPrint('[ExtraBite Debug] Personal User Querying Listings: Total raw listings count = ${state.listings.length}, Radius = $selectedRadius km');
+  debugPrint('[SavourE Debug] Personal User Querying Listings: Total raw listings count = ${state.listings.length}, Radius = $selectedRadius km');
 
   var rawList = state.listings;
   List<FoodListing> eligibleList = [];
 
   for (final item in rawList) {
     if (item.verificationStatus != 'verified') {
-      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Property unverified (verificationStatus=${item.verificationStatus})');
+      debugPrint('[SavourE Debug] Excluded item ID=${item.id} ("${item.foodName}"): Property unverified (verificationStatus=${item.verificationStatus})');
       continue;
     }
     if (item.status != 'active') {
-      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Inactive status (status=${item.status})');
+      debugPrint('[SavourE Debug] Excluded item ID=${item.id} ("${item.foodName}"): Inactive status (status=${item.status})');
       continue;
     }
     if (item.availablePortions <= 0) {
-      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Sold out (availablePortions=${item.availablePortions})');
+      debugPrint('[SavourE Debug] Excluded item ID=${item.id} ("${item.foodName}"): Sold out (availablePortions=${item.availablePortions})');
       continue;
     }
     if (item.isExpired) {
-      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Expired pickup window (pickupEnds=${item.pickupEnds})');
+      debugPrint('[SavourE Debug] Excluded item ID=${item.id} ("${item.foodName}"): Expired pickup window (pickupEnds=${item.pickupEnds})');
       continue;
     }
     eligibleList.add(item);
@@ -325,12 +333,12 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
       if (distance <= selectedRadius) {
         distanceFilteredList.add(itemWithDistance);
       } else {
-        debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Outside search radius (distance=${distance.toStringAsFixed(2)} km > $selectedRadius km)');
+        debugPrint('[SavourE Debug] Excluded item ID=${item.id} ("${item.foodName}"): Outside search radius (distance=${distance.toStringAsFixed(2)} km > $selectedRadius km)');
       }
     }
     eligibleList = distanceFilteredList;
   } else {
-    debugPrint('[ExtraBite Debug] Location status not available (${locationState.status}). Returning empty list for Personal User.');
+    debugPrint('[SavourE Debug] Location status not available (${locationState.status}). Returning empty list for Personal User.');
     return [];
   }
 
@@ -360,7 +368,7 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
   // Sort by distance
   eligibleList.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
-  debugPrint('[ExtraBite Debug] Personal User Query Result: Eligible available listings count = ${eligibleList.length}');
+  debugPrint('[SavourE Debug] Personal User Query Result: Eligible available listings count = ${eligibleList.length}');
 
   return eligibleList;
 });
