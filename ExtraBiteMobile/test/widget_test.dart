@@ -442,17 +442,26 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Online Payment Sheet content
-      expect(find.text('Online Pre-Payment'), findsOneWidget);
-      expect(find.text('100% Pre-paid Online • Zero Payment on Pickup'), findsOneWidget);
-      expect(find.text('UPI (GPay / PhonePe / Paytm / BHIM)'), findsOneWidget);
-      expect(find.text('Credit / Debit Cards'), findsOneWidget);
-      expect(find.text('Net Banking'), findsOneWidget);
-      expect(find.text('Digital Wallets'), findsOneWidget);
-      expect(find.text('Pay ₹65 Securely Online'), findsOneWidget);
+      expect(find.text('Pay using UPI App'), findsOneWidget);
+      expect(find.text('100% Pre-paid via UPI App • Zero Payment on Pickup'), findsOneWidget);
+      expect(find.text('Paytm UPI'), findsOneWidget);
+      expect(find.text('Google Pay (GPay)'), findsOneWidget);
+      expect(find.text('PhonePe'), findsOneWidget);
+      expect(find.text('BHIM / Any UPI App'), findsOneWidget);
+      expect(find.text('Scan UPI QR / VPA ID'), findsOneWidget);
+      expect(find.text('Pay ₹65 via Paytm UPI'), findsOneWidget);
 
-      // Tap Pay Securely
-      await tester.ensureVisible(find.text('Pay ₹65 Securely Online'));
-      await tester.tap(find.text('Pay ₹65 Securely Online'));
+      // Tap Pay via Paytm UPI
+      await tester.ensureVisible(find.text('Pay ₹65 via Paytm UPI'));
+      await tester.tap(find.text('Pay ₹65 via Paytm UPI'));
+      await tester.pumpAndSettle();
+
+      // Verify UPI Verification / Status Sheet
+      expect(find.text('I Have Paid • Verify & Confirm Order'), findsOneWidget);
+      expect(find.text('savoure.food@icici'), findsOneWidget);
+
+      // Tap to Confirm Payment
+      await tester.tap(find.text('I Have Paid • Verify & Confirm Order'));
       await tester.pumpAndSettle();
 
       // Verify Confirmation Dialog with Pre-paid Online status
@@ -466,6 +475,7 @@ void main() {
       expect(find.text('View Active Reservations & QR'), findsOneWidget);
     });
   });
+
 
   group('4. UI Navigation & Smoke Tests', () {
     testWidgets('App UI Smoke & Navigation Test', (WidgetTester tester) async {

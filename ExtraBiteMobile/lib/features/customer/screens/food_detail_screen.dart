@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../providers/food_provider.dart';
 import '../../../providers/reservation_provider.dart';
@@ -668,8 +670,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     int portions,
     OrderType orderType,
   ) {
-    String selectedPaymentMethod = 'UPI (Google Pay / PhonePe / Paytm)';
     final totalPayable = food.sellingPrice * portions;
+    String selectedPaymentMethod = 'Paytm UPI';
+    bool isUpiInitiated = false;
+    bool appLaunched = false;
+    String txnRef = 'SAVOURE_${DateTime.now().millisecondsSinceEpoch}';
+    Uri? retryUri;
 
     showModalBottomSheet(
       context: context,
@@ -683,7 +689,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           builder: (context, setModalState) {
             return ConstrainedBox(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.85,
+                maxHeight: MediaQuery.of(context).size.height * 0.88,
               ),
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
@@ -692,187 +698,451 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   top: 16,
                   bottom: MediaQuery.of(context).viewInsets.bottom + 20,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Modal Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.account_balance_wallet, color: AppColors.primary, size: 24),
-                            SizedBox(width: 8),
-                            Text(
-                              'Online Pre-Payment',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(bottomSheetContext),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 8),
-
-                    // Prepaid Only Notice
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                      ),
-                      child: const Row(
+                child: !isUpiInitiated
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.verified, color: AppColors.primary, size: 18),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '100% Pre-paid Online • Zero Payment on Pickup',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Bill Breakdown
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildPriceRow('Surplus Item', food.foodName),
-                          _buildPriceRow('Order Option', '${orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${orderType.displayName}'),
-                          _buildPriceRow('Portions', '$portions portion(s) × ₹${food.sellingPrice.toStringAsFixed(0)}'),
-                          _buildPriceRow('Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
-                          const Divider(height: 16),
+                          // Modal Header
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Total Payable Amount',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              const Row(
+                                children: [
+                                  Icon(Icons.account_balance_wallet, color: AppColors.primary, size: 24),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Pay using UPI App',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                '₹${totalPayable.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                  color: AppColors.primary,
-                                ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () => Navigator.pop(bottomSheetContext),
                               ),
                             ],
                           ),
+                          const Divider(),
+                          const SizedBox(height: 8),
+
+                          // Prepaid Only Notice
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.verified, color: AppColors.primary, size: 18),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '100% Pre-paid via UPI App • Zero Payment on Pickup',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Bill Breakdown
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              children: [
+                                _buildPriceRow('Surplus Item', food.foodName),
+                                _buildPriceRow('Order Option', '${orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${orderType.displayName}'),
+                                _buildPriceRow('Portions', '$portions portion(s) × ₹${food.sellingPrice.toStringAsFixed(0)}'),
+                                _buildPriceRow('UPI Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
+                                const Divider(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Total Payable Amount',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    Text(
+                                      '₹${totalPayable.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // UPI App Selection
+                          const Text(
+                            'Select Installed UPI App',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          _buildUpiOptionTile(
+                            title: 'Paytm UPI',
+                            subtitle: 'Direct redirect to Paytm app for 1-click payment',
+                            icon: Icons.account_balance_wallet,
+                            iconColor: const Color(0xFF002E6E),
+                            value: 'Paytm UPI',
+                            groupValue: selectedPaymentMethod,
+                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
+                          ),
+                          _buildUpiOptionTile(
+                            title: 'Google Pay (GPay)',
+                            subtitle: 'Fast UPI payment via Google Pay app',
+                            icon: Icons.payment,
+                            iconColor: const Color(0xFF1A73E8),
+                            value: 'Google Pay UPI',
+                            groupValue: selectedPaymentMethod,
+                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
+                          ),
+                          _buildUpiOptionTile(
+                            title: 'PhonePe',
+                            subtitle: 'Pay directly inside PhonePe app',
+                            icon: Icons.smartphone,
+                            iconColor: const Color(0xFF5F259F),
+                            value: 'PhonePe UPI',
+                            groupValue: selectedPaymentMethod,
+                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
+                          ),
+                          _buildUpiOptionTile(
+                            title: 'BHIM / Any UPI App',
+                            subtitle: 'Open UPI app chooser (CRED, Navi, Amazon Pay, etc.)',
+                            icon: Icons.qr_code_scanner,
+                            iconColor: const Color(0xFFE65100),
+                            value: 'BHIM / Other UPI',
+                            groupValue: selectedPaymentMethod,
+                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
+                          ),
+                          _buildUpiOptionTile(
+                            title: 'Scan UPI QR / VPA ID',
+                            subtitle: 'Pay to savoure.food@icici with any app',
+                            icon: Icons.qr_code_2,
+                            iconColor: AppColors.primary,
+                            value: 'UPI QR Code',
+                            groupValue: selectedPaymentMethod,
+                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Pay Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: AppColors.primary,
+                              ),
+                              onPressed: () {
+                                final payeeVpa = 'savoure.food@icici';
+                                final payeeName = 'SavourE Foods';
+                                final txnNote = 'Prepaid Meal ${food.foodName}';
+                                final amountStr = totalPayable.toStringAsFixed(2);
+                                txnRef = 'SAVOURE_${DateTime.now().millisecondsSinceEpoch}';
+
+                                final standardUpiUri = Uri.parse(
+                                  'upi://pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
+                                );
+
+                                Uri targetUri = standardUpiUri;
+                                if (selectedPaymentMethod.contains('Paytm')) {
+                                  targetUri = Uri.parse(
+                                    'paytmmp://pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
+                                  );
+                                } else if (selectedPaymentMethod.contains('PhonePe')) {
+                                  targetUri = Uri.parse(
+                                    'phonepe://pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
+                                  );
+                                } else if (selectedPaymentMethod.contains('Google Pay')) {
+                                  targetUri = Uri.parse(
+                                    'gpay://upi/pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
+                                  );
+                                }
+
+                                retryUri = targetUri;
+
+                                setModalState(() {
+                                  isUpiInitiated = true;
+                                  appLaunched = false;
+                                });
+
+                                // Launch UPI app deep link intent asynchronously
+                                launchUrl(targetUri, mode: LaunchMode.externalApplication).then((launched) {
+                                  setModalState(() {
+                                    appLaunched = launched;
+                                  });
+                                }).catchError((_) {
+                                  launchUrl(standardUpiUri, mode: LaunchMode.externalApplication).then((launched) {
+                                    setModalState(() {
+                                      appLaunched = launched;
+                                    });
+                                  }).catchError((_) {});
+                                });
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.touch_app, size: 18, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Pay ₹${totalPayable.toStringAsFixed(0)} via $selectedPaymentMethod',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Center(
+                            child: Text(
+                              '🔒 Instant NPCI UPI Intent Redirection • Zero Extra Charges',
+                              style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Modal Header with Back to selection option
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                tooltip: 'Change Payment App',
+                                onPressed: () => setModalState(() => isUpiInitiated = false),
+                              ),
+                              const Text(
+                                'UPI Payment Verification',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () => Navigator.pop(bottomSheetContext),
+                              ),
+                            ],
+                          ),
+                          const Divider(),
+                          const SizedBox(height: 12),
+
+                          // Top Indicator & Status Icon
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: appLaunched ? AppColors.primaryLight : Colors.amber.shade50,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: appLaunched
+                                  ? const CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary)
+                                  : Icon(Icons.qr_code_2, size: 36, color: Colors.amber.shade800),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          Text(
+                            appLaunched
+                                ? 'Waiting for payment in $selectedPaymentMethod...'
+                                : 'Complete UPI Payment',
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+
+                          Text(
+                            appLaunched
+                                ? 'Please complete your ₹${totalPayable.toStringAsFixed(0)} payment in the $selectedPaymentMethod app. Once done, click the button below to confirm your meal.'
+                                : 'Scan QR or pay using SavourE UPI ID in your favorite UPI app, then click below to confirm your meal reservation.',
+                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Transaction Details Card
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Amount Payable', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    Text(
+                                      '₹${totalPayable.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Divider(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Payee UPI ID', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'savoure.food@icici',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        InkWell(
+                                          onTap: () {
+                                            Clipboard.setData(const ClipboardData(text: 'savoure.food@icici'));
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('SavourE UPI ID copied to clipboard!'),
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+                                          },
+                                          child: const Icon(Icons.copy, size: 16, color: AppColors.primary),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Transaction Ref', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    Text(
+                                      txnRef,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Meal / Item', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '${food.foodName} ($portions portion)',
+                                        textAlign: TextAlign.end,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Confirm / Verify Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: AppColors.primary,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(bottomSheetContext); // Close sheet
+                                _processOnlinePaymentAndReserve(
+                                  context,
+                                  food,
+                                  portions,
+                                  orderType,
+                                  '$selectedPaymentMethod (Prepaid)',
+                                  txnRef,
+                                );
+                              },
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.verified, size: 18, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'I Have Paid • Verify & Confirm Order',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Re-open UPI App Button
+                          if (retryUri != null && appLaunched)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  side: const BorderSide(color: AppColors.primary),
+                                ),
+                                onPressed: () => launchUrl(retryUri!, mode: LaunchMode.externalApplication),
+                                child: Text(
+                                  'Re-open $selectedPaymentMethod',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 6),
+
+                          // Cancel Button
+                          TextButton(
+                            onPressed: () => Navigator.pop(bottomSheetContext),
+                            child: const Text(
+                              'Cancel Payment',
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Payment Method Selection
-                    const Text(
-                      'Select Payment Platform',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    _buildPaymentOptionTile(
-                      title: 'UPI (GPay / PhonePe / Paytm / BHIM)',
-                      subtitle: 'Instant pre-payment via any UPI app or ID',
-                      icon: Icons.qr_code_scanner,
-                      value: 'UPI (Google Pay / PhonePe / Paytm)',
-                      groupValue: selectedPaymentMethod,
-                      onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                    ),
-                    _buildPaymentOptionTile(
-                      title: 'Credit / Debit Cards',
-                      subtitle: 'Visa, MasterCard, RuPay & Maestro',
-                      icon: Icons.credit_card,
-                      value: 'Credit / Debit Card',
-                      groupValue: selectedPaymentMethod,
-                      onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                    ),
-                    _buildPaymentOptionTile(
-                      title: 'Net Banking',
-                      subtitle: 'All major Indian banks supported',
-                      icon: Icons.account_balance,
-                      value: 'Net Banking',
-                      groupValue: selectedPaymentMethod,
-                      onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                    ),
-                    _buildPaymentOptionTile(
-                      title: 'Digital Wallets',
-                      subtitle: 'Paytm, Amazon Pay & PhonePe Wallet',
-                      icon: Icons.account_balance_wallet_outlined,
-                      value: 'Digital Wallet',
-                      groupValue: selectedPaymentMethod,
-                      onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Pay Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          backgroundColor: AppColors.primary,
-                        ),
-                        onPressed: () {
-                          Navigator.pop(bottomSheetContext); // Close sheet
-                          _processOnlinePaymentAndReserve(
-                            context,
-                            food,
-                            portions,
-                            orderType,
-                            selectedPaymentMethod,
-                          );
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.lock, size: 16, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Pay ₹${totalPayable.toStringAsFixed(0)} Securely Online',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Center(
-                      child: Text(
-                        '🔒 256-Bit SSL Encrypted Online Payment',
-                        style: TextStyle(fontSize: 11, color: AppColors.textLight),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             );
           },
@@ -881,10 +1151,11 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 
-  Widget _buildPaymentOptionTile({
+  Widget _buildUpiOptionTile({
     required String title,
     required String subtitle,
     required IconData icon,
+    required Color iconColor,
     required String value,
     required String groupValue,
     required ValueChanged<String?> onChanged,
@@ -895,7 +1166,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       borderRadius: BorderRadius.circular(8),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary.withOpacity(0.06) : Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -912,7 +1183,14 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               onChanged: onChanged,
               activeColor: AppColors.primary,
             ),
-            Icon(icon, size: 20, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -965,6 +1243,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     int portions,
     OrderType orderType,
     String paymentMethod,
+    String txnRef,
   ) {
     // Decrement available portions in real-time
     ref.read(foodProvider.notifier).decrementPortions(food.id, portions);
@@ -989,48 +1268,54 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             Expanded(child: Text('Payment & Reservation Confirmed')),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Your online pre-payment was successful and surplus meal has been reserved! Present your pickup QR / confirmation code at the property to collect your meal.',
-              style: TextStyle(height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-            _buildDialogRow('Order Reference', '#${reservation.id}'),
-            _buildDialogRow('Reserved Item', reservation.foodName),
-            _buildDialogRow('Order Type', '${reservation.orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${reservation.orderTypeDisplayName}'),
-            _buildDialogRow('Quantity', '${reservation.quantity} portion(s)'),
-            _buildDialogRow('Amount Paid', '₹${reservation.amountPaid.toStringAsFixed(0)} (Paid Online)'),
-            _buildDialogRow('Payment Mode', reservation.paymentMethod),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your UPI pre-payment was verified and surplus meal has been reserved! Present your pickup QR / confirmation code at the property to collect your meal.',
+                style: TextStyle(height: 1.4),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.verified, size: 18, color: AppColors.primary),
-                  SizedBox(width: 8),
-                  Text(
-                    '✓ Pre-paid Online (Zero Payment on Pickup)',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              _buildDialogRow('Order Reference', '#${reservation.id}'),
+              _buildDialogRow('UPI Txn ID', txnRef),
+              _buildDialogRow('Reserved Item', reservation.foodName),
+              _buildDialogRow('Order Type', '${reservation.orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${reservation.orderTypeDisplayName}'),
+              _buildDialogRow('Quantity', '${reservation.quantity} portion(s)'),
+              _buildDialogRow('Amount Paid', '₹${reservation.amountPaid.toStringAsFixed(0)} (Paid Online)'),
+              _buildDialogRow('Payment Mode', reservation.paymentMethod),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.verified, size: 18, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '✓ Pre-paid Online (Zero Payment on Pickup)',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -1052,10 +1337,19 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+            ),
+          ),
         ],
       ),
     );
   }
 }
+
 

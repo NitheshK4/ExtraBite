@@ -93,7 +93,7 @@ void main() {
         'amount_paid': 150.0,
         'order_type': 'take_away',
         'payment_status': 'paid',
-        'payment_method': 'UPI (Google Pay / PhonePe / Paytm)',
+        'payment_method': 'Paytm UPI (Prepaid)',
         'status': 'reserved',
         'created_at': now.toIso8601String(),
       };
@@ -101,12 +101,31 @@ void main() {
       final res = Reservation.fromMap(onlineMap);
       expect(res.isPrepaid, isTrue);
       expect(res.paymentStatus, equals('paid'));
-      expect(res.paymentMethod, equals('UPI (Google Pay / PhonePe / Paytm)'));
+      expect(res.paymentMethod, equals('Paytm UPI (Prepaid)'));
       expect(res.amountPaid, equals(150.0));
       expect(res.toMap()['payment_status'], equals('paid'));
-      expect(res.toMap()['payment_method'], equals('UPI (Google Pay / PhonePe / Paytm)'));
+      expect(res.toMap()['payment_method'], equals('Paytm UPI (Prepaid)'));
       expect(res.toMap()['amount_paid'], equals(150.0));
+
+      final phonePeMap = {
+        'readable_id': 'EB-20002',
+        'listing_id': 'fl_100',
+        'title': 'Paneer Biryani',
+        'pg_name': 'Sai PG',
+        'portions_count': 1,
+        'amount_paid': 80.0,
+        'order_type': 'dine_in',
+        'payment_status': 'paid',
+        'payment_method': 'PhonePe UPI (Prepaid)',
+        'status': 'reserved',
+        'created_at': now.toIso8601String(),
+      };
+
+      final phonePeRes = Reservation.fromMap(phonePeMap);
+      expect(phonePeRes.paymentMethod, equals('PhonePe UPI (Prepaid)'));
+      expect(phonePeRes.isPrepaid, isTrue);
     });
+
 
     test('FoodListing model correctly serializes, deserializes, and defaults allowsDineIn', () {
       final now = DateTime.now();
