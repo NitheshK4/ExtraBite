@@ -124,6 +124,26 @@ void main() {
       final phonePeRes = Reservation.fromMap(phonePeMap);
       expect(phonePeRes.paymentMethod, equals('PhonePe UPI (Prepaid)'));
       expect(phonePeRes.isPrepaid, isTrue);
+
+      final razorpayMap = {
+        'readable_id': 'EB-30003',
+        'listing_id': 'fl_200',
+        'title': 'South Indian Meals',
+        'pg_name': 'Green PG',
+        'portions_count': 2,
+        'amount_paid': 120.0,
+        'order_type': 'take_away',
+        'payment_status': 'paid',
+        'payment_method': 'Razorpay UPI & Cards (Prepaid)',
+        'status': 'reserved',
+        'created_at': now.toIso8601String(),
+      };
+
+      final razorpayRes = Reservation.fromMap(razorpayMap);
+      expect(razorpayRes.paymentMethod, equals('Razorpay UPI & Cards (Prepaid)'));
+      expect(razorpayRes.isPrepaid, isTrue);
+      expect(razorpayRes.amountPaid, equals(120.0));
+      expect(razorpayRes.toMap()['payment_method'], equals('Razorpay UPI & Cards (Prepaid)'));
     });
 
 

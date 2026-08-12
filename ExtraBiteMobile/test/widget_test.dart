@@ -442,26 +442,23 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Online Payment Sheet content
-      expect(find.text('Pay using UPI App'), findsOneWidget);
-      expect(find.text('100% Pre-paid via UPI App • Zero Payment on Pickup'), findsOneWidget);
-      expect(find.text('Paytm UPI'), findsOneWidget);
-      expect(find.text('Google Pay (GPay)'), findsOneWidget);
-      expect(find.text('PhonePe'), findsOneWidget);
-      expect(find.text('BHIM / Any UPI App'), findsOneWidget);
-      expect(find.text('Scan UPI QR / VPA ID'), findsOneWidget);
-      expect(find.text('Pay ₹65 via Paytm UPI'), findsOneWidget);
+      expect(find.text('Razorpay Secure Checkout'), findsOneWidget);
+      expect(find.text('⚡ Real-time Payment • Auto-Confirmed on Pickup'), findsOneWidget);
+      expect(find.text('Razorpay Payment Gateway'), findsOneWidget);
+      expect(find.text('Pay ₹65 via Razorpay'), findsOneWidget);
 
-      // Tap Pay via Paytm UPI
-      await tester.ensureVisible(find.text('Pay ₹65 via Paytm UPI'));
-      await tester.tap(find.text('Pay ₹65 via Paytm UPI'));
-      await tester.pumpAndSettle();
+      // Tap Pay via Razorpay
+      await tester.ensureVisible(find.text('Pay ₹65 via Razorpay'));
+      await tester.tap(find.text('Pay ₹65 via Razorpay'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-      // Verify UPI Verification / Status Sheet
-      expect(find.text('I Have Paid • Verify & Confirm Order'), findsOneWidget);
-      expect(find.text('savoure.food@icici'), findsOneWidget);
+      // Verify Razorpay Payment Processing Sheet
+      expect(find.text('Razorpay Payment Processing'), findsOneWidget);
+      expect(find.text('✓ Complete & Confirm Payment'), findsOneWidget);
 
-      // Tap to Confirm Payment
-      await tester.tap(find.text('I Have Paid • Verify & Confirm Order'));
+      // Tap to Complete & Confirm Payment
+      await tester.tap(find.text('✓ Complete & Confirm Payment'));
       await tester.pumpAndSettle();
 
       // Verify Confirmation Dialog with Pre-paid Online status

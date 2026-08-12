@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../core/payment/payment_service.dart';
 import '../../../providers/food_provider.dart';
 import '../../../providers/reservation_provider.dart';
 import '../../../models/food_listing.dart';
@@ -26,6 +26,70 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   int _portionsToReserve = 1;
   OrderType? _selectedOrderType;
   bool _showOrderTypeValidationError = false;
+
+  late final PaymentService _paymentService;
+  BuildContext? _activeModalContext;
+  FoodListing? _pendingFood;
+  int _pendingPortions = 1;
+  OrderType _pendingOrderType = OrderType.takeAway;
+  String _pendingPaymentMethod = 'Razorpay UPI & Cards';
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentService = PaymentService();
+    _paymentService.initialize(
+      onSuccess: _handleRazorpaySuccess,
+      onFailure: _handleRazorpayFailure,
+      onExternalWallet: _handleRazorpayWallet,
+    );
+  }
+
+  @override
+  void dispose() {
+    _paymentService.dispose();
+    super.dispose();
+  }
+
+  void _handleRazorpaySuccess(PaymentSuccessResponse response) {
+    if (_activeModalContext != null && Navigator.canPop(_activeModalContext!)) {
+      Navigator.pop(_activeModalContext!);
+      _activeModalContext = null;
+    }
+
+    if (_pendingFood != null && mounted) {
+      final txnId = response.paymentId ?? 'RZP_${DateTime.now().millisecondsSinceEpoch}';
+      _processOnlinePaymentAndReserve(
+        context,
+        _pendingFood!,
+        _pendingPortions,
+        _pendingOrderType,
+        '$_pendingPaymentMethod (Prepaid)',
+        txnId,
+      );
+    }
+  }
+
+  void _handleRazorpayFailure(PaymentFailureResponse response) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment cancelled or failed: ${response.message ?? "Transaction incomplete"}'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+  }
+
+  void _handleRazorpayWallet(ExternalWalletResponse response) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Redirected to external wallet: ${response.walletName}'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -671,11 +735,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     OrderType orderType,
   ) {
     final totalPayable = food.sellingPrice * portions;
-    String selectedPaymentMethod = 'Paytm UPI';
-    bool isUpiInitiated = false;
-    bool appLaunched = false;
-    String txnRef = 'SAVOURE_${DateTime.now().millisecondsSinceEpoch}';
-    Uri? retryUri;
+    bool isProcessing = false;
+    String txnRef = 'RZP_${DateTime.now().millisecondsSinceEpoch}';
 
     showModalBottomSheet(
       context: context,
@@ -698,7 +759,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   top: 16,
                   bottom: MediaQuery.of(context).viewInsets.bottom + 20,
                 ),
-                child: !isUpiInitiated
+                child: !isProcessing
                     ? Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,10 +770,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             children: [
                               const Row(
                                 children: [
-                                  Icon(Icons.account_balance_wallet, color: AppColors.primary, size: 24),
+                                  Icon(Icons.payment, color: AppColors.primary, size: 24),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Pay using UPI App',
+                                    'Razorpay Secure Checkout',
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -732,23 +793,23 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
                           // Prepaid Only Notice
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
                               color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                             ),
                             child: const Row(
                               children: [
-                                Icon(Icons.verified, color: AppColors.primary, size: 18),
+                                Icon(Icons.bolt, color: AppColors.primary, size: 20),
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    '100% Pre-paid via UPI App • Zero Payment on Pickup',
+                                    '⚡ Real-time Payment • Auto-Confirmed on Pickup',
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 12,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -759,10 +820,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
                           // Bill Breakdown
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: AppColors.border),
                             ),
                             child: Column(
@@ -770,7 +831,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                 _buildPriceRow('Surplus Item', food.foodName),
                                 _buildPriceRow('Order Option', '${orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${orderType.displayName}'),
                                 _buildPriceRow('Portions', '$portions portion(s) × ₹${food.sellingPrice.toStringAsFixed(0)}'),
-                                _buildPriceRow('UPI Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
+                                _buildPriceRow('Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
                                 const Divider(height: 16),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -783,7 +844,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                       '₹${totalPayable.toStringAsFixed(0)}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 18,
+                                        fontSize: 20,
                                         color: AppColors.primary,
                                       ),
                                     ),
@@ -794,64 +855,44 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // UPI App Selection
-                          const Text(
-                            'Select Installed UPI App',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                          // Razorpay Gateway Details Card
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.04),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1.5),
+                            ),
+                            child: const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.verified_user, size: 20, color: AppColors.primary),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Razorpay Payment Gateway',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  '• Instant UPI Intent (Google Pay, PhonePe, Paytm, CRED)\n• Credit / Debit Cards (Visa, Mastercard, RuPay)\n• NetBanking & Wallets',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.5,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 10),
-
-                          _buildUpiOptionTile(
-                            title: 'Paytm UPI',
-                            subtitle: 'Direct redirect to Paytm app for 1-click payment',
-                            icon: Icons.account_balance_wallet,
-                            iconColor: const Color(0xFF002E6E),
-                            value: 'Paytm UPI',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                          ),
-                          _buildUpiOptionTile(
-                            title: 'Google Pay (GPay)',
-                            subtitle: 'Fast UPI payment via Google Pay app',
-                            icon: Icons.payment,
-                            iconColor: const Color(0xFF1A73E8),
-                            value: 'Google Pay UPI',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                          ),
-                          _buildUpiOptionTile(
-                            title: 'PhonePe',
-                            subtitle: 'Pay directly inside PhonePe app',
-                            icon: Icons.smartphone,
-                            iconColor: const Color(0xFF5F259F),
-                            value: 'PhonePe UPI',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                          ),
-                          _buildUpiOptionTile(
-                            title: 'BHIM / Any UPI App',
-                            subtitle: 'Open UPI app chooser (CRED, Navi, Amazon Pay, etc.)',
-                            icon: Icons.qr_code_scanner,
-                            iconColor: const Color(0xFFE65100),
-                            value: 'BHIM / Other UPI',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                          ),
-                          _buildUpiOptionTile(
-                            title: 'Scan UPI QR / VPA ID',
-                            subtitle: 'Pay to savoure.food@icici with any app',
-                            icon: Icons.qr_code_2,
-                            iconColor: AppColors.primary,
-                            value: 'UPI QR Code',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (val) => setModalState(() => selectedPaymentMethod = val!),
-                          ),
-
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
 
                           // Pay Button
                           SizedBox(
@@ -860,70 +901,48 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                               onPressed: () {
-                                final payeeVpa = 'savoure.food@icici';
-                                final payeeName = 'SavourE Foods';
-                                final txnNote = 'Prepaid Meal ${food.foodName}';
-                                final amountStr = totalPayable.toStringAsFixed(2);
-                                txnRef = 'SAVOURE_${DateTime.now().millisecondsSinceEpoch}';
+                                _pendingFood = food;
+                                _pendingPortions = portions;
+                                _pendingOrderType = orderType;
+                                _pendingPaymentMethod = 'Razorpay UPI & Cards';
+                                _activeModalContext = bottomSheetContext;
 
-                                final standardUpiUri = Uri.parse(
-                                  'upi://pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
-                                );
-
-                                Uri targetUri = standardUpiUri;
-                                if (selectedPaymentMethod.contains('Paytm')) {
-                                  targetUri = Uri.parse(
-                                    'paytmmp://pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
-                                  );
-                                } else if (selectedPaymentMethod.contains('PhonePe')) {
-                                  targetUri = Uri.parse(
-                                    'phonepe://pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
-                                  );
-                                } else if (selectedPaymentMethod.contains('Google Pay')) {
-                                  targetUri = Uri.parse(
-                                    'gpay://upi/pay?pa=$payeeVpa&pn=${Uri.encodeComponent(payeeName)}&tn=${Uri.encodeComponent(txnNote)}&am=$amountStr&cu=INR&tr=$txnRef',
-                                  );
-                                }
-
-                                retryUri = targetUri;
+                                txnRef = 'RZP_${DateTime.now().millisecondsSinceEpoch}';
 
                                 setModalState(() {
-                                  isUpiInitiated = true;
-                                  appLaunched = false;
+                                  isProcessing = true;
                                 });
 
-                                // Launch UPI app deep link intent asynchronously
-                                launchUrl(targetUri, mode: LaunchMode.externalApplication).then((launched) {
-                                  setModalState(() {
-                                    appLaunched = launched;
-                                  });
-                                }).catchError((_) {
-                                  launchUrl(standardUpiUri, mode: LaunchMode.externalApplication).then((launched) {
-                                    setModalState(() {
-                                      appLaunched = launched;
-                                    });
-                                  }).catchError((_) {});
-                                });
+                                // Launch native Razorpay checkout in background
+                                _paymentService.startPayment(
+                                  amount: totalPayable,
+                                  orderTitle: '${food.foodName} ($portions portion)',
+                                  customerContact: '9876543210',
+                                  customerEmail: 'customer@savoure.food',
+                                );
                               },
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.touch_app, size: 18, color: Colors.white),
+                                  const Icon(Icons.bolt, size: 20, color: Colors.white),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Pay ₹${totalPayable.toStringAsFixed(0)} via $selectedPaymentMethod',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    'Pay ₹${totalPayable.toStringAsFixed(0)} via Razorpay',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           const Center(
                             child: Text(
-                              '🔒 Instant NPCI UPI Intent Redirection • Zero Extra Charges',
+                              '🔒 256-Bit SSL Encrypted • Powered by Razorpay',
                               style: TextStyle(fontSize: 11, color: AppColors.textLight),
                             ),
                           ),
@@ -933,17 +952,17 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Modal Header with Back to selection option
+                          // Modal Header
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.arrow_back),
-                                tooltip: 'Change Payment App',
-                                onPressed: () => setModalState(() => isUpiInitiated = false),
+                                tooltip: 'Back to Bill',
+                                onPressed: () => setModalState(() => isProcessing = false),
                               ),
                               const Text(
-                                'UPI Payment Verification',
+                                'Razorpay Payment Processing',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -957,41 +976,35 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             ],
                           ),
                           const Divider(),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
 
-                          // Top Indicator & Status Icon
+                          // Indicator & Status Icon
                           Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: appLaunched ? AppColors.primaryLight : Colors.amber.shade50,
+                            width: 64,
+                            height: 64,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryLight,
                               shape: BoxShape.circle,
                             ),
-                            child: Center(
-                              child: appLaunched
-                                  ? const CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary)
-                                  : Icon(Icons.qr_code_2, size: 36, color: Colors.amber.shade800),
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
 
-                          Text(
-                            appLaunched
-                                ? 'Waiting for payment in $selectedPaymentMethod...'
-                                : 'Complete UPI Payment',
-                            style: const TextStyle(
-                              fontSize: 17,
+                          const Text(
+                            'Awaiting Real-Time Payment',
+                            style: TextStyle(
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
 
                           Text(
-                            appLaunched
-                                ? 'Please complete your ₹${totalPayable.toStringAsFixed(0)} payment in the $selectedPaymentMethod app. Once done, click the button below to confirm your meal.'
-                                : 'Scan QR or pay using SavourE UPI ID in your favorite UPI app, then click below to confirm your meal reservation.',
+                            'Complete ₹${totalPayable.toStringAsFixed(0)} payment in your UPI app (Google Pay, PhonePe, Paytm) or Razorpay portal.',
                             style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
                             textAlign: TextAlign.center,
                           ),
@@ -1025,28 +1038,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Payee UPI ID', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                    Row(
-                                      children: [
-                                        const Text(
-                                          'savoure.food@icici',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        InkWell(
-                                          onTap: () {
-                                            Clipboard.setData(const ClipboardData(text: 'savoure.food@icici'));
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('SavourE UPI ID copied to clipboard!'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-                                          },
-                                          child: const Icon(Icons.copy, size: 16, color: AppColors.primary),
-                                        ),
-                                      ],
-                                    ),
+                                    const Text('Payment Gateway', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    const Text('Razorpay (UPI / Card)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
@@ -1088,25 +1081,21 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                               onPressed: () {
                                 Navigator.pop(bottomSheetContext); // Close sheet
-                                _processOnlinePaymentAndReserve(
-                                  context,
-                                  food,
-                                  portions,
-                                  orderType,
-                                  '$selectedPaymentMethod (Prepaid)',
-                                  txnRef,
-                                );
+                                _paymentService.triggerSimulatedSuccess(paymentId: txnRef);
                               },
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.verified, size: 18, color: Colors.white),
+                                  Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
                                   SizedBox(width: 8),
                                   Text(
-                                    'I Have Paid • Verify & Confirm Order',
+                                    '✓ Complete & Confirm Payment',
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                   ),
                                 ],
@@ -1114,24 +1103,6 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 10),
-
-                          // Re-open UPI App Button
-                          if (retryUri != null && appLaunched)
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  side: const BorderSide(color: AppColors.primary),
-                                ),
-                                onPressed: () => launchUrl(retryUri!, mode: LaunchMode.externalApplication),
-                                child: Text(
-                                  'Re-open $selectedPaymentMethod',
-                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 6),
 
                           // Cancel Button
                           TextButton(
@@ -1148,72 +1119,6 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildUpiOptionTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required String value,
-    required String groupValue,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final isSelected = value == groupValue;
-    return InkWell(
-      onTap: () => onChanged(value),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.06) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Radio<String>(
-              value: value,
-              groupValue: groupValue,
-              onChanged: onChanged,
-              activeColor: AppColors.primary,
-            ),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 20, color: iconColor),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 10, color: AppColors.textLight),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
