@@ -156,14 +156,17 @@ CREATE POLICY "Admins manage all PG profiles" ON pg_profiles
         )
     );
 
--- Food Listings: Customers view active approved, Owners manage own, Admins manage all
+-- Food Listings: Customers view active approved listings with available portions before expiration
 CREATE POLICY "Customers view active approved listings" ON food_listings
     FOR SELECT USING (
-        status != 'removed' AND
+        status = 'active' AND
+        available_portions > 0 AND
+        pickup_end_time > NOW() AND
         pg_id IN (
             SELECT id FROM pg_profiles WHERE is_approved = true AND is_active = true
         )
     );
+
 CREATE POLICY "Owners view listings for their PGs" ON food_listings
     FOR SELECT USING (
         pg_id IN (SELECT id FROM pg_profiles WHERE owner_id = auth.uid())

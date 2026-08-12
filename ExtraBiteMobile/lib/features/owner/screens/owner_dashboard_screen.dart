@@ -780,12 +780,18 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
         ingredients: _isVeg ? ['Rice', 'Vegetables', 'Spices'] : ['Basmati Rice', 'Chicken', 'Spices'],
         allergens: const [],
         verificationStatus: 'verified',
+        status: 'active',
         latitude: lat,
         longitude: lon,
       );
 
+      debugPrint('[ExtraBite Debug] PG Owner Added Food Success: ID=${newListing.id}, Title="${newListing.foodName}", Property="${newListing.propertyName}" (PropertyID=${newListing.propertyId}), Portions=${newListing.availablePortions}, Status=${newListing.status}');
+
+
       widget.ref.read(foodProvider.notifier).addListing(newListing);
+      widget.ref.read(foodProvider.notifier).refreshListings();
       Navigator.pop(context);
+
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -17,6 +17,7 @@ class FoodListing {
   final List<String> ingredients;
   final List<String> allergens;
   final String verificationStatus; // e.g. "verified", "unverified"
+  final String status; // e.g. "active", "paused", "sold_out", "expired", "removed", "draft"
 
   final double latitude;
   final double longitude;
@@ -40,6 +41,7 @@ class FoodListing {
     required this.ingredients,
     required this.allergens,
     required this.verificationStatus,
+    this.status = 'active',
     required this.latitude,
     required this.longitude,
   });
@@ -59,8 +61,18 @@ class FoodListing {
     return now.isAfter(pickupStarts) && now.isBefore(pickupEnds);
   }
 
+  bool get isActive {
+    return status == 'active';
+  }
+
+  bool get isAvailable {
+    return isActive && availablePortions > 0 && !isExpired && verificationStatus == 'verified';
+  }
+
   FoodListing copyWith({
     double? distanceKm,
+    int? availablePortions,
+    String? status,
   }) {
     return FoodListing(
       id: id,
@@ -68,20 +80,90 @@ class FoodListing {
       description: description,
       propertyId: propertyId,
       propertyName: propertyName,
+      locationAddress: locationAddress,
       distanceKm: distanceKm ?? this.distanceKm,
       category: category,
       isVegetarian: isVegetarian,
       originalPrice: originalPrice,
       sellingPrice: sellingPrice,
-      availablePortions: availablePortions,
+      availablePortions: availablePortions ?? this.availablePortions,
       preparedTime: preparedTime,
       pickupStarts: pickupStarts,
       pickupEnds: pickupEnds,
       ingredients: ingredients,
       allergens: allergens,
       verificationStatus: verificationStatus,
+      status: status ?? this.status,
       latitude: latitude,
       longitude: longitude,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': foodName,
+      'description': description,
+      'pg_id': propertyId,
+      'propertyName': propertyName,
+      'locationAddress': locationAddress,
+      'distanceKm': distanceKm,
+      'category': category,
+      'dietary_type': isVegetarian ? 'vegetarian' : 'non_vegetarian',
+      'original_price': originalPrice,
+      'discounted_price': sellingPrice,
+      'available_portions': availablePortions,
+      'preparedTime': preparedTime.toIso8601String(),
+      'pickup_start_time': pickupStarts.toIso8601String(),
+      'pickup_end_time': pickupEnds.toIso8601String(),
+      'ingredients': ingredients,
+      'allergens': allergens,
+      'verificationStatus': verificationStatus,
+      'status': status,
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+  }
+
+  factory FoodListing.fromMap(Map<String, dynamic> map) {
+    final isVeg = (map['dietary_type'] as String? ?? 'vegetarian') == 'vegetarian' ||
+        (map['isVegetarian'] as bool? ?? true);
+    final origPrice = (map['original_price'] as num? ?? map['originalPrice'] as num? ?? 100.0).toDouble();
+    final discPrice = (map['discounted_price'] as num? ?? map['sellingPrice'] as num? ?? 50.0).toDouble();
+
+    return FoodListing(
+      id: map['id'] as String? ?? '',
+      foodName: map['title'] as String? ?? map['foodName'] as String? ?? 'Surplus Meal',
+      description: map['description'] as String? ?? '',
+      propertyId: map['pg_id'] as String? ?? map['propertyId'] as String? ?? '',
+      propertyName: map['propertyName'] as String? ?? map['pg_name'] as String? ?? 'PG / Hostel',
+      locationAddress: map['locationAddress'] as String? ?? 'Near VIT-AP University',
+      distanceKm: (map['distanceKm'] as num? ?? 0.8).toDouble(),
+      category: map['category'] as String? ?? 'Lunch',
+      isVegetarian: isVeg,
+      originalPrice: origPrice,
+      sellingPrice: discPrice,
+      availablePortions: (map['available_portions'] as num? ?? map['availablePortions'] as num? ?? 0).toInt(),
+      preparedTime: map['preparedTime'] != null
+          ? DateTime.parse(map['preparedTime'] as String)
+          : DateTime.now().subtract(const Duration(minutes: 30)),
+      pickupStarts: map['pickup_start_time'] != null
+          ? DateTime.parse(map['pickup_start_time'] as String)
+          : map['pickupStarts'] != null
+              ? DateTime.parse(map['pickupStarts'] as String)
+              : DateTime.now(),
+      pickupEnds: map['pickup_end_time'] != null
+          ? DateTime.parse(map['pickup_end_time'] as String)
+          : map['pickupEnds'] != null
+              ? DateTime.parse(map['pickupEnds'] as String)
+              : DateTime.now().add(const Duration(hours: 2)),
+      ingredients: (map['ingredients'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      allergens: (map['allergens'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      verificationStatus: map['verificationStatus'] as String? ?? 'verified',
+      status: map['status'] as String? ?? 'active',
+      latitude: (map['latitude'] as num? ?? 16.4971).toDouble(),
+      longitude: (map['longitude'] as num? ?? 80.5005).toDouble(),
+    );
+  }
 }
+

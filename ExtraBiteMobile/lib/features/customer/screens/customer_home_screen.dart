@@ -194,8 +194,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
+                  ref.read(foodProvider.notifier).refreshListings();
                   await ref.read(locationProvider.notifier).determinePosition();
                 },
+
                 child: filteredFood.isEmpty
                     ? _buildEmptyState(selectedRadius)
                     : ListView(
