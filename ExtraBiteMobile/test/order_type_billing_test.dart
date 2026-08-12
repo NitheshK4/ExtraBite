@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:extrabite_mobile/models/order_type.dart';
 import 'package:extrabite_mobile/models/reservation.dart';
+import 'package:extrabite_mobile/models/food_listing.dart';
 
 void main() {
 
@@ -105,6 +106,67 @@ void main() {
       expect(res.toMap()['payment_status'], equals('paid'));
       expect(res.toMap()['payment_method'], equals('UPI (Google Pay / PhonePe / Paytm)'));
       expect(res.toMap()['amount_paid'], equals(150.0));
+    });
+
+    test('FoodListing model correctly serializes, deserializes, and defaults allowsDineIn', () {
+      final now = DateTime.now();
+
+      // Case 1: Dine-in allowed listing
+      final dineInMap = {
+        'id': 'fl_dine',
+        'title': 'Veg Thali',
+        'description': 'Fresh Meals',
+        'pg_id': 'pg_1',
+        'propertyName': 'Sai Mess',
+        'locationAddress': 'Gate 2',
+        'distanceKm': 0.5,
+        'category': 'Lunch',
+        'dietary_type': 'vegetarian',
+        'original_price': 80.0,
+        'discounted_price': 40.0,
+        'available_portions': 5,
+        'allows_dine_in': true,
+        'verificationStatus': 'verified',
+        'status': 'active',
+      };
+
+      final dineInFood = FoodListing.fromMap(dineInMap);
+      expect(dineInFood.allowsDineIn, isTrue);
+      expect(dineInFood.toMap()['allows_dine_in'], isTrue);
+
+      // Case 2: Takeaway only listing (Dine-in NOT allowed)
+      final takeawayMap = {
+        'id': 'fl_takeaway',
+        'title': 'Paneer Biryani',
+        'description': 'Parcel',
+        'pg_id': 'pg_2',
+        'propertyName': 'Royal PG',
+        'locationAddress': 'Gate 1',
+        'distanceKm': 1.0,
+        'category': 'Dinner',
+        'dietary_type': 'vegetarian',
+        'original_price': 120.0,
+        'discounted_price': 60.0,
+        'available_portions': 3,
+        'allows_dine_in': false,
+        'verificationStatus': 'verified',
+        'status': 'active',
+      };
+
+      final takeawayFood = FoodListing.fromMap(takeawayMap);
+      expect(takeawayFood.allowsDineIn, isFalse);
+      expect(takeawayFood.toMap()['allows_dine_in'], isFalse);
+
+      // Case 3: Defaults to true for backward compatibility
+      final defaultFood = FoodListing.fromMap({
+        'id': 'fl_legacy',
+        'title': 'Old Meal',
+      });
+      expect(defaultFood.allowsDineIn, isTrue);
+
+      // Case 4: copyWith allowsDineIn
+      final updatedFood = dineInFood.copyWith(allowsDineIn: false);
+      expect(updatedFood.allowsDineIn, isFalse);
     });
   });
 }

@@ -18,6 +18,7 @@ class FoodListing {
   final List<String> allergens;
   final String verificationStatus; // e.g. "verified", "unverified"
   final String status; // e.g. "active", "paused", "sold_out", "expired", "removed", "draft"
+  final bool allowsDineIn; // whether students can dine-in at the PG or takeaway only
 
   final double latitude;
   final double longitude;
@@ -42,6 +43,7 @@ class FoodListing {
     required this.allergens,
     required this.verificationStatus,
     this.status = 'active',
+    this.allowsDineIn = true,
     required this.latitude,
     required this.longitude,
   });
@@ -73,6 +75,7 @@ class FoodListing {
     double? distanceKm,
     int? availablePortions,
     String? status,
+    bool? allowsDineIn,
   }) {
     return FoodListing(
       id: id,
@@ -94,6 +97,7 @@ class FoodListing {
       allergens: allergens,
       verificationStatus: verificationStatus,
       status: status ?? this.status,
+      allowsDineIn: allowsDineIn ?? this.allowsDineIn,
       latitude: latitude,
       longitude: longitude,
     );
@@ -120,6 +124,7 @@ class FoodListing {
       'allergens': allergens,
       'verificationStatus': verificationStatus,
       'status': status,
+      'allows_dine_in': allowsDineIn,
       'latitude': latitude,
       'longitude': longitude,
     };
@@ -130,6 +135,10 @@ class FoodListing {
         (map['isVegetarian'] as bool? ?? true);
     final origPrice = (map['original_price'] as num? ?? map['originalPrice'] as num? ?? 100.0).toDouble();
     final discPrice = (map['discounted_price'] as num? ?? map['sellingPrice'] as num? ?? 50.0).toDouble();
+    final dineInOption = map['allows_dine_in'] as bool? ??
+        map['isDineInAvailable'] as bool? ??
+        map['allowsDineIn'] as bool? ??
+        true;
 
     return FoodListing(
       id: map['id'] as String? ?? '',
@@ -161,6 +170,7 @@ class FoodListing {
       allergens: (map['allergens'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
       verificationStatus: map['verificationStatus'] as String? ?? 'verified',
       status: map['status'] as String? ?? 'active',
+      allowsDineIn: dineInOption,
       latitude: (map['latitude'] as num? ?? 16.4971).toDouble(),
       longitude: (map['longitude'] as num? ?? 80.5005).toDouble(),
     );

@@ -521,5 +521,71 @@ void main() {
       expect(find.text('testuser@example.com'), findsOneWidget);
       expect(find.text('Pavan Kumar'), findsNothing);
     });
+
+    testWidgets('FoodDetailScreen disables Dine-In when PG owner marked meal as Takeaway Only (allowsDineIn: false)', (WidgetTester tester) async {
+      final mockService = MockLocationService();
+
+      final takeawayOnlyListing = FoodListing(
+        id: 'item_takeaway_only',
+        foodName: 'Special Veg Thali',
+        description: 'Packed parcel with roti, sabzi, dal and rice.',
+        propertyId: 'pg_1',
+        propertyName: 'Sri Krishna PG',
+        distanceKm: 0.6,
+        category: 'Lunch',
+        isVegetarian: true,
+        originalPrice: 90.0,
+        sellingPrice: 45.0,
+        availablePortions: 4,
+        preparedTime: DateTime.now(),
+        pickupStarts: DateTime.now(),
+        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
+        ingredients: const ['Rice', 'Wheat', 'Vegetables'],
+        allergens: const [],
+        verificationStatus: 'verified',
+        allowsDineIn: false, // PG does not allow Dine-in
+        latitude: 16.4971,
+        longitude: 80.5005,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            locationProvider.overrideWith((ref) {
+              return FakeLocationNotifier(
+                mockService,
+                const LocationState.available(16.4971, 80.5005),
+              );
+            }),
+            foodProvider.overrideWith((ref) {
+              final notifier = FoodNotifier();
+              notifier.clearAll();
+              notifier.addListing(takeawayOnlyListing);
+              return notifier;
+            }),
+          ],
+          child: const MaterialApp(
+            home: FoodDetailScreen(foodId: 'item_takeaway_only'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify Takeaway Only badge and message
+      expect(find.text('🛍️ Takeaway / Parcel Only'), findsOneWidget);
+      expect(find.text('Not Allowed by PG'), findsOneWidget);
+      expect(find.textContaining('Parcel pickup only'), findsOneWidget);
+
+      // Verify tapping disabled Dine-In displays a snackbar notice
+      await tester.tap(find.text('Dine In'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('only allows Takeaway parcels'), findsOneWidget);
+
+      // Verify Take Away can be selected and leads to payment
+      await tester.tap(find.text('Take Away'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pay ₹45 Online & Reserve'), findsOneWidget);
+    });
   });
 }

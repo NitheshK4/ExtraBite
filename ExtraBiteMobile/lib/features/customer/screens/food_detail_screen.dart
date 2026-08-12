@@ -36,6 +36,11 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       );
     }
 
+    // If listing does not allow Dine In, enforce Take Away selection
+    if (!food.allowsDineIn && _selectedOrderType == OrderType.dineIn) {
+      _selectedOrderType = OrderType.takeAway;
+    }
+
     final formatTime = DateFormat('hh:mm a');
     final pickupWindowStr = '${formatTime.format(food.pickupStarts)} - ${formatTime.format(food.pickupEnds)}';
     
@@ -174,6 +179,55 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                             ),
                           ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Dining Option Information Card
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: food.allowsDineIn ? Colors.teal.shade50 : Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: food.allowsDineIn ? Colors.teal.shade200 : Colors.amber.shade300,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          food.allowsDineIn ? Icons.restaurant : Icons.takeout_dining,
+                          color: food.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                food.allowsDineIn ? '🍽️ Dine-in & Takeaway Available' : '🛍️ Takeaway / Parcel Only',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: food.allowsDineIn ? Colors.teal.shade900 : Colors.deepOrange.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                food.allowsDineIn
+                                    ? 'Students can sit and eat inside ${food.propertyName} mess, or take packed parcels.'
+                                    : '${food.propertyName} does not offer dine-in seating. Only takeaway parcels are allowed.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: food.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -339,8 +393,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                 child: _buildOrderTypeChoiceCard(
                   type: OrderType.dineIn,
                   label: 'Dine In',
-                  sublabel: 'Eat at PG Mess',
+                  sublabel: food.allowsDineIn ? 'Eat at PG Mess' : 'Not Allowed by PG',
                   icon: Icons.restaurant,
+                  isEnabled: food.allowsDineIn,
+                  disabledReason: '${food.propertyName} only allows Takeaway parcels.',
                 ),
               ),
               const SizedBox(width: 12),
@@ -350,10 +406,38 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   label: 'Take Away',
                   sublabel: 'Packed Parcel',
                   icon: Icons.takeout_dining,
+                  isEnabled: true,
                 ),
               ),
             ],
           ),
+          if (!food.allowsDineIn) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300, width: 0.8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: Colors.deepOrange.shade800),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Notice: Dine-in not available at ${food.propertyName}. Parcel pickup only.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.deepOrange.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
 
           // Quantity selection row
@@ -440,65 +524,98 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     required String label,
     required String sublabel,
     required IconData icon,
+    bool isEnabled = true,
+    String? disabledReason,
   }) {
     final isSelected = _selectedOrderType == type;
 
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedOrderType = type;
-          _showOrderTypeValidationError = false;
-        });
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : (_showOrderTypeValidationError ? AppColors.error : AppColors.border),
-            width: isSelected ? 2 : 1,
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.45,
+      child: InkWell(
+        onTap: isEnabled
+            ? () {
+                setState(() {
+                  _selectedOrderType = type;
+                  _showOrderTypeValidationError = false;
+                });
+              }
+            : () {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.deepOrange.shade800,
+                    behavior: SnackBarBehavior.floating,
+                    content: Text(disabledReason ?? 'This option is not offered for this meal.'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withOpacity(0.08)
+                : (isEnabled ? Colors.grey.shade50 : Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary
+                  : (_showOrderTypeValidationError ? AppColors.error : AppColors.border),
+              width: isSelected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 22,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    sublabel,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isSelected ? AppColors.primary.withOpacity(0.8) : AppColors.textLight,
-                    ),
-                  ),
-                ],
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isEnabled ? AppColors.textSecondary : Colors.grey.shade400),
+                size: 22,
               ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.primary,
-                size: 18,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? AppColors.primary
+                            : (isEnabled ? AppColors.textPrimary : Colors.grey.shade500),
+                      ),
+                    ),
+                    Text(
+                      sublabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isSelected
+                            ? AppColors.primary.withOpacity(0.8)
+                            : (isEnabled ? AppColors.textLight : Colors.red.shade400),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-          ],
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.primary,
+                  size: 18,
+                )
+              else if (!isEnabled)
+                Icon(
+                  Icons.block,
+                  color: Colors.grey.shade400,
+                  size: 16,
+                ),
+            ],
+          ),
         ),
       ),
     );
