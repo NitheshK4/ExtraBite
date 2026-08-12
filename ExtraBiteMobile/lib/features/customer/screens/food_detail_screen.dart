@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../providers/food_provider.dart';
 import '../../../providers/reservation_provider.dart';
 import '../../../models/food_listing.dart';
+import '../../../models/order_type.dart';
 
 class FoodDetailScreen extends ConsumerStatefulWidget {
   final String foodId;
@@ -21,6 +22,8 @@ class FoodDetailScreen extends ConsumerStatefulWidget {
 
 class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   int _portionsToReserve = 1;
+  OrderType? _selectedOrderType;
+  bool _showOrderTypeValidationError = false;
 
   @override
   Widget build(BuildContext context) {
@@ -308,14 +311,58 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Mandatory Order Option Selection (Dine In vs Take Away)
+          Row(
+            children: [
+              const Text(
+                'Select Order Option *',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_showOrderTypeValidationError && _selectedOrderType == null)
+                const Text(
+                  '(Selection Required)',
+                  style: TextStyle(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.bold),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildOrderTypeChoiceCard(
+                  type: OrderType.dineIn,
+                  label: 'Dine In',
+                  sublabel: 'Eat at PG Mess',
+                  icon: Icons.restaurant,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildOrderTypeChoiceCard(
+                  type: OrderType.takeAway,
+                  label: 'Take Away',
+                  sublabel: 'Packed Parcel',
+                  icon: Icons.takeout_dining,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
           // Quantity selection row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Select Portions',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
               Row(
                 children: [
@@ -339,7 +386,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Total Price + CTA Row
           Row(
@@ -367,10 +414,17 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                       : () {
                           _triggerReservation(context, food);
                         },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                   child: Text(
                     food.isExpired
                         ? 'Pickup Expired'
-                        : (isSoldOut ? 'Sold Out' : 'Reserve Meal'),
+                        : (isSoldOut
+                            ? 'Sold Out'
+                            : (_selectedOrderType == null
+                                ? 'Select Order Option'
+                                : 'Complete Bill (${_selectedOrderType!.displayName})')),
                   ),
                 ),
               ),
@@ -381,7 +435,104 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 
+  Widget _buildOrderTypeChoiceCard({
+    required OrderType type,
+    required String label,
+    required String sublabel,
+    required IconData icon,
+  }) {
+    final isSelected = _selectedOrderType == type;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedOrderType = type;
+          _showOrderTypeValidationError = false;
+        });
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : (_showOrderTypeValidationError ? AppColors.error : AppColors.border),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    sublabel,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isSelected ? AppColors.primary.withOpacity(0.8) : AppColors.textLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.primary,
+                size: 18,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _triggerReservation(BuildContext context, FoodListing food) {
+    // MANDATORY VALIDATION: Check if OrderType (Dine In / Take Away) is selected
+    if (_selectedOrderType == null) {
+      setState(() {
+        _showOrderTypeValidationError = true;
+      });
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Please select Dine In or Take Away before completing your bill.',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
     final available = food.availablePortions;
     if (available <= 0) return; // Prevent zero-portions reservation
 
@@ -394,13 +545,14 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     // Decrement available portions in real-time
     ref.read(foodProvider.notifier).decrementPortions(food.id, portions);
 
-    // Call state notifier to add reservation state
+    // Call state notifier to add reservation state with mandatory orderType
     final reservation = ref.read(reservationProvider.notifier).createReservation(
       listing: food,
       quantity: portions,
+      orderType: _selectedOrderType!,
     );
 
-    // Show Confirmation modal
+    // Show Confirmation modal / Invoice
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -409,7 +561,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           children: [
             Icon(Icons.check_circle_outline, color: AppColors.primary),
             SizedBox(width: 8),
-            Text('Reservation Confirmed'),
+            Text('Bill & Reservation Confirmed'),
           ],
         ),
         content: Column(
@@ -417,14 +569,15 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Your surplus food has been successfully reserved! Present this confirmation at the property to complete your purchase.',
+              'Your surplus meal bill has been generated! Present this invoice at the PG property upon collection.',
               style: TextStyle(height: 1.4),
             ),
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
-            _buildDialogRow('Order Reference', '#${reservation.id}'),
+            _buildDialogRow('Invoice Reference', '#${reservation.id}'),
             _buildDialogRow('Reserved Item', reservation.foodName),
+            _buildDialogRow('Order Type', '${reservation.orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${reservation.orderTypeDisplayName}'),
             _buildDialogRow('Quantity', '${reservation.quantity} portion(s)'),
             _buildDialogRow('Amount to Collect', '₹${reservation.amountToCollect.toStringAsFixed(0)}'),
             const SizedBox(height: 16),
@@ -457,7 +610,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               Navigator.pop(context); // Close dialog
               context.go('/customer/reservations'); // Navigate to active list
             },
-            child: const Text('View Active Reservations'),
+            child: const Text('View Active Bills & Reservations'),
           ),
         ],
       ),
@@ -477,3 +630,4 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 }
+
