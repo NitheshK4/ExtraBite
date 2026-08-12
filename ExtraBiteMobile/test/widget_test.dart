@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:extrabite_mobile/app/app.dart';
 import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/models/reservation.dart';
+import 'package:extrabite_mobile/models/order_type.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/core/location/location_state.dart';
 import 'package:extrabite_mobile/features/customer/screens/food_detail_screen.dart';
 import 'mocks.dart';
+
 
 void main() {
   group('1. FoodListing Model Tests', () {
@@ -222,6 +224,7 @@ void main() {
       final reservation = reservationNotifier.createReservation(
         listing: targetFood,
         quantity: 2,
+        orderType: OrderType.takeAway,
       );
 
       expect(reservation.foodName, equals(targetFood.foodName));
@@ -243,6 +246,7 @@ void main() {
       final reservation = reservationNotifier.createReservation(
         listing: targetFood,
         quantity: 2,
+        orderType: OrderType.dineIn,
       );
 
       final activeList = container.read(activeReservationsProvider);
@@ -291,8 +295,10 @@ void main() {
       final reservation = reservationNotifier.createReservation(
         listing: listing,
         quantity: 3,
+        orderType: OrderType.dineIn,
       );
       foodNotifier.decrementPortions(listing.id, 3);
+
 
       expect(reservation.foodName, equals('Chapati & Curry'));
       expect(reservation.quantity, equals(3));

@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_listing.dart';
 import '../core/location/location_state.dart';
 import '../core/utils/haversine.dart';
 import 'location_provider.dart';
+
 
 class FoodState {
   final List<FoodListing> listings;
@@ -227,12 +229,21 @@ class FoodNotifier extends StateNotifier<FoodState> {
   }
 
   void addListing(FoodListing listing) {
+    debugPrint('[ExtraBite Debug] Created food listing: ID=${listing.id}, Title="${listing.foodName}", Property="${listing.propertyName}" (ID=${listing.propertyId}), Portions=${listing.availablePortions}, Status=${listing.status}, Verification=${listing.verificationStatus}');
     state = state.copyWith(
       listings: [listing, ...state.listings],
     );
   }
 
+  void refreshListings() {
+    debugPrint('[ExtraBite Debug] Refreshing food listings state provider...');
+    state = state.copyWith(
+      listings: List.from(state.listings),
+    );
+  }
+
   void removeListing(String id) {
+    debugPrint('[ExtraBite Debug] Removed food listing: ID=$id');
     state = state.copyWith(
       listings: state.listings.where((item) => item.id != id).toList(),
     );
@@ -243,27 +254,11 @@ class FoodNotifier extends StateNotifier<FoodState> {
       listings: state.listings.map((item) {
         if (item.id == id) {
           final newPortions = (item.availablePortions - count).clamp(0, 9999);
-          return FoodListing(
-            id: item.id,
-            foodName: item.foodName,
-            description: item.description,
-            propertyId: item.propertyId,
-            propertyName: item.propertyName,
-            locationAddress: item.locationAddress,
-            distanceKm: item.distanceKm,
-            category: item.category,
-            isVegetarian: item.isVegetarian,
-            originalPrice: item.originalPrice,
-            sellingPrice: item.sellingPrice,
+          final newStatus = newPortions == 0 ? 'sold_out' : item.status;
+          debugPrint('[ExtraBite Debug] Updated portions for ID=$id: ${item.availablePortions} -> $newPortions (Status=$newStatus)');
+          return item.copyWith(
             availablePortions: newPortions,
-            preparedTime: item.preparedTime,
-            pickupStarts: item.pickupStarts,
-            pickupEnds: item.pickupEnds,
-            ingredients: item.ingredients,
-            allergens: item.allergens,
-            verificationStatus: item.verificationStatus,
-            latitude: item.latitude,
-            longitude: item.longitude,
+            status: newStatus,
           );
         }
         return item;
@@ -293,53 +288,81 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
   final locationState = ref.watch(locationProvider);
   final selectedRadius = ref.watch(radiusProvider);
 
-  // 1. Filter out unverified properties
-  var list = state.listings.where((item) => item.verificationStatus == 'verified').toList();
+  debugPrint('[ExtraBite Debug] Personal User Querying Listings: Total raw listings count = ${state.listings.length}, Radius = $selectedRadius km');
 
-  // 2. Filter by distance (if location is available)
+  var rawList = state.listings;
+  List<FoodListing> eligibleList = [];
+
+  for (final item in rawList) {
+    if (item.verificationStatus != 'verified') {
+      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Property unverified (verificationStatus=${item.verificationStatus})');
+      continue;
+    }
+    if (item.status != 'active') {
+      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Inactive status (status=${item.status})');
+      continue;
+    }
+    if (item.availablePortions <= 0) {
+      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Sold out (availablePortions=${item.availablePortions})');
+      continue;
+    }
+    if (item.isExpired) {
+      debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Expired pickup window (pickupEnds=${item.pickupEnds})');
+      continue;
+    }
+    eligibleList.add(item);
+  }
+
+  // Filter by distance if location is available
   if (locationState.status == LocationStateStatus.available) {
     final lat = locationState.latitude!;
     final lon = locationState.longitude!;
 
-    list = list
-        .map((item) {
-          final distance = Haversine.calculateDistance(lat, lon, item.latitude, item.longitude);
-          return item.copyWith(distanceKm: distance);
-        })
-        .where((item) => item.distanceKm <= selectedRadius)
-        .toList();
+    var distanceFilteredList = <FoodListing>[];
+    for (final item in eligibleList) {
+      final distance = Haversine.calculateDistance(lat, lon, item.latitude, item.longitude);
+      final itemWithDistance = item.copyWith(distanceKm: distance);
+      if (distance <= selectedRadius) {
+        distanceFilteredList.add(itemWithDistance);
+      } else {
+        debugPrint('[ExtraBite Debug] Excluded item ID=${item.id} ("${item.foodName}"): Outside search radius (distance=${distance.toStringAsFixed(2)} km > $selectedRadius km)');
+      }
+    }
+    eligibleList = distanceFilteredList;
   } else {
-    // Return empty list if location details are not verified/available
+    debugPrint('[ExtraBite Debug] Location status not available (${locationState.status}). Returning empty list for Personal User.');
     return [];
   }
 
-  // 3. Apply Category Filter
+  // Apply Category Filter
   if (state.selectedCategory != 'All') {
     if (state.selectedCategory == 'Vegetarian') {
-      list = list.where((item) => item.isVegetarian).toList();
+      eligibleList = eligibleList.where((item) => item.isVegetarian).toList();
     } else if (state.selectedCategory == 'Non-Vegetarian') {
-      list = list.where((item) => !item.isVegetarian).toList();
+      eligibleList = eligibleList.where((item) => !item.isVegetarian).toList();
     } else if (state.selectedCategory == 'Under ₹30') {
-      list = list.where((item) => item.sellingPrice < 30.0).toList();
+      eligibleList = eligibleList.where((item) => item.sellingPrice < 30.0).toList();
     } else {
-      list = list.where((item) => item.category.toLowerCase() == state.selectedCategory.toLowerCase()).toList();
+      eligibleList = eligibleList.where((item) => item.category.toLowerCase() == state.selectedCategory.toLowerCase()).toList();
     }
   }
 
-  // 4. Apply Search Query Filter
+  // Apply Search Query Filter
   if (state.searchQuery.isNotEmpty) {
     final query = state.searchQuery.toLowerCase();
-    list = list.where((item) =>
+    eligibleList = eligibleList.where((item) =>
       item.foodName.toLowerCase().contains(query) ||
       item.propertyName.toLowerCase().contains(query) ||
       item.category.toLowerCase().contains(query)
     ).toList();
   }
 
-  // Optional: Sort by distance
-  list.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+  // Sort by distance
+  eligibleList.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
-  return list;
+  debugPrint('[ExtraBite Debug] Personal User Query Result: Eligible available listings count = ${eligibleList.length}');
+
+  return eligibleList;
 });
 
 final foodDetailProvider = Provider.family<FoodListing?, String>((ref, id) {
@@ -361,3 +384,4 @@ final foodDetailProvider = Provider.family<FoodListing?, String>((ref, id) {
     return null;
   }
 });
+

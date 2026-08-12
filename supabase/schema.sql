@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     unit_price DECIMAL(10,2) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     payment_method TEXT NOT NULL DEFAULT 'pay_at_pickup', -- Invariant: 'pay_at_pickup' only
+    order_type TEXT CHECK (order_type IN ('dine_in', 'take_away') OR order_type IS NULL),
     status reservation_status NOT NULL DEFAULT 'confirmed',
     pickup_token TEXT NOT NULL,
     qr_payload TEXT NOT NULL,
@@ -87,6 +88,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- 6. Reports Table
 CREATE TABLE IF NOT EXISTS listing_reports (
@@ -154,14 +156,17 @@ CREATE POLICY "Admins manage all PG profiles" ON pg_profiles
         )
     );
 
--- Food Listings: Customers view active approved, Owners manage own, Admins manage all
+-- Food Listings: Customers view active approved listings with available portions before expiration
 CREATE POLICY "Customers view active approved listings" ON food_listings
     FOR SELECT USING (
-        status != 'removed' AND
+        status = 'active' AND
+        available_portions > 0 AND
+        pickup_end_time > NOW() AND
         pg_id IN (
             SELECT id FROM pg_profiles WHERE is_approved = true AND is_active = true
         )
     );
+
 CREATE POLICY "Owners view listings for their PGs" ON food_listings
     FOR SELECT USING (
         pg_id IN (SELECT id FROM pg_profiles WHERE owner_id = auth.uid())
@@ -302,7 +307,8 @@ FOR EACH ROW EXECUTE FUNCTION public.check_profile_updates();
 -- 12. Atomic Reservation RPC Function
 CREATE OR REPLACE FUNCTION public.reserve_food(
     p_listing_id UUID,
-    p_quantity INTEGER
+    p_quantity INTEGER,
+    p_order_type TEXT DEFAULT 'take_away'
 )
 RETURNS public.reservations AS $$
 DECLARE
@@ -327,6 +333,11 @@ BEGIN
     -- Verify quantity
     IF p_quantity <= 0 THEN
         RAISE EXCEPTION 'Quantity must be greater than zero';
+    END IF;
+
+    -- SERVER-SIDE VALIDATION: Validate order_type
+    IF p_order_type IS NULL OR p_order_type NOT IN ('dine_in', 'take_away') THEN
+        RAISE EXCEPTION 'Order type must be specified as dine_in or take_away';
     END IF;
 
     -- Lock food listing row and retrieve details
@@ -384,6 +395,7 @@ BEGIN
         unit_price,
         total_amount,
         payment_method,
+        order_type,
         status,
         pickup_token,
         qr_payload,
@@ -397,6 +409,7 @@ BEGIN
         v_listing.discounted_price,
         v_listing.discounted_price * p_quantity,
         'pay_at_pickup',
+        p_order_type,
         'confirmed'::reservation_status,
         md5(random()::text),
         v_readable_id || '|' || md5(random()::text),
@@ -407,6 +420,7 @@ BEGIN
     RETURN v_reservation;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
 
 -- 13. Enable Supabase Realtime for food_listings
 ALTER PUBLICATION supabase_realtime ADD TABLE public.food_listings;

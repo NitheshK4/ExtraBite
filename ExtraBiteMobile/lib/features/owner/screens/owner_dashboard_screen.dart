@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../models/food_listing.dart';
 import '../../../models/reservation.dart';
+import '../../../models/order_type.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/food_provider.dart';
@@ -29,14 +30,21 @@ class OwnerDashboardScreen extends ConsumerWidget {
       (listing) => listing.propertyName.toLowerCase() == ownerPropName || listing.propertyId == user.id,
     ).toList();
 
-    final pendingPickups = allReservations.where(
-      (r) => (r.propertyName.toLowerCase() == ownerPropName || ownerListings.any((l) => l.id == r.foodListingId)) &&
-          r.status == ReservationStatus.reserved,
-    ).length;
+    final ownerReservations = allReservations.where(
+      (r) => (r.propertyName.toLowerCase() == ownerPropName || ownerListings.any((l) => l.id == r.foodListingId)),
+    ).toList();
+
+    final activeOwnerReservations = ownerReservations.where(
+      (r) => r.status == ReservationStatus.reserved,
+    ).toList();
+
+    final dineInCount = activeOwnerReservations.where((r) => r.orderType == OrderType.dineIn).length;
+    final takeAwayCount = activeOwnerReservations.where((r) => r.orderType == OrderType.takeAway).length;
+    final legacyCount = activeOwnerReservations.where((r) => r.orderType == null).length;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(user.propertyName ?? 'Owner Dashboard'),
+        title: Text(user.propertyName ?? 'PG / Hostel Manager Dashboard'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.error),
@@ -83,7 +91,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            user.propertyName ?? 'PG / Hostel Manager',
+                            user.propertyName ?? 'PG / Hostel Manager & Staff',
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontWeight: FontWeight.w500,
@@ -106,7 +114,7 @@ class OwnerDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            // Metrics Summary
+            // Top Metrics Summary
             Row(
               children: [
                 Expanded(
@@ -121,13 +129,237 @@ class OwnerDashboardScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMetricCard(
                     title: 'Pending Pickups',
-                    value: '$pendingPickups',
+                    value: '${activeOwnerReservations.length}',
                     icon: Icons.qr_code_scanner,
                     color: AppColors.secondary,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+
+            // Dine In vs Take Away Fulfillment Breakdown Card
+            Card(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Fulfillment Type Breakdown (PG Staff Alert)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.indigo.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.indigo.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.restaurant, color: Colors.indigo.shade700, size: 24),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$dineInCount',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.indigo.shade900,
+                                      ),
+                                    ),
+                                    Text(
+                                      '🍽️ Dine In',
+                                      style: TextStyle(fontSize: 12, color: Colors.indigo.shade800),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.teal.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.takeout_dining, color: Colors.teal.shade700, size: 24),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$takeAwayCount',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.teal.shade900,
+                                      ),
+                                    ),
+                                    Text(
+                                      '🛍️ Take Away',
+                                      style: TextStyle(fontSize: 12, color: Colors.teal.shade800),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (legacyCount > 0) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '* Includes $legacyCount legacy order(s) without specified order option.',
+                        style: const TextStyle(fontSize: 11, color: AppColors.textLight, fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Section: Incoming Orders & Pickup Verification (PG/Hostel Owner & Staff Dashboard)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Incoming Orders & Pickups',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  '${activeOwnerReservations.length} Active',
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            if (activeOwnerReservations.isEmpty) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Center(
+                    child: Column(
+                      children: const [
+                        Icon(Icons.check_circle_outline, size: 40, color: AppColors.primary),
+                        SizedBox(height: 8),
+                        Text(
+                          'No pending pickups right now.',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'New student reservations will appear here with Dine In / Take Away instructions for mess staff.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: activeOwnerReservations.length,
+                itemBuilder: (context, index) {
+                  final res = activeOwnerReservations[index];
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Order #${res.id}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textLight),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildOwnerOrderTypeBadge(res.orderType),
+                              const Spacer(),
+                              Text(
+                                '₹${res.amountToCollect.toStringAsFixed(0)}',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            res.foodName,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Quantity: ${res.quantity} portion(s)',
+                                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                              ),
+                              const Text(
+                                'Pay at Pickup',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                              onPressed: () {
+                                ref.read(reservationProvider.notifier).completeReservation(res.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: AppColors.primary,
+                                    content: Text('✓ Verified pickup for Order #${res.id} (${res.orderTypeDisplayName}). Payment collected!'),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.check_circle_outline, size: 18),
+                              label: const Text('Verify & Confirm Pickup'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Section: Listing Controls
@@ -348,6 +580,57 @@ class OwnerDashboardScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildOwnerOrderTypeBadge(OrderType? orderType) {
+    if (orderType == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.grey.shade300, width: 0.5),
+        ),
+        child: const Text(
+          'Legacy',
+          style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+        ),
+      );
+    }
+
+    final isDineIn = orderType == OrderType.dineIn;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDineIn ? Colors.indigo.shade50 : Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isDineIn ? Colors.indigo.shade200 : Colors.teal.shade200,
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            orderType.icon,
+            size: 12,
+            color: isDineIn ? Colors.indigo.shade700 : Colors.teal.shade700,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            orderType.displayName,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isDineIn ? Colors.indigo.shade700 : Colors.teal.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   void _showAddMealSheet(BuildContext context, WidgetRef ref, UserModel user) {
     showModalBottomSheet(
       context: context,
@@ -497,12 +780,18 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
         ingredients: _isVeg ? ['Rice', 'Vegetables', 'Spices'] : ['Basmati Rice', 'Chicken', 'Spices'],
         allergens: const [],
         verificationStatus: 'verified',
+        status: 'active',
         latitude: lat,
         longitude: lon,
       );
 
+      debugPrint('[ExtraBite Debug] PG Owner Added Food Success: ID=${newListing.id}, Title="${newListing.foodName}", Property="${newListing.propertyName}" (PropertyID=${newListing.propertyId}), Portions=${newListing.availablePortions}, Status=${newListing.status}');
+
+
       widget.ref.read(foodProvider.notifier).addListing(newListing);
+      widget.ref.read(foodProvider.notifier).refreshListings();
       Navigator.pop(context);
+
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
