@@ -128,8 +128,6 @@ void main() {
 
 
     test('FoodListing model correctly serializes, deserializes, and defaults allowsDineIn', () {
-      final now = DateTime.now();
-
       // Case 1: Dine-in allowed listing
       final dineInMap = {
         'id': 'fl_dine',
