@@ -43,7 +43,7 @@ class PaymentService {
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    debugPrint('[PaymentService] Payment Error: [${response.code}] ${response.message}');
+    debugPrint('[PaymentService] Payment Cancelled/Error: [${response.code}] ${response.message}');
     _onFailure?.call(response);
   }
 
@@ -70,10 +70,11 @@ class PaymentService {
       'description': orderTitle,
       if (orderId != null && orderId.isNotEmpty) 'order_id': orderId,
       'currency': PaymentConfig.currency,
-      'timeout': 180, // 3 minutes timeout
+      'timeout': 300, // 5 minutes timeout
       'prefill': {
         'contact': customerContact ?? PaymentConfig.defaultContact,
         'email': customerEmail ?? PaymentConfig.defaultEmail,
+        'method': 'upi', // Pre-selects & prioritizes UPI payment tab in Razorpay Checkout
       },
       'theme': {
         'color': PaymentConfig.themeColorHex,
@@ -103,7 +104,7 @@ class PaymentService {
     }
   }
 
-  /// Helper to trigger payment success simulation directly for tests or fallback
+  /// Helper to trigger payment success simulation directly for test suites
   void triggerSimulatedSuccess({String? paymentId, String? orderId}) {
     final response = PaymentSuccessResponse(
       paymentId ?? 'pay_${DateTime.now().millisecondsSinceEpoch}',
@@ -112,6 +113,16 @@ class PaymentService {
       null,
     );
     _handlePaymentSuccess(response);
+  }
+
+  /// Helper to trigger payment cancellation/failure simulation directly for test suites
+  void triggerSimulatedFailure({int? code, String? message}) {
+    final response = PaymentFailureResponse(
+      code ?? Razorpay.PAYMENT_CANCELLED,
+      message ?? 'Payment cancelled by user',
+      null,
+    );
+    _handlePaymentError(response);
   }
 
   /// Cleans up listeners when widget disposes

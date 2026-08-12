@@ -12,10 +12,12 @@ import '../../../models/order_type.dart';
 
 class FoodDetailScreen extends ConsumerStatefulWidget {
   final String foodId;
+  final PaymentService? paymentService;
 
   const FoodDetailScreen({
     super.key,
     required this.foodId,
+    this.paymentService,
   });
 
   @override
@@ -37,7 +39,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _paymentService = PaymentService();
+    _paymentService = widget.paymentService ?? PaymentService();
     _paymentService.initialize(
       onSuccess: _handleRazorpaySuccess,
       onFailure: _handleRazorpayFailure,
@@ -58,24 +60,38 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     }
 
     if (_pendingFood != null && mounted) {
+      final food = _pendingFood!;
+      final portions = _pendingPortions;
+      final orderType = _pendingOrderType;
+      final paymentMethod = _pendingPaymentMethod;
       final txnId = response.paymentId ?? 'RZP_${DateTime.now().millisecondsSinceEpoch}';
+
+      _pendingFood = null;
+
       _processOnlinePaymentAndReserve(
         context,
-        _pendingFood!,
-        _pendingPortions,
-        _pendingOrderType,
-        '$_pendingPaymentMethod (Prepaid)',
+        food,
+        portions,
+        orderType,
+        '$paymentMethod (Prepaid)',
         txnId,
       );
     }
   }
 
   void _handleRazorpayFailure(PaymentFailureResponse response) {
+    if (_activeModalContext != null && Navigator.canPop(_activeModalContext!)) {
+      Navigator.pop(_activeModalContext!);
+      _activeModalContext = null;
+    }
+    _pendingFood = null;
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Payment cancelled or failed: ${response.message ?? "Transaction incomplete"}'),
+          content: Text('Payment cancelled / failed. Meal reservation was NOT placed.'),
           backgroundColor: Colors.red.shade700,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -735,8 +751,6 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     OrderType orderType,
   ) {
     final totalPayable = food.sellingPrice * portions;
-    bool isProcessing = false;
-    String txnRef = 'RZP_${DateTime.now().millisecondsSinceEpoch}';
 
     showModalBottomSheet(
       context: context,
@@ -746,377 +760,202 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (bottomSheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.88,
-              ),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.88,
+          ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Modal Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.payment, color: AppColors.primary, size: 24),
+                        SizedBox(width: 8),
+                        Text(
+                          'Razorpay Secure Checkout',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(bottomSheetContext),
+                    ),
+                  ],
                 ),
-                child: !isProcessing
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                const Divider(),
+                const SizedBox(height: 8),
+
+                // Prepaid Only Notice
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.bolt, color: AppColors.primary, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '⚡ Real-time Payment • Auto-Confirmed on Pickup',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Bill Breakdown
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildPriceRow('Surplus Item', food.foodName),
+                      _buildPriceRow('Order Option', '${orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${orderType.displayName}'),
+                      _buildPriceRow('Portions', '$portions portion(s) × ₹${food.sellingPrice.toStringAsFixed(0)}'),
+                      _buildPriceRow('Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Modal Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.payment, color: AppColors.primary, size: 24),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Razorpay Secure Checkout',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => Navigator.pop(bottomSheetContext),
-                              ),
-                            ],
-                          ),
-                          const Divider(),
-                          const SizedBox(height: 8),
-
-                          // Prepaid Only Notice
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.bolt, color: AppColors.primary, size: 20),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    '⚡ Real-time Payment • Auto-Confirmed on Pickup',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Bill Breakdown
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Column(
-                              children: [
-                                _buildPriceRow('Surplus Item', food.foodName),
-                                _buildPriceRow('Order Option', '${orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${orderType.displayName}'),
-                                _buildPriceRow('Portions', '$portions portion(s) × ₹${food.sellingPrice.toStringAsFixed(0)}'),
-                                _buildPriceRow('Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
-                                const Divider(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Total Payable Amount',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                    Text(
-                                      '₹${totalPayable.toStringAsFixed(0)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 20,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Razorpay Gateway Details Card
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.04),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1.5),
-                            ),
-                            child: const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.verified_user, size: 20, color: AppColors.primary),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Razorpay Payment Gateway',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  '• Instant UPI Intent (Google Pay, PhonePe, Paytm, CRED)\n• Credit / Debit Cards (Visa, Mastercard, RuPay)\n• NetBanking & Wallets',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    height: 1.5,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Pay Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: () {
-                                _pendingFood = food;
-                                _pendingPortions = portions;
-                                _pendingOrderType = orderType;
-                                _pendingPaymentMethod = 'Razorpay UPI & Cards';
-                                _activeModalContext = bottomSheetContext;
-
-                                txnRef = 'RZP_${DateTime.now().millisecondsSinceEpoch}';
-
-                                setModalState(() {
-                                  isProcessing = true;
-                                });
-
-                                // Launch native Razorpay checkout in background
-                                _paymentService.startPayment(
-                                  amount: totalPayable,
-                                  orderTitle: '${food.foodName} ($portions portion)',
-                                  customerContact: '9876543210',
-                                  customerEmail: 'customer@savoure.food',
-                                );
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.bolt, size: 20, color: Colors.white),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Pay ₹${totalPayable.toStringAsFixed(0)} via Razorpay',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Center(
-                            child: Text(
-                              '🔒 256-Bit SSL Encrypted • Powered by Razorpay',
-                              style: TextStyle(fontSize: 11, color: AppColors.textLight),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Modal Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.arrow_back),
-                                tooltip: 'Back to Bill',
-                                onPressed: () => setModalState(() => isProcessing = false),
-                              ),
-                              const Text(
-                                'Razorpay Payment Processing',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => Navigator.pop(bottomSheetContext),
-                              ),
-                            ],
-                          ),
-                          const Divider(),
-                          const SizedBox(height: 16),
-
-                          // Indicator & Status Icon
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryLight,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
                           const Text(
-                            'Awaiting Real-Time Payment',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                            textAlign: TextAlign.center,
+                            'Total Payable Amount',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
-                          const SizedBox(height: 8),
-
                           Text(
-                            'Complete ₹${totalPayable.toStringAsFixed(0)} payment in your UPI app (Google Pay, PhonePe, Paytm) or Razorpay portal.',
-                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Transaction Details Card
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Amount Payable', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                    Text(
-                                      '₹${totalPayable.toStringAsFixed(0)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 18,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Payment Gateway', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                    const Text('Razorpay (UPI / Card)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Transaction Ref', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                    Text(
-                                      txnRef,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textSecondary),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Meal / Item', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        '${food.foodName} ($portions portion)',
-                                        textAlign: TextAlign.end,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Confirm / Verify Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.pop(bottomSheetContext); // Close sheet
-                                _paymentService.triggerSimulatedSuccess(paymentId: txnRef);
-                              },
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    '✓ Complete & Confirm Payment',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          // Cancel Button
-                          TextButton(
-                            onPressed: () => Navigator.pop(bottomSheetContext),
-                            child: const Text(
-                              'Cancel Payment',
-                              style: TextStyle(color: AppColors.textSecondary),
+                            '₹${totalPayable.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 20,
+                              color: AppColors.primary,
                             ),
                           ),
                         ],
                       ),
-              ),
-            );
-          },
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Razorpay Gateway Details Card
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.04),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1.5),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.verified_user, size: 20, color: AppColors.primary),
+                          SizedBox(width: 8),
+                          Text(
+                            'Razorpay Payment Gateway',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '• Instant UPI Intent (Google Pay, PhonePe, Paytm, CRED, BHIM)\n• UPI ID / VPA & QR Code\n• Credit / Debit Cards (Visa, Mastercard, RuPay)\n• NetBanking & Wallets',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Pay Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(bottomSheetContext); // Close sheet immediately
+
+                      _pendingFood = food;
+                      _pendingPortions = portions;
+                      _pendingOrderType = orderType;
+                      _pendingPaymentMethod = 'Razorpay (Online UPI/Cards)';
+                      _activeModalContext = null;
+
+                      // Open native Razorpay Checkout
+                      _paymentService.startPayment(
+                        amount: totalPayable,
+                        orderTitle: '${food.foodName} ($portions portion)',
+                        customerContact: '9876543210',
+                        customerEmail: 'customer@savoure.food',
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.bolt, size: 20, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Pay ₹${totalPayable.toStringAsFixed(0)} via Razorpay',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Center(
+                  child: Text(
+                    '🔒 256-Bit SSL Encrypted • Powered by Razorpay',
+                    style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );

@@ -9,6 +9,7 @@ import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/core/location/location_state.dart';
+import 'package:extrabite_mobile/core/payment/payment_service.dart';
 import 'package:extrabite_mobile/features/customer/screens/food_detail_screen.dart';
 import 'mocks.dart';
 
@@ -403,6 +404,8 @@ void main() {
         longitude: 80.5005,
       );
 
+      final testPaymentService = PaymentService();
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -419,12 +422,14 @@ void main() {
               return notifier;
             }),
           ],
-          child: const MaterialApp(
-            home: FoodDetailScreen(foodId: 'item_online_pay'),
+          child: MaterialApp(
+            home: FoodDetailScreen(
+              foodId: 'item_online_pay',
+              paymentService: testPaymentService,
+            ),
           ),
         ),
       );
-
       await tester.pumpAndSettle();
 
       // Initially prompt to select order option
@@ -447,18 +452,34 @@ void main() {
       expect(find.text('Razorpay Payment Gateway'), findsOneWidget);
       expect(find.text('Pay ₹65 via Razorpay'), findsOneWidget);
 
-      // Tap Pay via Razorpay
+      // Tap Pay via Razorpay (which closes sheet & launches Razorpay)
       await tester.ensureVisible(find.text('Pay ₹65 via Razorpay'));
       await tester.tap(find.text('Pay ₹65 via Razorpay'));
+      await tester.pumpAndSettle();
+
+      // Payment Sheet is dismissed
+      expect(find.text('Razorpay Secure Checkout'), findsNothing);
+
+      // 1. Simulate Payment Cancellation -> verifies NO order is placed
+      testPaymentService.triggerSimulatedFailure(message: 'Customer cancelled payment');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Verify Razorpay Payment Processing Sheet
-      expect(find.text('Razorpay Payment Processing'), findsOneWidget);
-      expect(find.text('✓ Complete & Confirm Payment'), findsOneWidget);
+      expect(find.text('Payment cancelled / failed. Meal reservation was NOT placed.'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
 
-      // Tap to Complete & Confirm Payment
-      await tester.tap(find.text('✓ Complete & Confirm Payment'));
+      // Dismiss the SnackBar before re-opening checkout
+      ScaffoldMessenger.of(tester.element(find.byType(FoodDetailScreen))).hideCurrentSnackBar();
+      await tester.pumpAndSettle();
+
+      // 2. Re-open checkout and Simulate Payment Success
+      await tester.tap(find.text('Pay ₹65 Online & Reserve'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Pay ₹65 via Razorpay'));
+      await tester.tap(find.text('Pay ₹65 via Razorpay'));
+      await tester.pumpAndSettle();
+
+      testPaymentService.triggerSimulatedSuccess(paymentId: 'pay_test_biryani_success_999');
       await tester.pumpAndSettle();
 
       // Verify Confirmation Dialog with Pre-paid Online status
