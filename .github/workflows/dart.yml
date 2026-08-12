@@ -2,9 +2,9 @@ name: Flutter CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "nk" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "nk" ]
 
 jobs:
   build:
@@ -28,31 +28,26 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.2'
           channel: 'stable'
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
-        working-directory: ExtraBiteMobile
 
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
-        working-directory: ExtraBiteMobile
 
       - name: Run tests
         run: flutter test
-        working-directory: ExtraBiteMobile
 
       - name: Build Android APK
         run: flutter build apk --debug
-        working-directory: ExtraBiteMobile
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: extrabite-app-debug
-          path: ExtraBiteMobile/build/app/outputs/flutter-apk/app-debug.apk
+          path: ExtraBiteMobile/**/app-debug.apk
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -61,5 +56,6 @@ jobs:
           tag_name: v1.0.0
           name: "ExtraBite App Release v1.0.0"
           body: "Official Android APK build for ExtraBite Mobile Application."
-          files: ExtraBiteMobile/build/app/outputs/flutter-apk/app-debug.apk
+          files: ExtraBiteMobile/**/app-debug.apk
+
 
