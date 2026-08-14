@@ -55,3 +55,8 @@ app.*.map.json
 # Web / Node
 node_modules/
 .env
+
+# Local developer Supabase credentials (never commit)
+ExtraBiteMobile/.env.local
+ExtraBiteMobile/dart-defines.json
+ExtraBiteMobile/run_dev.bat
