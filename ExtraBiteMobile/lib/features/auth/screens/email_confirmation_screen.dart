@@ -102,6 +102,11 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
               height: 22,
               width: 22,
               fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.eco,
+                color: AppColors.primary,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 8),
             Text(

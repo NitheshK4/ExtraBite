@@ -94,6 +94,11 @@ class _CustomerAuthScreenState extends ConsumerState<CustomerAuthScreen> {
                 height: 24,
                 width: 24,
                 fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.eco,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 8),
               Text(

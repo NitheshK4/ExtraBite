@@ -32,6 +32,11 @@ class LocationHeader extends ConsumerWidget {
               height: 36,
               width: 36,
               fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.eco,
+                color: AppColors.primary,
+                size: 26,
+              ),
             ),
           ),
 

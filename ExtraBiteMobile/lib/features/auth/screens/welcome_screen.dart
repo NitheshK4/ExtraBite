@@ -31,6 +31,11 @@ class WelcomeScreen extends ConsumerWidget {
                       height: 32,
                       width: 32,
                       fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.eco,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -126,6 +131,11 @@ class WelcomeScreen extends ConsumerWidget {
                                     height: 56,
                                     width: 56,
                                     fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.restaurant_menu,
+                                      size: 48,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 12),

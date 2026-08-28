@@ -158,6 +158,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           child: Image.asset(
             'assets/branding/extrabite_logo.png',
             fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.admin_panel_settings,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
         ),
         title: const Text(

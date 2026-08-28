@@ -68,6 +68,11 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
           child: Image.asset(
             'assets/branding/extrabite_logo.png',
             fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.storefront,
+              color: AppColors.secondary,
+              size: 24,
+            ),
           ),
         ),
         title: Text(

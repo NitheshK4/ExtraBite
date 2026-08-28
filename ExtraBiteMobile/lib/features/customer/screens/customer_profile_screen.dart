@@ -105,6 +105,11 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     height: 32,
                     width: 32,
                     fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.eco,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(

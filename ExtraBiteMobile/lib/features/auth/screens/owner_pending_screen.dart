@@ -31,6 +31,11 @@ class OwnerPendingScreen extends ConsumerWidget {
                       height: 28,
                       width: 28,
                       fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.eco,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Text(

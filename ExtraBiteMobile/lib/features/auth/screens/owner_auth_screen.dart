@@ -96,6 +96,11 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                 height: 24,
                 width: 24,
                 fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.storefront,
+                  color: AppColors.secondary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
