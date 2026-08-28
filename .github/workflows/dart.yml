@@ -2,7 +2,7 @@ name: ExtraBite CI/CD
 
 on:
   push:
-    branches: [ "main", "**" ]
+    branches: [ "**" ]
     tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
@@ -51,6 +51,7 @@ jobs:
         with:
           name: extrabite-mobile-release-apk
           path: ExtraBiteMobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
 
   # =========================================================================
   # Admin Web CI (Web Build & Tests)
@@ -89,6 +90,7 @@ jobs:
         with:
           name: extrabite-admin-web-build
           path: ExtraBiteAdmin/build/web/
+          if-no-files-found: error
 
   # =========================================================================
   # Automated Release (on Git Tag)
@@ -114,6 +116,7 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           name: "ExtraBite ${{ github.ref_name }}"
           body: |
             ## ExtraBite Release ${{ github.ref_name }}
