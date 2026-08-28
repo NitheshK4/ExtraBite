@@ -257,32 +257,35 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.outline),
       ),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
-            title: Text('Phone Number', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
-            subtitle: Text(
-              phone != null && phone.isNotEmpty ? phone : '+91 (Not Provided)',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
+              title: Text('Phone Number', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              subtitle: Text(
+                phone != null && phone.isNotEmpty ? phone : '+91 (Not Provided)',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+              ),
             ),
-          ),
-          const Divider(color: AppColors.outline, height: 1),
-          ListTile(
-            leading: Icon(
-              isVerified ? Icons.verified_user : Icons.gpp_maybe_outlined,
-              color: isVerified ? AppColors.vegColor : AppColors.secondary,
+            const Divider(color: AppColors.outline, height: 1),
+            ListTile(
+              leading: Icon(
+                isVerified ? Icons.verified_user : Icons.gpp_maybe_outlined,
+                color: isVerified ? AppColors.vegColor : AppColors.secondary,
+              ),
+              title: Text('Account Status', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              subtitle: Text(
+                isVerified ? 'Verified Community Account' : 'Standard Member',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+              ),
+              trailing: isVerified
+                  ? const Icon(Icons.check_circle, color: AppColors.vegColor, size: 20)
+                  : null,
             ),
-            title: Text('Account Status', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
-            subtitle: Text(
-              isVerified ? 'Verified Community Account' : 'Standard Member',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
-            ),
-            trailing: isVerified
-                ? const Icon(Icons.check_circle, color: AppColors.vegColor, size: 20)
-                : null,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -294,30 +297,33 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.outline),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Text(
-              'Location & Campus Area',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+              child: Text(
+                'Location & Campus Area',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.location_on_outlined, color: AppColors.primary),
-            title: Text(currentAddress, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-            subtitle: Text('Tap to change default search area', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-            trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary, size: 20),
-            onTap: () {
-              _showLocationPicker(context);
-            },
-          ),
-        ],
+            ListTile(
+              leading: const Icon(Icons.location_on_outlined, color: AppColors.primary),
+              title: Text(currentAddress, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Tap to change default search area', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary, size: 20),
+              onTap: () {
+                _showLocationPicker(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -329,34 +335,37 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.outline),
       ),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.report_problem_outlined, color: AppColors.error),
-            title: Text('Food Safety Incident Reporting', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-            subtitle: Text('Report concerns about food quality directly to admins.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-            trailing: const Icon(Icons.chevron_right, size: 20),
-            onTap: () {
-              _showSafetyReportDialog(context);
-            },
-          ),
-          const Divider(color: AppColors.outline, height: 1),
-          ListTile(
-            leading: const Icon(Icons.help_outline, color: AppColors.primary),
-            title: Text('Help & Support FAQ', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-            subtitle: Text('Learn how pickup reservation and physical payments work.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-            trailing: const Icon(Icons.chevron_right, size: 20),
-            onTap: () {
-              _showFAQDialog(context);
-            },
-          ),
-          const Divider(color: AppColors.outline, height: 1),
-          ListTile(
-            leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
-            title: Text('About ExtraBite', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-            subtitle: Text('Version 1.0.0 • Community Surplus Food Marketplace', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-          ),
-        ],
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.report_problem_outlined, color: AppColors.error),
+              title: Text('Food Safety Incident Reporting', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Report concerns about food quality directly to admins.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () {
+                _showSafetyReportDialog(context);
+              },
+            ),
+            const Divider(color: AppColors.outline, height: 1),
+            ListTile(
+              leading: const Icon(Icons.help_outline, color: AppColors.primary),
+              title: Text('Help & Support FAQ', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Learn how pickup reservation and physical payments work.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () {
+                _showFAQDialog(context);
+              },
+            ),
+            const Divider(color: AppColors.outline, height: 1),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
+              title: Text('About ExtraBite', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Version 1.0.0 • Community Surplus Food Marketplace', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+            ),
+          ],
+        ),
       ),
     );
   }

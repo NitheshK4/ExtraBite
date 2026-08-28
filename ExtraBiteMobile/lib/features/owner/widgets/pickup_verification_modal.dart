@@ -234,23 +234,26 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.outline),
                   ),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: AppColors.primaryLight,
-                      child: Icon(Icons.qr_code, color: AppColors.primary),
-                    ),
-                    title: Text(r.foodName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14)),
-                    subtitle: Text(
-                      '#${r.id} • ${r.quantity} portion(s) • ₹${r.amountToCollect.toStringAsFixed(0)}',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                    trailing: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: AppColors.primaryLight,
+                        child: Icon(Icons.qr_code, color: AppColors.primary),
                       ),
-                      onPressed: () => _completePickup(r),
-                      child: Text('Verify', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12)),
+                      title: Text(r.foodName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14)),
+                      subtitle: Text(
+                        '#${r.id} • ${r.quantity} portion(s) • ₹${r.amountToCollect.toStringAsFixed(0)}',
+                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                      trailing: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        ),
+                        onPressed: () => _completePickup(r),
+                        child: Text('Verify', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12)),
+                      ),
                     ),
                   ),
                 );

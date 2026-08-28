@@ -287,53 +287,56 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.outline),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    res.foodName,
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+          child: Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      res.foodName,
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
                   ),
-                ),
-                Text(
-                  '₹${res.amountToCollect.toStringAsFixed(0)}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: isCompleted ? AppColors.primary : AppColors.textSecondary,
+                  Text(
+                    '₹${res.amountToCollect.toStringAsFixed(0)}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: isCompleted ? AppColors.primary : AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(res.propertyName, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
-                const SizedBox(height: 8),
-                Text(
-                  dateFormat.format(res.reservedAt),
-                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textLight),
-                ),
-              ],
-            ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isCompleted 
-                    ? AppColors.primaryLight 
-                    : AppColors.errorLight,
-                borderRadius: BorderRadius.circular(9999),
+                ],
               ),
-              child: Text(
-                isCompleted ? 'Completed' : 'Cancelled',
-                style: GoogleFonts.inter(
-                  color: isCompleted ? AppColors.primary : AppColors.error,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(res.propertyName, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  Text(
+                    dateFormat.format(res.reservedAt),
+                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textLight),
+                  ),
+                ],
+              ),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isCompleted 
+                      ? AppColors.primaryLight 
+                      : AppColors.errorLight,
+                  borderRadius: BorderRadius.circular(9999),
+                ),
+                child: Text(
+                  isCompleted ? 'Completed' : 'Cancelled',
+                  style: GoogleFonts.inter(
+                    color: isCompleted ? AppColors.primary : AppColors.error,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
