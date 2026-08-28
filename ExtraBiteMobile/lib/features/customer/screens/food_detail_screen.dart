@@ -2,22 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../app/theme/app_colors.dart';
-import '../../../core/payment/payment_service.dart';
 import '../../../providers/food_provider.dart';
 import '../../../providers/reservation_provider.dart';
 import '../../../models/food_listing.dart';
-import '../../../models/order_type.dart';
 
 class FoodDetailScreen extends ConsumerStatefulWidget {
   final String foodId;
-  final PaymentService? paymentService;
 
   const FoodDetailScreen({
     super.key,
     required this.foodId,
-    this.paymentService,
   });
 
   @override
@@ -26,86 +23,7 @@ class FoodDetailScreen extends ConsumerStatefulWidget {
 
 class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   int _portionsToReserve = 1;
-  OrderType? _selectedOrderType;
-  bool _showOrderTypeValidationError = false;
-
-  late final PaymentService _paymentService;
-  BuildContext? _activeModalContext;
-  FoodListing? _pendingFood;
-  int _pendingPortions = 1;
-  OrderType _pendingOrderType = OrderType.takeAway;
-  String _pendingPaymentMethod = 'Razorpay UPI & Cards';
-
-  @override
-  void initState() {
-    super.initState();
-    _paymentService = widget.paymentService ?? PaymentService();
-    _paymentService.initialize(
-      onSuccess: _handleRazorpaySuccess,
-      onFailure: _handleRazorpayFailure,
-      onExternalWallet: _handleRazorpayWallet,
-    );
-  }
-
-  @override
-  void dispose() {
-    _paymentService.dispose();
-    super.dispose();
-  }
-
-  void _handleRazorpaySuccess(PaymentSuccessResponse response) {
-    if (_activeModalContext != null && Navigator.canPop(_activeModalContext!)) {
-      Navigator.pop(_activeModalContext!);
-      _activeModalContext = null;
-    }
-
-    if (_pendingFood != null && mounted) {
-      final food = _pendingFood!;
-      final portions = _pendingPortions;
-      final orderType = _pendingOrderType;
-      final paymentMethod = _pendingPaymentMethod;
-      final txnId = response.paymentId ?? 'RZP_${DateTime.now().millisecondsSinceEpoch}';
-
-      _pendingFood = null;
-
-      _processOnlinePaymentAndReserve(
-        context,
-        food,
-        portions,
-        orderType,
-        '$paymentMethod (Prepaid)',
-        txnId,
-      );
-    }
-  }
-
-  void _handleRazorpayFailure(PaymentFailureResponse response) {
-    if (_activeModalContext != null && Navigator.canPop(_activeModalContext!)) {
-      Navigator.pop(_activeModalContext!);
-      _activeModalContext = null;
-    }
-    _pendingFood = null;
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Payment cancelled / failed. Meal reservation was NOT placed.'),
-          backgroundColor: Colors.red.shade700,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
-  }
-
-  void _handleRazorpayWallet(ExternalWalletResponse response) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Redirected to external wallet: ${response.walletName}'),
-        ),
-      );
-    }
-  }
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -113,867 +31,312 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     
     if (food == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Error')),
-        body: const Center(child: Text('Surplus food listing not found.')),
+        appBar: AppBar(title: const Text('Meal Listing')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.search_off, size: 64, color: AppColors.textLight),
+              const SizedBox(height: 16),
+              Text(
+                'Surplus meal listing not found.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.go('/customer/home'),
+                child: const Text('Back to Home Feed'),
+              ),
+            ],
+          ),
+        ),
       );
-    }
-
-    // If listing does not allow Dine In, enforce Take Away selection
-    if (!food.allowsDineIn && _selectedOrderType == OrderType.dineIn) {
-      _selectedOrderType = OrderType.takeAway;
     }
 
     final formatTime = DateFormat('hh:mm a');
     final pickupWindowStr = '${formatTime.format(food.pickupStarts)} - ${formatTime.format(food.pickupEnds)}';
-    
+    final savingsPerPortion = (food.originalPrice - food.sellingPrice).clamp(0.0, double.infinity).toDouble();
+    final remainingMinutes = food.pickupEnds.difference(DateTime.now()).inMinutes;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(food.foodName),
-      ),
-      body: Column(
+      backgroundColor: AppColors.background,
+      body: Stack(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image/Icon Banner Area
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withOpacity(0.15),
-                          AppColors.primaryLight,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        food.isVegetarian ? Icons.eco : Icons.kebab_dining,
-                        size: 80,
-                        color: food.isVegetarian ? AppColors.vegColor : AppColors.nonVegColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Food Title + Veg tag
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          food.foodName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: food.isVegetarian ? AppColors.vegColor : AppColors.nonVegColor,
-                          ),
-                        ),
-                        child: Text(
-                          food.isVegetarian ? 'VEG' : 'NON-VEG',
-                          style: TextStyle(
-                            color: food.isVegetarian ? AppColors.vegColor : AppColors.nonVegColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Pickup Location & Property Box
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.business, size: 18, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                food.propertyName,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.location_on, size: 16, color: AppColors.secondary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                food.locationAddress,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.navigation, size: 14, color: AppColors.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${food.distanceKm.toStringAsFixed(1)} km away',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
-                            ),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.restaurant, size: 14, color: AppColors.textLight),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Prepared ${DateFormat('hh:mm a').format(food.preparedTime)}',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Dining Option Information Card
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: food.allowsDineIn ? Colors.teal.shade50 : Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: food.allowsDineIn ? Colors.teal.shade200 : Colors.amber.shade300,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          food.allowsDineIn ? Icons.restaurant : Icons.takeout_dining,
-                          color: food.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                food.allowsDineIn ? '🍽️ Dine-in & Takeaway Available' : '🛍️ Takeaway / Parcel Only',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: food.allowsDineIn ? Colors.teal.shade900 : Colors.deepOrange.shade900,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                food.allowsDineIn
-                                    ? 'Students can sit and eat inside ${food.propertyName} mess, or take packed parcels.'
-                                    : '${food.propertyName} does not offer dine-in seating. Only takeaway parcels are allowed.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: food.allowsDineIn ? Colors.teal.shade800 : Colors.deepOrange.shade800,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  const Divider(color: AppColors.border),
-                  const SizedBox(height: 16),
-
-                  // Description
-                  const Text(
-                    'Description',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    food.description,
-                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Ingredients & Allergens
-                  if (food.ingredients.isNotEmpty) ...[
-                    const Text(
-                      'Ingredients',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: food.ingredients.map((ing) => Chip(
-                        label: Text(ing),
-                        backgroundColor: Colors.grey.shade50,
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (food.allergens.isNotEmpty) ...[
-                    const Text(
-                      'Allergen Warnings',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: food.allergens.map((all) => Chip(
-                        label: Text(all, style: const TextStyle(color: AppColors.error)),
-                        backgroundColor: AppColors.error.withOpacity(0.05),
-                        side: const BorderSide(color: AppColors.error, width: 0.5),
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  const Divider(color: AppColors.border),
-                  const SizedBox(height: 16),
-
-                  // Pickup Window banner
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.lock_clock, color: AppColors.primary, size: 28),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Surplus Food Pickup Window',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                pickupWindowStr,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          // Sticky Bottom Reservation Panel
-          _buildReservationPanel(context, food),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReservationPanel(BuildContext context, FoodListing food) {
-    final available = food.availablePortions;
-    final isSoldOut = available <= 0;
-
-    // Dynamically clamp portion count to match availability
-    int displayPortions = _portionsToReserve;
-    if (isSoldOut) {
-      displayPortions = 0;
-    } else if (displayPortions > available) {
-      displayPortions = available;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Mandatory Order Option Selection (Dine In vs Take Away)
-          Row(
-            children: [
-              const Text(
-                'Select Order Option *',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (_showOrderTypeValidationError && _selectedOrderType == null)
-                const Text(
-                  '(Selection Required)',
-                  style: TextStyle(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.bold),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildOrderTypeChoiceCard(
-                  type: OrderType.dineIn,
-                  label: 'Dine In',
-                  sublabel: food.allowsDineIn ? 'Eat at PG Mess' : 'Not Allowed by PG',
-                  icon: Icons.restaurant,
-                  isEnabled: food.allowsDineIn,
-                  disabledReason: '${food.propertyName} only allows Takeaway parcels.',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildOrderTypeChoiceCard(
-                  type: OrderType.takeAway,
-                  label: 'Take Away',
-                  sublabel: 'Packed Parcel',
-                  icon: Icons.takeout_dining,
-                  isEnabled: true,
-                ),
-              ),
-            ],
-          ),
-          if (!food.allowsDineIn) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.shade300, width: 0.8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 14, color: Colors.deepOrange.shade800),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Notice: Dine-in not available at ${food.propertyName}. Parcel pickup only.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.deepOrange.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-
-          // Quantity selection row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Select Portions',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: !isSoldOut && _portionsToReserve > 1
-                        ? () => setState(() => _portionsToReserve--)
-                        : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text(
-                    '$displayPortions',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    onPressed: !isSoldOut && _portionsToReserve < available
-                        ? () => setState(() => _portionsToReserve++)
-                        : null,
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Total Price + CTA Row
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Total Price', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '₹${(food.sellingPrice * displayPortions).toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: food.isExpired || isSoldOut
-                      ? null
-                      : () {
-                          _triggerReservation(context, food);
-                        },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: Text(
-                    food.isExpired
-                        ? 'Pickup Expired'
-                        : (isSoldOut
-                            ? 'Sold Out'
-                            : (_selectedOrderType == null
-                                ? 'Select Order Option'
-                                : 'Pay ₹${(food.sellingPrice * displayPortions).toStringAsFixed(0)} Online & Reserve')),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderTypeChoiceCard({
-    required OrderType type,
-    required String label,
-    required String sublabel,
-    required IconData icon,
-    bool isEnabled = true,
-    String? disabledReason,
-  }) {
-    final isSelected = _selectedOrderType == type;
-
-    return Opacity(
-      opacity: isEnabled ? 1.0 : 0.45,
-      child: InkWell(
-        onTap: isEnabled
-            ? () {
-                setState(() {
-                  _selectedOrderType = type;
-                  _showOrderTypeValidationError = false;
-                });
-              }
-            : () {
-                ScaffoldMessenger.of(context).clearSnackBars();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.deepOrange.shade800,
-                    behavior: SnackBarBehavior.floating,
-                    content: Text(disabledReason ?? 'This option is not offered for this meal.'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary.withOpacity(0.08)
-                : (isEnabled ? Colors.grey.shade50 : Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : (_showOrderTypeValidationError ? AppColors.error : AppColors.border),
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: isSelected
-                    ? AppColors.primary
-                    : (isEnabled ? AppColors.textSecondary : Colors.grey.shade400),
-                size: 22,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected
-                            ? AppColors.primary
-                            : (isEnabled ? AppColors.textPrimary : Colors.grey.shade500),
-                      ),
-                    ),
-                    Text(
-                      sublabel,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isSelected
-                            ? AppColors.primary.withOpacity(0.8)
-                            : (isEnabled ? AppColors.textLight : Colors.red.shade400),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                const Icon(
-                  Icons.check_circle,
-                  color: AppColors.primary,
-                  size: 18,
-                )
-              else if (!isEnabled)
-                Icon(
-                  Icons.block,
-                  color: Colors.grey.shade400,
-                  size: 16,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _triggerReservation(BuildContext context, FoodListing food) {
-    // MANDATORY VALIDATION: Check if OrderType (Dine In / Take Away) is selected
-    if (_selectedOrderType == null) {
-      setState(() {
-        _showOrderTypeValidationError = true;
-      });
-
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          content: Row(
-            children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Please select Dine In or Take Away before completing your pre-payment.',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-      return;
-    }
-
-    final available = food.availablePortions;
-    if (available <= 0) return; // Prevent zero-portions reservation
-
-    int portions = _portionsToReserve;
-    if (portions > available) {
-      portions = available;
-    }
-    if (portions <= 0) return;
-
-    _showOnlinePaymentSheet(context, food, portions, _selectedOrderType!);
-  }
-
-  void _showOnlinePaymentSheet(
-    BuildContext context,
-    FoodListing food,
-    int portions,
-    OrderType orderType,
-  ) {
-    final totalPayable = food.sellingPrice * portions;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (bottomSheetContext) {
-        return ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.88,
-          ),
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 16,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            ),
+          // Scrollable Content
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 140),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Modal Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.payment, color: AppColors.primary, size: 24),
-                        SizedBox(width: 8),
+                // 1. Hero Image Header (300px with bottom radius & floating buttons)
+                _buildHeroHeader(food),
+
+                // 2. Main Content Canvas
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Dietary Badge & Title
+                      _buildDietaryTag(food.isVegetarian),
+                      const SizedBox(height: 8),
+                      Text(
+                        food.foodName,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Price & Savings Card
+                      _buildPricingCard(food, savingsPerPortion),
+                      const SizedBox(height: 14),
+
+                      // Urgency & Pickup Window Card
+                      _buildUrgencyCard(food, pickupWindowStr, remainingMinutes),
+                      const SizedBox(height: 16),
+
+                      // PG Property Card
+                      _buildPropertyCard(food),
+                      const SizedBox(height: 16),
+
+                      // Description
+                      if (food.description.isNotEmpty) ...[
                         Text(
-                          'Razorpay Secure Checkout',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          'Meal Details',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(bottomSheetContext),
-                    ),
-                  ],
-                ),
-                const Divider(),
-                const SizedBox(height: 8),
-
-                // Prepaid Only Notice
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.bolt, color: AppColors.primary, size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '⚡ Real-time Payment • Auto-Confirmed on Pickup',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Bill Breakdown
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildPriceRow('Surplus Item', food.foodName),
-                      _buildPriceRow('Order Option', '${orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${orderType.displayName}'),
-                      _buildPriceRow('Portions', '$portions portion(s) × ₹${food.sellingPrice.toStringAsFixed(0)}'),
-                      _buildPriceRow('Platform & Pickup Fee', 'FREE (₹0)', isFree: true),
-                      const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Payable Amount',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          Text(
-                            '₹${totalPayable.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 20,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Razorpay Gateway Details Card
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.04),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1.5),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.verified_user, size: 20, color: AppColors.primary),
-                          SizedBox(width: 8),
-                          Text(
-                            'Razorpay Payment Gateway',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '• Instant UPI Intent (Google Pay, PhonePe, Paytm, CRED, BHIM)\n• UPI ID / VPA & QR Code\n• Credit / Debit Cards (Visa, Mastercard, RuPay)\n• NetBanking & Wallets',
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.5,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Pay Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(bottomSheetContext); // Close sheet immediately
-
-                      _pendingFood = food;
-                      _pendingPortions = portions;
-                      _pendingOrderType = orderType;
-                      _pendingPaymentMethod = 'Razorpay (Online UPI/Cards)';
-                      _activeModalContext = null;
-
-                      // Open native Razorpay Checkout
-                      _paymentService.startPayment(
-                        amount: totalPayable,
-                        orderTitle: '${food.foodName} ($portions portion)',
-                        customerContact: '9876543210',
-                        customerEmail: 'customer@savoure.food',
-                      );
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.bolt, size: 20, color: Colors.white),
-                        const SizedBox(width: 8),
+                        const SizedBox(height: 6),
                         Text(
-                          'Pay ₹${totalPayable.toStringAsFixed(0)} via Razorpay',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          food.description,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
                         ),
+                        const SizedBox(height: 16),
                       ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Center(
-                  child: Text(
-                    '🔒 256-Bit SSL Encrypted • Powered by Razorpay',
-                    style: TextStyle(fontSize: 11, color: AppColors.textLight),
+
+                      // Ingredients & Allergens
+                      if (food.ingredients.isNotEmpty) ...[
+                        Text(
+                          'Ingredients',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: food.ingredients.map((ing) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(9999),
+                              border: Border.all(color: AppColors.outline),
+                            ),
+                            child: Text(
+                              ing,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      if (food.allergens.isNotEmpty) ...[
+                        Text(
+                          'Allergen Warnings',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: food.allergens.map((all) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorLight,
+                              borderRadius: BorderRadius.circular(9999),
+                              border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.error),
+                                const SizedBox(width: 4),
+                                Text(
+                                  all,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+
+          // Sticky Bottom Bar with Portion Stepper & Reserve Button
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildStickyBottomBar(food),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildPriceRow(String label, String value, {bool isFree = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.0),
+  Widget _buildHeroHeader(FoodListing food) {
+    return Stack(
+      children: [
+        Container(
+          height: 280,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primaryLight,
+                AppColors.surfaceDim,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: food.imageUrl != null && food.imageUrl!.isNotEmpty
+              ? Image.network(
+                  food.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      food.isVegetarian ? Icons.eco : Icons.kebab_dining,
+                      size: 80,
+                      color: food.isVegetarian ? AppColors.vegColor.withOpacity(0.5) : AppColors.nonVegColor.withOpacity(0.5),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Icon(
+                    food.isVegetarian ? Icons.eco : Icons.kebab_dining,
+                    size: 80,
+                    color: food.isVegetarian ? AppColors.vegColor.withOpacity(0.5) : AppColors.nonVegColor.withOpacity(0.5),
+                  ),
+                ),
+        ),
+
+        // Gradient overlay for back button contrast
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ),
+
+        // Floating Back Button
+        Positioned(
+          top: 48,
+          left: 16,
+          child: CircleAvatar(
+            backgroundColor: AppColors.surface,
+            radius: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 20),
+              onPressed: () => context.pop(),
+            ),
+          ),
+        ),
+
+        // Floating Share Button
+        Positioned(
+          top: 48,
+          right: 16,
+          child: CircleAvatar(
+            backgroundColor: AppColors.surface,
+            radius: 20,
+            child: IconButton(
+              icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary, size: 20),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Meal link copied to clipboard!')),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDietaryTag(bool isVeg) {
+    final color = isVeg ? AppColors.vegColor : AppColors.nonVegColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 6),
           Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: isFree ? AppColors.primary : AppColors.textPrimary,
+            isVeg ? '100% VEGETARIAN' : 'NON-VEGETARIAN',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -981,78 +344,184 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 
-  void _processOnlinePaymentAndReserve(
-    BuildContext context,
-    FoodListing food,
-    int portions,
-    OrderType orderType,
-    String paymentMethod,
-    String txnRef,
-  ) {
-    // Decrement available portions in real-time
-    ref.read(foodProvider.notifier).decrementPortions(food.id, portions);
-
-    // Call state notifier to add pre-paid reservation state
-    final reservation = ref.read(reservationProvider.notifier).createReservation(
-      listing: food,
-      quantity: portions,
-      orderType: orderType,
-      paymentMethod: paymentMethod,
-    );
-
-    // Show Confirmed Pre-paid Reservation Modal / Invoice
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_outline, color: AppColors.primary),
-            SizedBox(width: 8),
-            Expanded(child: Text('Payment & Reservation Confirmed')),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildPricingCard(FoodListing food, double savings) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Your UPI pre-payment was verified and surplus meal has been reserved! Present your pickup QR / confirmation code at the property to collect your meal.',
-                style: TextStyle(height: 1.4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '₹${food.sellingPrice.toStringAsFixed(0)}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '₹${food.originalPrice.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      decoration: TextDecoration.lineThrough,
+                      color: AppColors.textLight,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              _buildDialogRow('Order Reference', '#${reservation.id}'),
-              _buildDialogRow('UPI Txn ID', txnRef),
-              _buildDialogRow('Reserved Item', reservation.foodName),
-              _buildDialogRow('Order Type', '${reservation.orderType == OrderType.dineIn ? "🍽️" : "🛍️"} ${reservation.orderTypeDisplayName}'),
-              _buildDialogRow('Quantity', '${reservation.quantity} portion(s)'),
-              _buildDialogRow('Amount Paid', '₹${reservation.amountPaid.toStringAsFixed(0)} (Paid Online)'),
-              _buildDialogRow('Payment Mode', reservation.paymentMethod),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+              const SizedBox(height: 2),
+              Text(
+                'Per Portion • Pay at Pickup',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              ),
+            ],
+          ),
+          if (savings > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.secondaryLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'SAVE',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  Text(
+                    '₹${savings.toStringAsFixed(0)}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUrgencyCard(FoodListing food, String pickupWindowStr, int remainingMinutes) {
+    final isUrgent = remainingMinutes <= 60 && remainingMinutes > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isUrgent ? AppColors.errorLight : AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isUrgent ? AppColors.error.withOpacity(0.3) : AppColors.outlineVariant,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.access_time_rounded,
+            color: isUrgent ? AppColors.error : AppColors.secondary,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pickup Window: $pickupWindowStr',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  remainingMinutes > 0
+                      ? '$remainingMinutes minutes remaining before pickup closes'
+                      : 'Pickup window ended',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isUrgent ? AppColors.error : AppColors.textSecondary,
+                    fontWeight: isUrgent ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPropertyCard(FoodListing food) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.storefront, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.verified, size: 18, color: AppColors.primary),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '✓ Pre-paid Online (Zero Payment on Pickup)',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                    Row(
+                      children: [
+                        Text(
+                          food.propertyName,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
+                        const SizedBox(width: 6),
+                        const Icon(Icons.verified, color: AppColors.tertiary, size: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'FSSAI Registered Hostel / Mess',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.tertiary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1060,18 +529,303 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              context.go('/customer/reservations'); // Navigate to active list
-            },
-            child: const Text('View Active Reservations & QR'),
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.outline, height: 1),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  food.locationAddress,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${food.distanceKm.toStringAsFixed(1)} km',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildStickyBottomBar(FoodListing food) {
+    final maxPortions = food.availablePortions.clamp(1, 10);
+    final totalPayable = food.sellingPrice * _portionsToReserve;
+    final isSoldOut = food.availablePortions <= 0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x18000000),
+            blurRadius: 16,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Portions Stepper Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Portions to Reserve',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    isSoldOut ? 'Sold out' : '${food.availablePortions} portions left',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: isSoldOut ? AppColors.error : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove, size: 18),
+                      onPressed: _portionsToReserve > 1 && !isSoldOut
+                          ? () => setState(() => _portionsToReserve--)
+                          : null,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        '${isSoldOut ? 0 : _portionsToReserve}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add, size: 18),
+                      onPressed: _portionsToReserve < maxPortions && !isSoldOut
+                          ? () => setState(() => _portionsToReserve++)
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Total Price & Reserve Button
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total to Pay at Pickup',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '₹${totalPayable.toStringAsFixed(0)}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: isSoldOut || _isLoading
+                      ? null
+                      : () => _handleReserve(context, food),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        )
+                      : Text(
+                          isSoldOut ? 'Sold Out' : 'Reserve & Get Pass',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleReserve(BuildContext context, FoodListing food) async {
+    setState(() => _isLoading = true);
+    try {
+      final reservation = await ref.read(reservationProvider.notifier).createReservation(
+        listing: food,
+        quantity: _portionsToReserve,
+      );
+
+      // Decrement portion count in local state
+      ref.read(foodProvider.notifier).decrementPortions(food.id, _portionsToReserve);
+
+      if (!mounted || !context.mounted) return;
+
+      // Show confirmation dialog with direct pass navigation
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.vegColor, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                'Meal Reserved!',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your surplus food has been successfully reserved! Present your digital pass at pickup to complete your purchase.',
+                style: GoogleFonts.inter(height: 1.4, fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 14),
+              const Divider(color: AppColors.outline),
+              const SizedBox(height: 6),
+              _buildDialogRow('Order Reference', '#${reservation.id.substring(0, reservation.id.length > 8 ? 8 : reservation.id.length).toUpperCase()}'),
+              _buildDialogRow('Reserved Item', reservation.foodName),
+              _buildDialogRow('Quantity', '${reservation.quantity} portion(s)'),
+              _buildDialogRow('Amount to Collect', '₹${reservation.amountToCollect.toStringAsFixed(0)}'),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.payments_outlined, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Pay at Pickup (Cash / UPI)',
+                      style: GoogleFonts.inter(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                if (context.mounted) {
+                  context.go('/customer/reservations');
+                }
+              },
+              child: const Text('All Reservations'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                if (context.mounted) {
+                  context.push('/customer/pass/${reservation.id}');
+                }
+              },
+              icon: const Icon(Icons.qr_code_2, size: 18),
+              label: const Text('View Digital Pass & QR'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted && context.mounted) {
+        String msg = e.toString();
+        if (msg.contains('Insufficient portions')) {
+          msg = 'Insufficient portions available. Please try a lower quantity.';
+        } else if (msg.contains('is not active')) {
+          msg = 'This meal listing is no longer active.';
+        } else if (msg.contains('not approved')) {
+          msg = 'The PG property is no longer approved.';
+        } else {
+          msg = 'Reservation failed: ${e.toString().replaceAll('Exception:', '').trim()}';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Widget _buildDialogRow(String label, String value) {
@@ -1080,20 +834,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-            ),
-          ),
+          Text(label, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
+          Text(value, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
         ],
       ),
     );
   }
 }
-
-

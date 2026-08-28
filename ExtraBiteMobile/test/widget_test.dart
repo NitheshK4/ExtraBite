@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:extrabite_mobile/app/app.dart';
+import 'package:extrabite_mobile/core/repositories/fake_auth_repository.dart';
 import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/models/reservation.dart';
-import 'package:extrabite_mobile/models/order_type.dart';
+import 'package:extrabite_mobile/providers/auth_provider.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/core/location/location_state.dart';
-import 'package:extrabite_mobile/core/payment/payment_service.dart';
 import 'package:extrabite_mobile/features/customer/screens/food_detail_screen.dart';
+import 'package:extrabite_mobile/core/repositories/pg_profile_repository.dart';
 import 'mocks.dart';
-
 
 void main() {
   group('1. FoodListing Model Tests', () {
@@ -214,7 +214,7 @@ void main() {
   });
 
   group('3. Reservation Creation & State Tests', () {
-    test('Creates new active reservations and updates lists correctly', () {
+    test('Correctly updates and computes active reservations list', () async {
       final container = createMockLocationContainer();
       final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
@@ -222,18 +222,14 @@ void main() {
       final initialActiveCount = container.read(activeReservationsProvider).length;
 
       final targetFood = foodList.first;
-      final reservation = reservationNotifier.createReservation(
+      final reservation = await reservationNotifier.createReservation(
         listing: targetFood,
         quantity: 2,
-        orderType: OrderType.takeAway,
       );
 
       expect(reservation.foodName, equals(targetFood.foodName));
       expect(reservation.quantity, equals(2));
       expect(reservation.amountToCollect, equals(targetFood.sellingPrice * 2));
-      expect(reservation.amountPaid, equals(targetFood.sellingPrice * 2));
-      expect(reservation.isPrepaid, isTrue);
-      expect(reservation.paymentStatus, equals('paid'));
       expect(reservation.status, equals(ReservationStatus.reserved));
 
       final activeList = container.read(activeReservationsProvider);
@@ -241,23 +237,22 @@ void main() {
       expect(activeList.first.id, equals(reservation.id));
     });
 
-    test('Cancels active reservations correctly', () {
+    test('Cancels active reservations correctly', () async {
       final container = createMockLocationContainer();
       final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
 
       final targetFood = foodList.first;
-      final reservation = reservationNotifier.createReservation(
+      final reservation = await reservationNotifier.createReservation(
         listing: targetFood,
         quantity: 2,
-        orderType: OrderType.dineIn,
       );
 
       final activeList = container.read(activeReservationsProvider);
       expect(activeList.isNotEmpty, isTrue);
       final targetId = reservation.id;
 
-      reservationNotifier.cancelReservation(targetId);
+      await reservationNotifier.cancelReservation(targetId);
 
       final newActiveList = container.read(activeReservationsProvider);
       expect(newActiveList.any((item) => item.id == targetId), isFalse);
@@ -266,7 +261,7 @@ void main() {
       expect(pastList.any((item) => item.id == targetId && item.status == ReservationStatus.cancelled), isTrue);
     });
 
-    test('Creates new active reservations and decrements portions in real time', () {
+    test('Creates new active reservations and decrements portions in real time', () async {
       final container = createMockLocationContainer();
       final foodNotifier = container.read(foodProvider.notifier);
       final reservationNotifier = container.read(reservationProvider.notifier);
@@ -296,20 +291,15 @@ void main() {
 
       foodNotifier.addListing(listing);
 
-      final reservation = reservationNotifier.createReservation(
+      final reservation = await reservationNotifier.createReservation(
         listing: listing,
         quantity: 3,
-        orderType: OrderType.dineIn,
       );
-      foodNotifier.decrementPortions(listing.id, 3);
-
+      await foodNotifier.decrementPortions(listing.id, 3);
 
       expect(reservation.foodName, equals('Chapati & Curry'));
       expect(reservation.quantity, equals(3));
       expect(reservation.amountToCollect, equals(90.0));
-      expect(reservation.amountPaid, equals(90.0));
-      expect(reservation.isPrepaid, isTrue);
-      expect(reservation.paymentStatus, equals('paid'));
       expect(reservation.status, equals(ReservationStatus.reserved));
 
       final activeList = container.read(activeReservationsProvider);
@@ -354,11 +344,13 @@ void main() {
               );
             }),
             foodProvider.overrideWith((ref) {
-              final notifier = FoodNotifier();
+              final notifier = FoodNotifier(FakeFoodRepository());
               notifier.clearAll();
               notifier.addListing(soldOutListing);
               return notifier;
             }),
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: FoodDetailScreen(foodId: 'item_sold_out'),
@@ -378,142 +370,20 @@ void main() {
       final elevatedButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(elevatedButton.onPressed, isNull);
     });
-
-    testWidgets('Online Pre-Payment flow shows bottom sheet, methods, and confirms paid reservation', (WidgetTester tester) async {
-      final mockService = MockLocationService();
-
-      final availableListing = FoodListing(
-        id: 'item_online_pay',
-        foodName: 'Chicken Biryani Plate',
-        description: 'Fresh parcel',
-        propertyId: 'p1',
-        propertyName: 'Sri Sai PG',
-        distanceKm: 0.5,
-        category: 'Dinner',
-        isVegetarian: false,
-        originalPrice: 120.0,
-        sellingPrice: 65.0,
-        availablePortions: 5,
-        preparedTime: DateTime.now(),
-        pickupStarts: DateTime.now(),
-        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: const ['Rice', 'Chicken'],
-        allergens: const [],
-        verificationStatus: 'verified',
-        latitude: 16.4971,
-        longitude: 80.5005,
-      );
-
-      final testPaymentService = PaymentService();
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            locationProvider.overrideWith((ref) {
-              return FakeLocationNotifier(
-                mockService,
-                const LocationState.available(16.4971, 80.5005),
-              );
-            }),
-            foodProvider.overrideWith((ref) {
-              final notifier = FoodNotifier();
-              notifier.clearAll();
-              notifier.addListing(availableListing);
-              return notifier;
-            }),
-          ],
-          child: MaterialApp(
-            home: FoodDetailScreen(
-              foodId: 'item_online_pay',
-              paymentService: testPaymentService,
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Initially prompt to select order option
-      expect(find.text('Select Order Option'), findsOneWidget);
-
-      // Select Take Away option
-      await tester.tap(find.text('Take Away'));
-      await tester.pumpAndSettle();
-
-      // CTA button now indicates pre-paid online payment
-      expect(find.text('Pay ₹65 Online & Reserve'), findsOneWidget);
-
-      // Tap to open Online Payment sheet
-      await tester.tap(find.text('Pay ₹65 Online & Reserve'));
-      await tester.pumpAndSettle();
-
-      // Verify Online Payment Sheet content
-      expect(find.text('Razorpay Secure Checkout'), findsOneWidget);
-      expect(find.text('⚡ Real-time Payment • Auto-Confirmed on Pickup'), findsOneWidget);
-      expect(find.text('Razorpay Payment Gateway'), findsOneWidget);
-      expect(find.text('Pay ₹65 via Razorpay'), findsOneWidget);
-
-      // Tap Pay via Razorpay (which closes sheet & launches Razorpay)
-      await tester.ensureVisible(find.text('Pay ₹65 via Razorpay'));
-      await tester.tap(find.text('Pay ₹65 via Razorpay'));
-      await tester.pumpAndSettle();
-
-      // Payment Sheet is dismissed
-      expect(find.text('Razorpay Secure Checkout'), findsNothing);
-
-      // 1. Simulate Payment Cancellation -> verifies NO order is placed
-      testPaymentService.triggerSimulatedFailure(message: 'Customer cancelled payment');
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-
-      expect(find.text('Payment cancelled / failed. Meal reservation was NOT placed.'), findsOneWidget);
-      expect(find.byType(AlertDialog), findsNothing);
-
-      // Dismiss the SnackBar before re-opening checkout
-      ScaffoldMessenger.of(tester.element(find.byType(FoodDetailScreen))).hideCurrentSnackBar();
-      await tester.pumpAndSettle();
-
-      // 2. Re-open checkout and Simulate Payment Success
-      await tester.tap(find.text('Pay ₹65 Online & Reserve'));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Pay ₹65 via Razorpay'));
-      await tester.tap(find.text('Pay ₹65 via Razorpay'));
-      await tester.pumpAndSettle();
-
-      testPaymentService.triggerSimulatedSuccess(paymentId: 'pay_test_biryani_success_999');
-      await tester.pumpAndSettle();
-
-      // Verify Confirmation Dialog with Pre-paid Online status
-      expect(find.text('Payment & Reservation Confirmed'), findsOneWidget);
-      expect(
-        find.descendant(of: find.byType(AlertDialog), matching: find.text('Chicken Biryani Plate')),
-        findsOneWidget,
-      );
-      expect(find.text('₹65 (Paid Online)'), findsOneWidget);
-      expect(find.text('✓ Pre-paid Online (Zero Payment on Pickup)'), findsOneWidget);
-      expect(find.text('View Active Reservations & QR'), findsOneWidget);
-    });
   });
-
 
   group('4. UI Navigation & Smoke Tests', () {
     testWidgets('App UI Smoke & Navigation Test', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            locationProvider.overrideWith((ref) {
-              return FakeLocationNotifier(
-                MockLocationService(),
-                const LocationState.available(16.4971, 80.5005),
-              );
-            }),
-          ],
-          child: const SavourEApp(),
+          overrides: fakeLocationAndAuthOverrides(),
+          child: const ExtraBiteApp(),
         ),
       );
       await tester.pumpAndSettle();
 
       // 1. Initial screen must be Role Selection screen
-      expect(find.text('Welcome to SavourE'), findsOneWidget);
+      expect(find.text('Welcome to ExtraBite'), findsOneWidget);
       expect(find.text('Personal User'), findsOneWidget);
       expect(find.text('Hostel / PG Owner'), findsOneWidget);
 
@@ -528,18 +398,26 @@ void main() {
       await tester.tap(find.text('Log In as Personal User'));
       await tester.pumpAndSettle();
 
-      // 4. Verify Customer Home Screen loads after login
+      // 4. After login, role_finalized = false (new fake user).
+      //    Router shows Role Selection ("Choose Your Role") so user can confirm role.
+      expect(find.text('Choose Your Role'), findsOneWidget);
+
+      // 5. Tap Personal User to finalize the role via set_user_role('customer').
+      await tester.tap(find.text('Personal User'));
+      await tester.pumpAndSettle();
+
+      // 6. Now role_finalized = true → Customer Home Screen loads.
       expect(find.text('Near VIT-AP University'), findsAtLeastNWidgets(1));
       expect(find.text('Search meals, PGs or messes...'), findsOneWidget);
 
-      // 5. Navigate to Search tab
+      // 7. Navigate to Search tab
       final searchIcon = find.byIcon(Icons.search_outlined);
       expect(searchIcon, findsOneWidget);
       await tester.tap(searchIcon);
       await tester.pumpAndSettle();
       expect(find.text('Search Marketplace'), findsOneWidget);
 
-      // 6. Navigate to Profile tab and check authenticated user info
+      // 8. Navigate to Profile tab and check authenticated user info
       final profileIcon = find.byIcon(Icons.person_outline);
       expect(profileIcon, findsOneWidget);
       await tester.tap(profileIcon);
@@ -548,72 +426,6 @@ void main() {
       expect(find.text('Testuser'), findsOneWidget);
       expect(find.text('testuser@example.com'), findsOneWidget);
       expect(find.text('Pavan Kumar'), findsNothing);
-    });
-
-    testWidgets('FoodDetailScreen disables Dine-In when PG owner marked meal as Takeaway Only (allowsDineIn: false)', (WidgetTester tester) async {
-      final mockService = MockLocationService();
-
-      final takeawayOnlyListing = FoodListing(
-        id: 'item_takeaway_only',
-        foodName: 'Special Veg Thali',
-        description: 'Packed parcel with roti, sabzi, dal and rice.',
-        propertyId: 'pg_1',
-        propertyName: 'Sri Krishna PG',
-        distanceKm: 0.6,
-        category: 'Lunch',
-        isVegetarian: true,
-        originalPrice: 90.0,
-        sellingPrice: 45.0,
-        availablePortions: 4,
-        preparedTime: DateTime.now(),
-        pickupStarts: DateTime.now(),
-        pickupEnds: DateTime.now().add(const Duration(hours: 2)),
-        ingredients: const ['Rice', 'Wheat', 'Vegetables'],
-        allergens: const [],
-        verificationStatus: 'verified',
-        allowsDineIn: false, // PG does not allow Dine-in
-        latitude: 16.4971,
-        longitude: 80.5005,
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            locationProvider.overrideWith((ref) {
-              return FakeLocationNotifier(
-                mockService,
-                const LocationState.available(16.4971, 80.5005),
-              );
-            }),
-            foodProvider.overrideWith((ref) {
-              final notifier = FoodNotifier();
-              notifier.clearAll();
-              notifier.addListing(takeawayOnlyListing);
-              return notifier;
-            }),
-          ],
-          child: const MaterialApp(
-            home: FoodDetailScreen(foodId: 'item_takeaway_only'),
-          ),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      // Verify Takeaway Only badge and message
-      expect(find.text('🛍️ Takeaway / Parcel Only'), findsOneWidget);
-      expect(find.text('Not Allowed by PG'), findsOneWidget);
-      expect(find.textContaining('Parcel pickup only'), findsOneWidget);
-
-      // Verify tapping disabled Dine-In displays a snackbar notice
-      await tester.tap(find.text('Dine In'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('only allows Takeaway parcels'), findsOneWidget);
-
-      // Verify Take Away can be selected and leads to payment
-      await tester.tap(find.text('Take Away'));
-      await tester.pumpAndSettle();
-      expect(find.text('Pay ₹45 Online & Reserve'), findsOneWidget);
     });
   });
 }

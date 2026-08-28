@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../app/theme/app_colors.dart';
-import '../../../models/user_model.dart';
+import '../../../models/user_role.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
 
@@ -13,222 +16,308 @@ class CustomerProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
-  bool _isVegPreference = false;
-  bool _enableNotifications = true;
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-
-    if (authState.status == AuthStatus.authenticating ||
-        authState.status == AuthStatus.uninitialized) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('My Profile')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.account_circle_outlined, size: 64, color: AppColors.textLight),
-              const SizedBox(height: 16),
-              const Text('No active user session.'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(authProvider.notifier).resetToRoleSelection();
-                },
-                child: const Text('Go to Login'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final locationState = ref.watch(locationProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text(
+          'My Profile',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/customer/home');
+            }
+          },
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Dynamic Avatar & Name Card
-            _buildProfileCard(user),
-            const SizedBox(height: 24),
+            // User Header Card
+            _buildUserHeader(user?.name ?? 'Customer User', user?.email ?? 'customer@example.com', user?.role ?? UserRole.personal),
 
-            // Preferences section
-            _buildSectionHeader('Dietary Preferences'),
-            const SizedBox(height: 8),
-            _buildPreferenceCard(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Settings section
-            _buildSectionHeader('App Settings'),
-            const SizedBox(height: 8),
-            _buildSettingsCard(),
-            const SizedBox(height: 24),
+            // Profile Details & Verification Card
+            _buildDetailsCard(user?.phone, user != null),
 
-            // Safety & Info section
-            _buildSectionHeader('Trust & Safety'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
+
+            // Preferences Card (Location, Radius)
+            _buildPreferencesCard(context, locationState.displayName),
+
+            const SizedBox(height: 20),
+
+            // Trust & Safety / Help Card
             _buildSafetyCard(context),
-            const SizedBox(height: 32),
 
-            // Logout Option
-            _buildLogoutButton(context),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            // Brand Footer
+            // Logout Button
+            OutlinedButton.icon(
+              onPressed: () async {
+                final shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: Text(
+                      'Log Out',
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                    ),
+                    content: Text(
+                      'Are you sure you want to log out of ExtraBite?',
+                      style: GoogleFonts.inter(fontSize: 14),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Log Out'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLogout == true && context.mounted) {
+                  await ref.read(authProvider.notifier).logout();
+                  if (context.mounted) {
+                    context.go('/auth/role-selection');
+                  }
+                }
+              },
+              icon: const Icon(Icons.logout, color: AppColors.error, size: 18),
+              label: Text(
+                'Log Out',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.error),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // App Brand & Version Footer
             Center(
               child: Column(
                 children: [
                   Image.asset(
                     'assets/branding/extrabite_logo.png',
-                    height: 32,
-                    width: 32,
+                    height: 28,
+                    width: 28,
                     fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.eco,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'SavourE v1.0.0',
-                    style: TextStyle(
+                  Text(
+                    'ExtraBite v1.0.0',
+                    style: GoogleFonts.inter(
                       color: AppColors.textLight,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Rescuing surplus food, together.',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: AppColors.textLight,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileCard(UserModel user) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
+  Widget _buildUserHeader(String name, String email, UserRole role) {
+    final initials = name.isNotEmpty
+        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        : 'CU';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.primaryLight,
+            child: Text(
+              initials,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Food Saver • ${role.displayName}',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsCard(String? phone, bool isVerified) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
           children: [
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: AppColors.primary,
+            ListTile(
+              leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
+              title: Text('Phone Number', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              subtitle: Text(
+                phone != null && phone.isNotEmpty ? phone : '+91 (Not Provided)',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+              ),
+            ),
+            const Divider(color: AppColors.outline, height: 1),
+            ListTile(
+              leading: Icon(
+                isVerified ? Icons.verified_user : Icons.gpp_maybe_outlined,
+                color: isVerified ? AppColors.vegColor : AppColors.secondary,
+              ),
+              title: Text('Account Status', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              subtitle: Text(
+                isVerified ? 'Verified Community Account' : 'Standard Member',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+              ),
+              trailing: isVerified
+                  ? const Icon(Icons.check_circle, color: AppColors.vegColor, size: 20)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreferencesCard(BuildContext context, String currentAddress) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
               child: Text(
-                user.initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                'Location & Campus Area',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.email,
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    user.phone,
-                    style: const TextStyle(color: AppColors.textLight, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPreferenceCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Column(
-          children: [
-            SwitchListTile(
-              title: const Text('Vegetarian Mode Only'),
-              subtitle: const Text('Show only vegetarian food listings in explorer feed.'),
-              activeColor: AppColors.primary,
-              value: _isVegPreference,
-              onChanged: (val) {
-                setState(() {
-                  _isVegPreference = val;
-                });
-              },
-            ),
-            const Divider(color: AppColors.border, height: 1),
             ListTile(
-              title: const Text('Food Allergens & Intolerances'),
-              subtitle: const Text('Configure custom allergen warnings (e.g. Peanuts, Gluten).'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                _showAllergenDialog(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Column(
-          children: [
-            SwitchListTile(
-              title: const Text('Enable Notifications'),
-              subtitle: const Text('Get alerts for ending-soon reservations & hot deals.'),
-              activeColor: AppColors.primary,
-              value: _enableNotifications,
-              onChanged: (val) {
-                setState(() {
-                  _enableNotifications = val;
-                });
-              },
-            ),
-            const Divider(color: AppColors.border, height: 1),
-            ListTile(
-              title: const Text('Saved Pickup Location'),
-              subtitle: Text(ref.watch(locationProvider).displayName),
-              trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary),
+              leading: const Icon(Icons.location_on_outlined, color: AppColors.primary),
+              title: Text(currentAddress, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Tap to change default search area', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary, size: 20),
               onTap: () {
                 _showLocationPicker(context);
               },
@@ -240,105 +329,92 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   }
 
   Widget _buildSafetyCard(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
         child: Column(
           children: [
             ListTile(
               leading: const Icon(Icons.report_problem_outlined, color: AppColors.error),
-              title: const Text('Food Safety Incident Reporting'),
-              subtitle: const Text('Report concerns about food quality or safety issues directly to admins.'),
-              trailing: const Icon(Icons.chevron_right),
+              title: Text('Food Safety Incident Reporting', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Report concerns about food quality directly to admins.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.chevron_right, size: 20),
               onTap: () {
                 _showSafetyReportDialog(context);
               },
             ),
-            const Divider(color: AppColors.border, height: 1),
+            const Divider(color: AppColors.outline, height: 1),
             ListTile(
               leading: const Icon(Icons.help_outline, color: AppColors.primary),
-              title: const Text('Help & Support FAQ'),
-              subtitle: const Text('Learn how surplus meal reservations and online pre-payments work.'),
-              trailing: const Icon(Icons.chevron_right),
+              title: Text('Help & Support FAQ', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Learn how pickup reservation and physical payments work.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.chevron_right, size: 20),
               onTap: () {
                 _showFAQDialog(context);
               },
             ),
-            const Divider(color: AppColors.border, height: 1),
-            const ListTile(
-              leading: Icon(Icons.info_outline, color: AppColors.textSecondary),
-              title: Text('About SavourE'),
-              subtitle: Text('Version 1.0.0 • Marketplace Foundation'),
+            const Divider(color: AppColors.outline, height: 1),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
+              title: Text('About ExtraBite', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Version 1.0.0 • Community Surplus Food Marketplace', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.error.withOpacity(0.08),
-          foregroundColor: AppColors.error,
-          elevation: 0,
-        ),
-        onPressed: () {
-          _showLogoutDialog(context);
-        },
-        child: const Text('Log Out'),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-      ),
-    );
-  }
-
-  void _showAllergenDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Allergen Profile'),
-        content: const Text('Allergen configurations will be saved to your authenticated account.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-        ],
       ),
     );
   }
 
   void _showSafetyReportDialog(BuildContext context) {
+    final titleController = TextEditingController();
+    final descController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Report Safety Concern'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
           children: [
-            Text('We take food safety extremely seriously.'),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Describe safety or quality issue (e.g. stale food, unhygienic packaging)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
+            const Icon(Icons.report_problem_outlined, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(
+              'Report Food Safety Incident',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'If you received expired, unsafe, or contaminated food from any PG or hostel, submit a direct report here for immediate administrative review.',
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'PG / Mess Name & Listing',
+                  hintText: 'e.g. Royal PG - Dinner Curry',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Incident Description',
+                  hintText: 'Describe the issue encountered...',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -346,10 +422,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Thank you. Safety report submitted successfully to admin review.')),
+                const SnackBar(
+                  backgroundColor: AppColors.primary,
+                  content: Text('🛡️ Safety report logged with ExtraBite Admin Team.'),
+                  duration: Duration(seconds: 3),
+                ),
               );
             },
             child: const Text('Submit Report'),
@@ -363,16 +444,17 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Frequently Asked Questions'),
-        content: const SingleChildScrollView(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Frequently Asked Questions', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Q: How do I pay?', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text('A: SavourE is 100% pre-paid online. You complete payment securely via UPI, Cards, Net Banking, or Wallets during reservation. No cash or physical payment is accepted at pickup.'),
-              SizedBox(height: 12),
-              Text('Q: Can I cancel a reservation?', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text('A: Yes, you can cancel an active reservation from the Reservations tab anytime before the pickup window starts.'),
+              Text('Q: How do I pay?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+              Text('A: Payment is strictly physical at pickup directly to the PG mess owners using Cash or personal UPI.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 12),
+              Text('Q: Can I cancel a reservation?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+              Text('A: Yes, you can cancel an active reservation from the Digital Pass or Reservations tab anytime before the pickup window closes.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
         ),
@@ -390,24 +472,25 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
           children: [
-            Icon(Icons.location_on, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text('Saved Location'),
+            const Icon(Icons.location_on, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Set Search Area',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Enter your default campus or hostel location:'),
-            const SizedBox(height: 12),
             TextField(
               controller: textController,
               decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'e.g. Near VIT-AP University Gate 2',
+                labelText: 'Campus / Hostel Area',
+                hintText: 'e.g. VIT-AP Inavolu Campus',
               ),
             ),
           ],
@@ -416,34 +499,12 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              final newLoc = textController.text.trim();
-              if (newLoc.isNotEmpty) {
-                ref.read(locationProvider.notifier).updateLocation(newLoc);
+              if (textController.text.trim().isNotEmpty) {
+                ref.read(locationProvider.notifier).updateLocation(textController.text.trim());
               }
               Navigator.pop(context);
             },
             child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Log Out?'),
-        content: const Text('Are you sure you want to log out? All cached local session data will be cleared.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(authProvider.notifier).logout();
-            },
-            child: const Text('Logout'),
           ),
         ],
       ),
