@@ -81,48 +81,59 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
-            tooltip: 'Scan Student QR',
-            onPressed: () => PickupVerificationModal.show(context, user.propertyName ?? user.name),
+            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
+            tooltip: 'Refresh',
+            onPressed: () {
+              ref.read(foodProvider.notifier).loadListings();
+              ref.read(reservationProvider.notifier).loadOwnerReservations();
+            },
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.error),
+            icon: const Icon(Icons.logout, color: AppColors.textPrimary),
             tooltip: 'Log Out',
             onPressed: () => _showLogoutDialog(context, ref),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _navigateToAddMeal(context),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text(
+          'Post Surplus Food',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(foodProvider.notifier).loadListings();
+          await ref.read(reservationProvider.notifier).loadOwnerReservations();
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            // Owner Profile Card
+            // Welcome Header Card
             Container(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.outline),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x06000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
-                  ),
-                ],
               ),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppColors.primary,
+                    radius: 24,
+                    backgroundColor: AppColors.primaryLight,
                     child: Text(
-                      user.initials,
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'O',
                       style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -131,47 +142,22 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                user.name,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(9999),
-                              ),
-                              child: Text(
-                                'Verified Host',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
                         Text(
-                          user.propertyName ?? 'PG / Hostel Manager',
-                          style: GoogleFonts.inter(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
+                          user.name,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
+                        Text(
+                          user.propertyName ?? 'Mess / PG Partner',
+                          style: GoogleFonts.inter(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
                         Text(
                           user.email,
                           style: GoogleFonts.inter(
@@ -233,55 +219,117 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Section: Listing Controls
+            // Quick Pickup Verification Action Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.85)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Verify Customer Pickup',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Enter 6-character token or scan QR code',
+                          style: GoogleFonts.inter(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => PickupVerificationModal(
+                          ownerPropertyName: user.propertyName ?? user.name,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Verify',
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Active Listings Section Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'My Food Listings',
+                  'My Active Food Listings (${ownerListings.length})',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  ),
+                TextButton.icon(
                   onPressed: () => _navigateToAddMeal(context),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text(
-                    'Add Meal',
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
-                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add Meal'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             if (ownerListings.isEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(28.0),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.outline),
-                ),
-                child: Center(
+              Card(
+                color: AppColors.surface,
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
                   child: Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryLight,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.inventory_2_outlined, size: 36, color: AppColors.primary),
-                      ),
+                      const Icon(Icons.fastfood_outlined, size: 48, color: AppColors.textLight),
                       const SizedBox(height: 12),
                       Text(
-                        'No surplus meals listed yet.',
+                        'No surplus food listed today',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -311,48 +359,41 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
             ],
 
             const SizedBox(height: 24),
+
+            // Recent Customer Reservations Section Header
             Text(
-              'Incoming Reservations',
+              'Recent Customer Reservations (${ownerReservations.length})',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             if (ownerReservations.isEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.outline),
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      const Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.textLight),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No reservations received yet.',
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                      ),
-                    ],
+              Card(
+                color: AppColors.surface,
+                child: Padding(
+                  padding: const EdgeInsets.all(28.0),
+                  child: Center(
+                    child: Text(
+                      'No customer reservations received yet.',
+                      style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+                    ),
                   ),
                 ),
               ),
             ] else ...[
               Column(
-                children: ownerReservations.map((res) => _buildReservationCard(context, res)).toList(),
+                children: ownerReservations.map((res) => _buildReservationCard(context, ref, res)).toList(),
               ),
             ],
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-            // Logout Action
-            SizedBox(
-              width: double.infinity,
+            // Footer / Logout
+            Center(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
@@ -420,91 +461,44 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
+                  color: item.status == 'active' ? AppColors.primaryLight : AppColors.outlineVariant,
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Text(
-                  item.category,
-                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w700),
+                  item.status.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    color: item.status == 'active' ? AppColors.primary : AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            item.description,
-            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 14, color: AppColors.primary),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  '${item.locationAddress} (${item.distanceKm.toStringAsFixed(1)} km)',
-                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            '₹${item.sellingPrice.toStringAsFixed(0)} (Original ₹${item.originalPrice.toStringAsFixed(0)}) · ${item.availablePortions} portions left',
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(
-                    '₹${item.sellingPrice.toInt()}',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.primary),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '₹${item.originalPrice.toInt()}',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textLight,
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
-                ],
+              Text(
+                'Category: ${item.category}',
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textLight),
               ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, size: 20, color: AppColors.primary),
-                    tooltip: 'Decrease portion',
-                    onPressed: item.availablePortions > 0
-                        ? () {
-                            ref.read(foodProvider.notifier).decrementPortions(item.id, 1);
-                          }
-                        : null,
-                  ),
-                  Text(
-                    '${item.availablePortions} left',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline, size: 20, color: AppColors.primary),
-                    tooltip: 'Increase portion',
-                    onPressed: () {
-                      ref.read(foodProvider.notifier).decrementPortions(item.id, -1);
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
-                    tooltip: 'Delete listing',
-                    onPressed: () {
-                      ref.read(foodProvider.notifier).removeListing(item.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Removed "${item.foodName}".')),
-                      );
-                    },
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                tooltip: 'Remove Listing',
+                onPressed: () async {
+                  await ref.read(foodProvider.notifier).removeListing(item.id);
+                  if (mounted && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Meal listing removed.')),
+                    );
+                  }
+                },
               ),
             ],
           ),
@@ -513,16 +507,13 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
     );
   }
 
-  Widget _buildReservationCard(BuildContext context, Reservation res) {
-    final statusColor = res.status == ReservationStatus.completed
-        ? AppColors.primary
-        : res.status == ReservationStatus.cancelled
-            ? AppColors.error
-            : AppColors.secondary;
+  Widget _buildReservationCard(BuildContext context, WidgetRef ref, Reservation res) {
+    final isReserved = res.status == ReservationStatus.reserved;
+    final isCompleted = res.status == ReservationStatus.completed;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -536,17 +527,29 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
             children: [
               Text(
                 '#${res.id}',
-                style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700, color: AppColors.textLight, fontSize: 13),
+                style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textLight),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: isCompleted
+                      ? AppColors.primaryLight
+                      : isReserved
+                          ? AppColors.secondaryLight
+                          : AppColors.errorLight,
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Text(
                   res.status.name.toUpperCase(),
-                  style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.w700, fontSize: 10),
+                  style: GoogleFonts.inter(
+                    color: isCompleted
+                        ? AppColors.primary
+                        : isReserved
+                            ? AppColors.secondary
+                            : AppColors.error,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -554,55 +557,39 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
           const SizedBox(height: 8),
           Text(
             res.foodName,
-            style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700),
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15),
           ),
           const SizedBox(height: 4),
           Text(
-            'Portions: ${res.quantity} | Amount: ₹${res.amountToCollect.toStringAsFixed(0)}',
+            '${res.quantity} portion(s) · ₹${res.amountToCollect.toStringAsFixed(0)} to collect',
             style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
           ),
-          const SizedBox(height: 12),
-          if (res.status == ReservationStatus.reserved) ...[
+          if (isReserved) ...[
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    onPressed: () {
-                      ref.read(reservationProvider.notifier).updateStatus(res.id, 'ready_for_pickup');
-                    },
-                    child: Text('Mark Ready', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.success,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     onPressed: () {
                       ref.read(reservationProvider.notifier).updateStatus(res.id, 'picked_up');
                     },
-                    child: Text('Complete', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12)),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Mark Collected'),
                   ),
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.outline),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: AppColors.error),
+                  tooltip: 'Cancel Order',
                   onPressed: () {
-                    ref.read(reservationProvider.notifier).updateStatus(res.id, 'rejected');
+                    ref.read(reservationProvider.notifier).cancelReservation(res.id);
                   },
-                  child: Text('Reject', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 12)),
                 ),
               ],
             ),

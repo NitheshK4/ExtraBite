@@ -57,7 +57,7 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
         body: TabBarView(
           children: [
             _buildActiveTab(context, ref, activeList),
-            _buildPastTab(pastList),
+            _buildPastTab(context, pastList),
           ],
         ),
       ),
@@ -262,7 +262,7 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
     );
   }
 
-  Widget _buildPastTab(List<Reservation> pastList) {
+  Widget _buildPastTab(BuildContext context, List<Reservation> pastList) {
     if (pastList.isEmpty) {
       return _buildEmptyState(
         icon: Icons.history,

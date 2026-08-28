@@ -5,10 +5,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+flutter {
+    source = "../.."
+}
+
 android {
     namespace = "com.extrabite.extrabite_mobile"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -39,6 +44,3 @@ android {
     }
 }
 
-flutter {
-    source = "../.."
-}

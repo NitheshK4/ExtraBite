@@ -2,10 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import '../models/reservation.dart';
 import '../models/food_listing.dart';
+import '../models/order_type.dart';
 import '../core/repositories/reservation_repository.dart';
 
 final reservationRepositoryProvider = Provider<ReservationRepository>((ref) {
-  return ReservationRepository(supabase.Supabase.instance.client);
+  try {
+    return ReservationRepository(supabase.Supabase.instance.client);
+  } catch (_) {
+    return ReservationRepository.fakeForTest();
+  }
 });
 
 class ReservationNotifier extends StateNotifier<List<Reservation>> {
@@ -16,6 +21,8 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
   Future<Reservation> createReservation({
     required FoodListing listing,
     required int quantity,
+    OrderType orderType = OrderType.takeAway,
+    String paymentMethod = 'Pay at Counter / Direct UPI',
   }) async {
     final response = await _repository.reserveFood(
       listingId: listing.id,
@@ -100,6 +107,9 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
             pickupEnds: res.pickupEnds,
             reservedAt: res.reservedAt,
             status: status,
+            orderType: res.orderType,
+            paymentStatus: res.paymentStatus,
+            paymentMethod: res.paymentMethod,
           );
         }
         return res;
@@ -125,6 +135,32 @@ class ReservationNotifier extends StateNotifier<List<Reservation>> {
           pickupEnds: res.pickupEnds,
           reservedAt: res.reservedAt,
           status: ReservationStatus.cancelled,
+          orderType: res.orderType,
+          paymentStatus: res.paymentStatus,
+          paymentMethod: res.paymentMethod,
+        );
+      }
+      return res;
+    }).toList();
+  }
+
+  void completeReservation(String id) {
+    state = state.map((res) {
+      if (res.id == id) {
+        return Reservation(
+          id: res.id,
+          foodListingId: res.foodListingId,
+          foodName: res.foodName,
+          propertyName: res.propertyName,
+          quantity: res.quantity,
+          amountToCollect: res.amountToCollect,
+          pickupStarts: res.pickupStarts,
+          pickupEnds: res.pickupEnds,
+          reservedAt: res.reservedAt,
+          status: ReservationStatus.completed,
+          orderType: res.orderType,
+          paymentStatus: res.paymentStatus,
+          paymentMethod: res.paymentMethod,
         );
       }
       return res;

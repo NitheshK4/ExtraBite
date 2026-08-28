@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
+  AppTheme._();
+
   static ThemeData get lightTheme {
     final baseTextTheme = GoogleFonts.interTextTheme();
     final headlineTheme = GoogleFonts.plusJakartaSansTextTheme();
@@ -34,7 +36,6 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
-        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.border, width: 1),

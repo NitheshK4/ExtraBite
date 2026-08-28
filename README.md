@@ -25,6 +25,11 @@ Every day, university hostels, paying guest (PG) accommodations, and private mes
 
 **ExtraBite** bridges this gap through a hyperlocal, real-time food rescue network. PG owners list high-quality surplus meals at discounted prices (typically ₹20–₹50), and students reserve portions on their phones for quick, pay-at-counter collection.
 
+ExtraBite is strictly a **reservation and pay-at-pickup** application:
+- **NO online payment gateway overhead** (No complex gateways, card forms, or wallet lock-ins).
+- Every reservation records an `amount_to_collect`.
+- Customers pay the PG/hostel owner **directly in cash or UPI at pickup/collection**.
+
 ---
 
 ## 🏛️ Monorepo Structure
