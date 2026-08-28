@@ -410,3 +410,59 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- 13. Enable Supabase Realtime for food_listings
 ALTER PUBLICATION supabase_realtime ADD TABLE public.food_listings;
+
+-- 14. Storage Buckets and Security Policies
+-- Insert storage buckets if they do not exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES 
+    ('food-images', 'food-images', true),
+    ('pg-documents', 'pg-documents', false),
+    ('pg-photos', 'pg-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+-- Storage RLS: food-images (Public read, verified PG Owner upload)
+CREATE POLICY "Public Read Access for Food Images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'food-images' OR bucket_id = 'pg-photos');
+
+CREATE POLICY "PG Owners Upload Food Images"
+ON storage.objects FOR INSERT
+WITH CHECK (
+    (bucket_id = 'food-images' OR bucket_id = 'pg-photos') AND
+    auth.role() = 'authenticated' AND
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND (role = 'pg_owner' OR role = 'admin')
+    )
+);
+
+CREATE POLICY "PG Owners Update and Delete Own Food Images"
+ON storage.objects FOR ALL
+USING (
+    (bucket_id = 'food-images' OR bucket_id = 'pg-photos') AND
+    auth.role() = 'authenticated' AND
+    (
+        auth.uid()::text = (storage.foldername(name))[1] OR
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    )
+);
+
+-- Storage RLS: pg-documents (Private: Owner & Admin only)
+CREATE POLICY "PG Owners View Own Verification Documents"
+ON storage.objects FOR SELECT
+USING (
+    bucket_id = 'pg-documents' AND
+    auth.role() = 'authenticated' AND
+    (
+        auth.uid()::text = (storage.foldername(name))[1] OR
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    )
+);
+
+CREATE POLICY "PG Owners Upload Verification Documents"
+ON storage.objects FOR INSERT
+WITH CHECK (
+    bucket_id = 'pg-documents' AND
+    auth.role() = 'authenticated' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+);

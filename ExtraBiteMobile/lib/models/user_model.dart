@@ -9,6 +9,11 @@ class UserModel {
   final String? propertyName;
   final DateTime createdAt;
 
+  // Onboarding / eligibility flags from public.profiles
+  final bool roleFinalized;
+  final bool isOwnerEligible;
+  final bool isSuspended;
+
   UserModel({
     required this.id,
     required this.name,
@@ -17,6 +22,9 @@ class UserModel {
     required this.role,
     this.propertyName,
     DateTime? createdAt,
+    this.roleFinalized = false,
+    this.isOwnerEligible = false,
+    this.isSuspended = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   String get initials {
@@ -38,6 +46,9 @@ class UserModel {
       'role': role.name,
       'propertyName': propertyName,
       'createdAt': createdAt.toIso8601String(),
+      'roleFinalized': roleFinalized,
+      'isOwnerEligible': isOwnerEligible,
+      'isSuspended': isSuspended,
     };
   }
 
@@ -55,6 +66,35 @@ class UserModel {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
+      roleFinalized: (json['roleFinalized'] as bool?) ?? false,
+      isOwnerEligible: (json['isOwnerEligible'] as bool?) ?? false,
+      isSuspended: (json['isSuspended'] as bool?) ?? false,
+    );
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? phone,
+    UserRole? role,
+    String? propertyName,
+    DateTime? createdAt,
+    bool? roleFinalized,
+    bool? isOwnerEligible,
+    bool? isSuspended,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      propertyName: propertyName ?? this.propertyName,
+      createdAt: createdAt ?? this.createdAt,
+      roleFinalized: roleFinalized ?? this.roleFinalized,
+      isOwnerEligible: isOwnerEligible ?? this.isOwnerEligible,
+      isSuspended: isSuspended ?? this.isSuspended,
     );
   }
 }

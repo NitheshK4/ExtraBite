@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:extrabite_mobile/app/app.dart';
+import 'package:extrabite_mobile/core/repositories/fake_auth_repository.dart';
 import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/models/reservation.dart';
+import 'package:extrabite_mobile/providers/auth_provider.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/providers/reservation_provider.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/core/location/location_state.dart';
 import 'package:extrabite_mobile/features/customer/screens/food_detail_screen.dart';
+import 'package:extrabite_mobile/core/repositories/pg_profile_repository.dart';
 import 'mocks.dart';
 
 void main() {
@@ -211,7 +214,7 @@ void main() {
   });
 
   group('3. Reservation Creation & State Tests', () {
-    test('Creates new active reservations and updates lists correctly', () {
+    test('Correctly updates and computes active reservations list', () async {
       final container = createMockLocationContainer();
       final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
@@ -219,7 +222,7 @@ void main() {
       final initialActiveCount = container.read(activeReservationsProvider).length;
 
       final targetFood = foodList.first;
-      final reservation = reservationNotifier.createReservation(
+      final reservation = await reservationNotifier.createReservation(
         listing: targetFood,
         quantity: 2,
       );
@@ -234,13 +237,13 @@ void main() {
       expect(activeList.first.id, equals(reservation.id));
     });
 
-    test('Cancels active reservations correctly', () {
+    test('Cancels active reservations correctly', () async {
       final container = createMockLocationContainer();
       final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
 
       final targetFood = foodList.first;
-      final reservation = reservationNotifier.createReservation(
+      final reservation = await reservationNotifier.createReservation(
         listing: targetFood,
         quantity: 2,
       );
@@ -249,7 +252,7 @@ void main() {
       expect(activeList.isNotEmpty, isTrue);
       final targetId = reservation.id;
 
-      reservationNotifier.cancelReservation(targetId);
+      await reservationNotifier.cancelReservation(targetId);
 
       final newActiveList = container.read(activeReservationsProvider);
       expect(newActiveList.any((item) => item.id == targetId), isFalse);
@@ -258,7 +261,7 @@ void main() {
       expect(pastList.any((item) => item.id == targetId && item.status == ReservationStatus.cancelled), isTrue);
     });
 
-    test('Creates new active reservations and decrements portions in real time', () {
+    test('Creates new active reservations and decrements portions in real time', () async {
       final container = createMockLocationContainer();
       final foodNotifier = container.read(foodProvider.notifier);
       final reservationNotifier = container.read(reservationProvider.notifier);
@@ -288,11 +291,11 @@ void main() {
 
       foodNotifier.addListing(listing);
 
-      final reservation = reservationNotifier.createReservation(
+      final reservation = await reservationNotifier.createReservation(
         listing: listing,
         quantity: 3,
       );
-      foodNotifier.decrementPortions(listing.id, 3);
+      await foodNotifier.decrementPortions(listing.id, 3);
 
       expect(reservation.foodName, equals('Chapati & Curry'));
       expect(reservation.quantity, equals(3));
@@ -341,11 +344,13 @@ void main() {
               );
             }),
             foodProvider.overrideWith((ref) {
-              final notifier = FoodNotifier();
+              final notifier = FoodNotifier(FakeFoodRepository());
               notifier.clearAll();
               notifier.addListing(soldOutListing);
               return notifier;
             }),
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: FoodDetailScreen(foodId: 'item_sold_out'),
@@ -371,14 +376,7 @@ void main() {
     testWidgets('App UI Smoke & Navigation Test', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            locationProvider.overrideWith((ref) {
-              return FakeLocationNotifier(
-                MockLocationService(),
-                const LocationState.available(16.4971, 80.5005),
-              );
-            }),
-          ],
+          overrides: fakeLocationAndAuthOverrides(),
           child: const ExtraBiteApp(),
         ),
       );
@@ -400,18 +398,26 @@ void main() {
       await tester.tap(find.text('Log In as Personal User'));
       await tester.pumpAndSettle();
 
-      // 4. Verify Customer Home Screen loads after login
+      // 4. After login, role_finalized = false (new fake user).
+      //    Router shows Role Selection ("Choose Your Role") so user can confirm role.
+      expect(find.text('Choose Your Role'), findsOneWidget);
+
+      // 5. Tap Personal User to finalize the role via set_user_role('customer').
+      await tester.tap(find.text('Personal User'));
+      await tester.pumpAndSettle();
+
+      // 6. Now role_finalized = true → Customer Home Screen loads.
       expect(find.text('Near VIT-AP University'), findsAtLeastNWidgets(1));
       expect(find.text('Search meals, PGs or messes...'), findsOneWidget);
 
-      // 5. Navigate to Search tab
+      // 7. Navigate to Search tab
       final searchIcon = find.byIcon(Icons.search_outlined);
       expect(searchIcon, findsOneWidget);
       await tester.tap(searchIcon);
       await tester.pumpAndSettle();
       expect(find.text('Search Marketplace'), findsOneWidget);
 
-      // 6. Navigate to Profile tab and check authenticated user info
+      // 8. Navigate to Profile tab and check authenticated user info
       final profileIcon = find.byIcon(Icons.person_outline);
       expect(profileIcon, findsOneWidget);
       await tester.tap(profileIcon);
@@ -423,3 +429,4 @@ void main() {
     });
   });
 }
+
