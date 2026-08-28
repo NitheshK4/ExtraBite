@@ -26,17 +26,11 @@ class WelcomeScreen extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryLight,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.eco,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
+                    Image.asset(
+                      'assets/branding/extrabite_logo.png',
+                      height: 32,
+                      width: 32,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -115,7 +109,7 @@ class WelcomeScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(18),
+                                  padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
@@ -127,10 +121,11 @@ class WelcomeScreen extends ConsumerWidget {
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(
-                                    Icons.restaurant_menu,
-                                    size: 48,
-                                    color: AppColors.primary,
+                                  child: Image.asset(
+                                    'assets/branding/extrabite_logo.png',
+                                    height: 56,
+                                    width: 56,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                                 const SizedBox(height: 12),

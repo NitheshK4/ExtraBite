@@ -172,6 +172,13 @@ class _PropertyRegistrationScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Image.asset(
+            'assets/branding/extrabite_logo.png',
+            fit: BoxFit.contain,
+          ),
+        ),
         title: const Text('Complete your PG profile'),
         elevation: 0,
         actions: [

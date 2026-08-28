@@ -94,13 +94,25 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
           },
         ),
         centerTitle: true,
-        title: Text(
-          'Account Verification',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/branding/extrabite_logo.png',
+              height: 22,
+              width: 22,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Account Verification',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
       body: SafeArea(

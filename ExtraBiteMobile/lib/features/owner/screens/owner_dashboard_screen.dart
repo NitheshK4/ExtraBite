@@ -63,6 +63,13 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 10.0, bottom: 10.0),
+          child: Image.asset(
+            'assets/branding/extrabite_logo.png',
+            fit: BoxFit.contain,
+          ),
+        ),
         title: Text(
           user.propertyName ?? 'Owner Dashboard',
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),

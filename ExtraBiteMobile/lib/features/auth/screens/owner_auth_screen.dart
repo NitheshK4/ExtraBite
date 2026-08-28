@@ -91,13 +91,11 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: AppColors.secondaryLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.storefront, color: AppColors.secondary, size: 18),
+              Image.asset(
+                'assets/branding/extrabite_logo.png',
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 8),
               Text(

@@ -20,10 +20,21 @@ class LocationHeader extends ConsumerWidget {
 
     return Container(
       color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // App Logo
+          Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: Image.asset(
+              'assets/branding/extrabite_logo.png',
+              height: 36,
+              width: 36,
+              fit: BoxFit.contain,
+            ),
+          ),
+
           // Location details (Tappable to pick location)
           Expanded(
             child: InkWell(
@@ -34,7 +45,7 @@ class LocationHeader extends ConsumerWidget {
                   const Icon(
                     Icons.location_on,
                     color: AppColors.primary,
-                    size: 24,
+                    size: 22,
                   ),
                   const SizedBox(width: 8),
                   Expanded(

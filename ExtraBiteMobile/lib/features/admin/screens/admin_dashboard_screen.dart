@@ -153,6 +153,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Image.asset(
+            'assets/branding/extrabite_logo.png',
+            fit: BoxFit.contain,
+          ),
+        ),
         title: const Text(
           'Admin Dashboard',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),

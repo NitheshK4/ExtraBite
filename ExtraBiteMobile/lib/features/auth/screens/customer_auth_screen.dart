@@ -89,13 +89,11 @@ class _CustomerAuthScreenState extends ConsumerState<CustomerAuthScreen> {
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.eco, color: AppColors.primary, size: 18),
+              Image.asset(
+                'assets/branding/extrabite_logo.png',
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 8),
               Text(

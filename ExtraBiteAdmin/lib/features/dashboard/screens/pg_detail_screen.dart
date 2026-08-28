@@ -196,7 +196,12 @@ class _PgDetailScreenState extends ConsumerState<PgDetailScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.eco, color: AppColors.primary, size: 26),
+                    Image.asset(
+                      'assets/branding/extrabite_logo.png',
+                      height: 28,
+                      width: 28,
+                      fit: BoxFit.contain,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
