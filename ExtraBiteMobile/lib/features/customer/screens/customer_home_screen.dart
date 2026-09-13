@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../models/food_listing.dart';
 import '../../../providers/food_provider.dart';
@@ -48,20 +49,17 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     final endingSoonList = filteredFood
         .where((item) => !item.isExpired && item.pickupEnds.difference(DateTime.now()).inMinutes <= 90)
         .toList();
-        
-    final popularList = filteredFood
-        .where((item) => !item.isExpired && item.availablePortions > 5)
-        .toList();
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Branding & Location Header
+            // 1. Top Branding & Location Header
             const LocationHeader(),
-            
-            // Render body based on location state
+
+            // 2. Body based on Location State
             Expanded(
               child: _buildBody(
                 locationState,
@@ -69,7 +67,6 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 categories,
                 filteredFood,
                 endingSoonList,
-                popularList,
                 selectedRadius,
               ),
             ),
@@ -85,7 +82,6 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     List<String> categories,
     List<FoodListing> filteredFood,
     List<FoodListing> endingSoonList,
-    List<FoodListing> popularList,
     double selectedRadius,
   ) {
     switch (locationState.status) {
@@ -104,7 +100,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.location_off_outlined,
           iconColor: AppColors.secondary,
           title: 'Location permission required',
-          subtitle: 'SavourE requires foreground location access to show surplus food available near you.',
+          subtitle: 'ExtraBite requires location access to discover surplus food listings near your campus.',
           actionText: 'Enable Location',
           onAction: () => ref.read(locationProvider.notifier).determinePosition(),
         );
@@ -114,7 +110,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.block_outlined,
           iconColor: AppColors.error,
           title: 'Location permission permanently denied',
-          subtitle: 'Please enable location permissions for SavourE in your device system settings to discover nearby food.',
+          subtitle: 'Please enable location permissions for ExtraBite in your device system settings to discover nearby food.',
           actionText: 'Retry',
           onAction: () => ref.read(locationProvider.notifier).determinePosition(),
         );
@@ -131,7 +127,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
 
       case LocationStateStatus.error:
         return _buildStatusView(
-          icon: Icons.error_outline_sharp,
+          icon: Icons.error_outline,
           iconColor: AppColors.error,
           title: 'Unable to determine location',
           subtitle: locationState.errorMessage ?? 'Something went wrong while retrieving your location.',
@@ -140,152 +136,294 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
         );
 
       case LocationStateStatus.available:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Mock Search Bar (Tapping navigates to Search Tab)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: GestureDetector(
-                onTap: () => context.go('/customer/search'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.grey),
-                      SizedBox(width: 8),
-                      Text(
-                        'Search meals, PGs or messes...',
-                        style: TextStyle(color: Colors.grey, fontSize: 15),
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            await ref.read(foodProvider.notifier).loadListings();
+            await ref.read(locationProvider.notifier).determinePosition();
+          },
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              // Search Bar & Filter Button Section
+              Container(
+                color: AppColors.surface,
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search Bar
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => context.go('/customer/search'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.outlineVariant),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Search meals, PGs or messes...',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        InkWell(
+                          onTap: () => context.go('/customer/search'),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.outlineVariant),
+                            ),
+                            child: const Icon(Icons.tune, color: AppColors.textSecondary, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Distance Radius Filter Pills
+                    Row(
+                      children: [
+                        Text(
+                          'Distance: ',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRadiusPill(1.0, '1.0 km', selectedRadius),
+                        const SizedBox(width: 6),
+                        _buildRadiusPill(2.0, '2.0 km', selectedRadius),
+                        const SizedBox(width: 6),
+                        _buildRadiusPill(5.0, '5.0 km', selectedRadius),
+                        const SizedBox(width: 6),
+                        _buildRadiusPill(10.0, '10.0 km', selectedRadius),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Category Filter Carousel
+                    SizedBox(
+                      height: 38,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final cat = categories[index];
+                          final isSelected = foodState.selectedCategory == cat;
+                          Color? dot;
+                          if (cat == 'Vegetarian') dot = AppColors.vegColor;
+                          if (cat == 'Non-Vegetarian') dot = AppColors.nonVegColor;
+
+                          return CategoryChip(
+                            label: cat,
+                            isSelected: isSelected,
+                            dotColor: dot,
+                            onTap: () {
+                              ref.read(foodProvider.notifier).updateCategory(cat);
+                            },
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            
-            // Categories Horizontal List
-            SizedBox(
-              height: 56,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final cat = categories[index];
-                  final isSelected = foodState.selectedCategory == cat;
-                  return CategoryChip(
-                    label: cat,
-                    isSelected: isSelected,
-                    onTap: () {
-                      ref.read(foodProvider.notifier).updateCategory(cat);
-                    },
-                  );
-                },
-              ),
-            ),
-            
-            // Feed Listings
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  ref.read(foodProvider.notifier).refreshListings();
-                  await ref.read(locationProvider.notifier).determinePosition();
-                },
 
-                child: filteredFood.isEmpty
-                    ? _buildEmptyState(selectedRadius)
-                    : ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          if (foodState.selectedCategory == 'All') ...[
-                            // Section: Ending Soon
-                            if (endingSoonList.isNotEmpty) ...[
-                              _buildSectionHeader('Ending Soon ⚡'),
-                              const SizedBox(height: 8),
-                              ...endingSoonList.take(2).map((food) => FoodCard(
-                                    food: food,
-                                    onTap: () => context.push('/customer/food/${food.id}'),
-                                  )),
-                              const SizedBox(height: 16),
-                            ],
+              const SizedBox(height: 12),
 
-                            // Section: Popular Today
-                            if (popularList.isNotEmpty) ...[
-                              _buildSectionHeader('Popular Today 🔥'),
-                              const SizedBox(height: 8),
-                              ...popularList.take(2).map((food) => FoodCard(
-                                    food: food,
-                                    onTap: () => context.push('/customer/food/${food.id}'),
-                                  )),
-                              const SizedBox(height: 16),
-                            ],
-                            
-                            // Section: Nearby Food
-                            _buildSectionHeader('Nearby Food Marketplace 📍'),
-                            const SizedBox(height: 8),
+              // Listings content or True Empty State
+              if (filteredFood.isEmpty)
+                _buildEmptyState()
+              else ...[
+                // Ending Soon Carousel (Only on 'All' category and if endingSoonList has items)
+                if (foodState.selectedCategory == 'All' && endingSoonList.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.timer_outlined, color: AppColors.secondary, size: 22),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Ending Soon',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
                           ],
-                          
-                          // General list of items
-                          ...filteredFood.map((food) => FoodCard(
-                                food: food,
-                                onTap: () => context.push('/customer/food/${food.id}'),
-                              )),
-                        ],
-                      ),
-              ),
-            ),
-          ],
+                        ),
+                        InkWell(
+                          onTap: () => context.go('/customer/search'),
+                          child: Text(
+                            'View All',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 264,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: endingSoonList.length,
+                      itemBuilder: (context, index) {
+                        final food = endingSoonList[index];
+                        return FoodCard(
+                          food: food,
+                          isCompact: true,
+                          onTap: () => context.push('/customer/food/${food.id}'),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Nearby Fresh Surplus Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Text(
+                    'Nearby Fresh Surplus',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: filteredFood.map((food) => FoodCard(
+                          food: food,
+                          isCompact: false,
+                          onTap: () => context.push('/customer/food/${food.id}'),
+                        )).toList(),
+                  ),
+                ),
+              ],
+            ],
+          ),
         );
     }
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+  Widget _buildRadiusPill(double radius, String label, double selectedRadius) {
+    final isSelected = (selectedRadius - radius).abs() < 0.1;
+    return GestureDetector(
+      onTap: () {
+        ref.read(radiusProvider.notifier).state = radius;
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(9999),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.outline,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.15),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState(double radius) {
+  Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Opacity(
-              opacity: 0.3,
-              child: Image.asset(
-                'assets/branding/extrabite_logo.png',
-                height: 80,
-                width: 80,
-                fit: BoxFit.contain,
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.restaurant_outlined,
+                size: 48,
+                color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
-              'No meals within ${radius.toInt()} km',
-              style: const TextStyle(
+              'No surplus meals nearby yet.',
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Try changing your category filter or increasing your search radius.',
+              'PGs and messes post extra portions after meal service times (Lunch: 1:30–3 PM, Dinner: 9–11 PM). Try expanding your radius or check back soon!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: () {
+                ref.read(foodProvider.notifier).loadListings();
+                ref.read(locationProvider.notifier).determinePosition();
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Refresh Feed'),
             ),
           ],
         ),
@@ -303,7 +441,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     VoidCallback? onAction,
   }) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -311,30 +449,30 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             if (isProgress) ...[
               const CircularProgressIndicator(color: AppColors.primary),
             ] else ...[
-              Icon(icon, size: 64, color: iconColor),
+              Icon(icon, size: 52, color: iconColor),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
+              style: GoogleFonts.inter(
+                fontSize: 13,
                 color: AppColors.textSecondary,
                 height: 1.4,
               ),
             ),
             if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: onAction,
                 child: Text(actionText),

@@ -5,11 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:extrabite_mobile/core/location/location_state.dart';
+import 'package:extrabite_mobile/core/repositories/fake_auth_repository.dart';
 import 'package:extrabite_mobile/core/utils/haversine.dart';
+import 'package:extrabite_mobile/providers/auth_provider.dart';
 import 'package:extrabite_mobile/providers/location_provider.dart';
 import 'package:extrabite_mobile/providers/food_provider.dart';
 import 'package:extrabite_mobile/models/food_listing.dart';
 import 'package:extrabite_mobile/features/customer/screens/customer_home_screen.dart';
+import 'package:extrabite_mobile/core/repositories/pg_profile_repository.dart';
 import 'mocks.dart';
 
 void main() {
@@ -127,6 +130,8 @@ void main() {
       container = ProviderContainer(
         overrides: [
           locationServiceProvider.overrideWithValue(mockService),
+          foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
+          pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
         ],
       );
     });
@@ -339,6 +344,9 @@ void main() {
         ProviderScope(
           overrides: [
             locationServiceProvider.overrideWithValue(mockService),
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
+            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -374,6 +382,9 @@ void main() {
         ProviderScope(
           overrides: [
             locationServiceProvider.overrideWithValue(mockService),
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
+            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -394,6 +405,9 @@ void main() {
         ProviderScope(
           overrides: [
             locationServiceProvider.overrideWithValue(mockService),
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
+            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -424,6 +438,9 @@ void main() {
                 const LocationState.available(16.4971, 80.5005),
               );
             }),
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
+            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),

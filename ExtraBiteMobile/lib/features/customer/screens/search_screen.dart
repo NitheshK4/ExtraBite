@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../providers/food_provider.dart';
 import '../widgets/food_card.dart';
@@ -20,13 +21,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     'Biryani',
     'Veg Meals',
     'Sri Sai PG',
-    'Breakfast'
+    'Breakfast',
+    'Paneer',
   ];
 
   @override
   void initState() {
     super.initState();
-    // Pre-populate controller from existing state if any
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchController.text = ref.read(foodProvider).searchQuery;
     });
@@ -55,8 +56,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final filteredFood = ref.watch(filteredFoodProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Search Marketplace'),
+        title: Text(
+          'Search Marketplace',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -65,42 +70,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             // Search Input Container
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _focusNode,
-                      autofocus: foodState.searchQuery.isEmpty,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: 'Search meals, PGs or messes...',
-                        prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, color: Colors.grey),
-                                onPressed: _clearSearch,
-                              )
-                            : null,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              child: TextField(
+                controller: _searchController,
+                focusNode: _focusNode,
+                autofocus: foodState.searchQuery.isEmpty,
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Search meals, PGs or messes...',
+                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                ),
               ),
             ),
 
@@ -117,6 +101,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             final food = filteredFood[index];
                             return FoodCard(
                               food: food,
+                              isCompact: false,
                               onTap: () => context.push('/customer/food/${food.id}'),
                             );
                           },
@@ -134,11 +119,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Recent Searches',
-            style: TextStyle(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
@@ -148,11 +133,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             runSpacing: 8,
             children: _recentSearches.map((term) {
               return ActionChip(
-                label: Text(term),
+                label: Text(
+                  term,
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
                 backgroundColor: AppColors.surface,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: const BorderSide(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(9999),
+                  side: const BorderSide(color: AppColors.outline),
                 ),
                 onPressed: () {
                   _searchController.text = term;
@@ -169,33 +158,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Opacity(
-              opacity: 0.3,
-              child: Image.asset(
-                'assets/branding/extrabite_logo.png',
-                height: 80,
-                width: 80,
-                fit: BoxFit.contain,
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off_outlined,
+                size: 44,
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No meals found nearby.',
-              style: TextStyle(
+            Text(
+              'No matching surplus meals',
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'We couldn\'t find any active surplus food listings matching your query.',
+            Text(
+              'We couldn\'t find any active listings matching "${_searchController.text}". Try a broader term or different keyword.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
+              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
             ),
           ],
         ),

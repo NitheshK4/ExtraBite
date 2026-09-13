@@ -1,23 +1,53 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF2E7D32); // Emerald Green
-  static const Color primaryLight = Color(0xFFE8F5E9);
-  static const Color secondary = Color(0xFFFF8F00); // Amber Orange
-  static const Color secondaryLight = Color(0xFFFFF8E1);
+  // Brand & Semantic
+  static const Color primary = Color(0xFF1B5E20); // Forest Emerald Green
+  static const Color primaryLight = Color(0xFFE8F5E9); // Mint Container Tint
+  static const Color onPrimary = Colors.white;
+  static const Color onPrimaryContainer = Color(0xFF003300);
+
+  static const Color secondary = Color(0xFFE65100); // Warm Amber Accent / Urgency
+  static const Color secondaryLight = Color(0xFFFFF3E0); // Warm Glow Pill
+  static const Color onSecondary = Colors.white;
+  static const Color onSecondaryContainer = Color(0xFF561900);
+
+  static const Color tertiary = Color(0xFF1976D2); // Digital Pass Blue
+  static const Color tertiaryLight = Color(0xFFE3F2FD);
+  static const Color onTertiary = Colors.white;
   
-  static const Color background = Color(0xFFF9FBF9);
+  // Surfaces & Backgrounds
+  static const Color background = Color(0xFFF8F9FA); // Soft Neutral Canvas
   static const Color surface = Colors.white;
+  static const Color surfaceDim = Color(0xFFF1F3F5);
+  static const Color surfaceContainerHigh = Color(0xFFF1F3F5);
+  static const Color surfaceContainerHighest = Color(0xFFE9ECEF);
   
-  static const Color textPrimary = Color(0xFF1B2A1C);
-  static const Color textSecondary = Color(0xFF556B58);
-  static const Color textLight = Color(0xFF8D9E90);
+  // Typography
+  static const Color textPrimary = Color(0xFF1A1D1E);
+  static const Color textSecondary = Color(0xFF5A626A);
+  static const Color textLight = Color(0xFF8D959E);
+  static const Color onSurfaceVariant = Color(0xFF5A626A);
   
-  static const Color border = Color(0xFFE0E6E0);
-  static const Color error = Color(0xFFC62828);
+  // Borders & Feedback
+  static const Color border = Color(0xFFE0E3E7);
+  static const Color outline = Color(0xFFE0E3E7);
+  static const Color outlineVariant = Color(0xFFCBD2D9);
+  static const Color error = Color(0xFFD32F2F);
+  static const Color errorLight = Color(0xFFFFEBEE);
   static const Color success = Color(0xFF2E7D32);
   
   // Veg/Non-Veg indicators
-  static const Color vegColor = Color(0xFF388E3C);
-  static const Color nonVegColor = Color(0xFFD32F2F);
+  static const Color vegColor = Color(0xFF2E7D32);
+  static const Color dietaryVeg = Color(0xFF2E7D32);
+  static const Color vegBg = Color(0xFFE8F5E9);
+  static const Color nonVegColor = Color(0xFFC62828);
+  static const Color dietaryNonVeg = Color(0xFFC62828);
+  static const Color nonVegBg = Color(0xFFFFEBEE);
+
+  // Status Badges
+  static const Color statusConfirmed = Color(0xFFE65100);
+  static const Color statusReady = Color(0xFF1976D2);
+  static const Color statusCompleted = Color(0xFF2E7D32);
+  static const Color statusCancelled = Color(0xFF757575);
 }

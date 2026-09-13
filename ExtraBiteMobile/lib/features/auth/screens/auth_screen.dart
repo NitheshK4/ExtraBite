@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../models/user_role.dart';
 import '../../../providers/auth_provider.dart';
@@ -79,10 +80,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
           ),
           title: Text(
             isOwner ? 'Hostel / PG Owner Auth' : 'Personal User Auth',
-            style: const TextStyle(
+            style: GoogleFonts.plusJakartaSans(
               color: AppColors.textPrimary,
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -96,7 +97,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                   ),
@@ -114,8 +115,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                           children: [
                             Text(
                               selectedRole.displayName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w700,
                                 fontSize: 15,
                                 color: AppColors.textPrimary,
                               ),
@@ -124,7 +125,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                               isOwner
                                   ? 'Register your PG/Hostel to list surplus food'
                                   : 'Sign in to reserve surplus meals near you',
-                              style: const TextStyle(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
                               ),
@@ -134,25 +135,47 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                       ),
                       TextButton(
                         onPressed: _handleBackNavigation,
-                        child: const Text('Change', style: TextStyle(fontSize: 12)),
+                        child: Text(
+                          'Change',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // Error banner if any
+                // Error banner
                 if (authState.errorMessage != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.errorLight,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error.withOpacity(0.3)),
                     ),
                     child: Text(
                       authState.errorMessage!,
-                      style: const TextStyle(color: AppColors.error, fontSize: 13),
+                      style: GoogleFonts.inter(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (authState.infoMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+                    ),
+                    child: Text(
+                      authState.infoMessage!,
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -162,7 +185,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppColors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TabBar(
@@ -175,7 +198,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                     ),
                     labelColor: Colors.white,
                     unselectedLabelColor: AppColors.textSecondary,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14),
+                    unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
                     tabs: const [
                       Tab(text: 'Log In'),
                       Tab(text: 'Sign Up'),
@@ -184,24 +208,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                 ),
                 const SizedBox(height: 24),
 
-              // Form View
-              SizedBox(
-                height: isOwner ? 480 : 420,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildLoginForm(isLoading, selectedRole),
-                    _buildSignupForm(isLoading, selectedRole, isOwner),
-                  ],
+                // Form View
+                SizedBox(
+                  height: isOwner ? 500 : 440,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildLoginForm(isLoading, selectedRole),
+                      _buildSignupForm(isLoading, selectedRole, isOwner),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildLoginForm(bool isLoading, UserRole role) {
     return Form(
@@ -215,7 +239,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
             decoration: const InputDecoration(
               labelText: 'Email Address',
               prefixIcon: Icon(Icons.email_outlined),
-              border: OutlineInputBorder(),
             ),
             validator: (val) {
               if (val == null || val.trim().isEmpty) return 'Please enter your email';
@@ -230,7 +253,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
             decoration: const InputDecoration(
               labelText: 'Password',
               prefixIcon: Icon(Icons.lock_outline),
-              border: OutlineInputBorder(),
             ),
             validator: (val) {
               if (val == null || val.isEmpty) return 'Please enter your password';
@@ -257,6 +279,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
                   )
                 : Text('Log In as ${role.displayName}'),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: isLoading
+                ? null
+                : () async {
+                    await ref.read(authProvider.notifier).signInWithGoogle();
+                  },
+            icon: const Icon(Icons.login),
+            label: const Text('Continue with Google'),
+          ),
         ],
       ),
     );
@@ -274,7 +306,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
               decoration: const InputDecoration(
                 labelText: 'Full Name',
                 prefixIcon: Icon(Icons.person_outline),
-                border: OutlineInputBorder(),
               ),
               validator: (val) => val == null || val.trim().isEmpty ? 'Please enter your name' : null,
             ),
@@ -285,7 +316,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
               decoration: const InputDecoration(
                 labelText: 'Email Address',
                 prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) return 'Please enter your email';
@@ -300,34 +330,31 @@ class _AuthScreenState extends ConsumerState<AuthScreen> with SingleTickerProvid
               decoration: const InputDecoration(
                 labelText: 'Phone Number',
                 prefixIcon: Icon(Icons.phone_outlined),
-                border: OutlineInputBorder(),
               ),
               validator: (val) => val == null || val.trim().isEmpty ? 'Please enter your phone number' : null,
             ),
+            const SizedBox(height: 12),
             if (isOwner) ...[
-              const SizedBox(height: 12),
               TextFormField(
                 controller: _signupPropertyNameController,
                 decoration: const InputDecoration(
                   labelText: 'PG / Hostel / Mess Name',
                   prefixIcon: Icon(Icons.business_outlined),
-                  border: OutlineInputBorder(),
                 ),
                 validator: (val) =>
                     val == null || val.trim().isEmpty ? 'Please enter your property name' : null,
               ),
+              const SizedBox(height: 12),
             ],
-            const SizedBox(height: 12),
             TextFormField(
               controller: _signupPasswordController,
               obscureText: true,
               decoration: const InputDecoration(
                 labelText: 'Password',
                 prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(),
               ),
               validator: (val) =>
-                  val == null || val.length < 4 ? 'Password must be at least 4 chars' : null,
+                  val == null || val.length < 6 ? 'Password must be at least 6 characters' : null,
             ),
             const SizedBox(height: 20),
             ElevatedButton(

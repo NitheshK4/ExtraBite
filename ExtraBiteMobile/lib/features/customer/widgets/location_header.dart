@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
@@ -9,209 +10,112 @@ import '../../../core/location/location_state.dart';
 class LocationHeader extends ConsumerWidget {
   const LocationHeader({super.key});
 
-  String getGreeting([String? name]) {
-    final hour = DateTime.now().hour;
-    String timeGreeting;
-    if (hour < 12) {
-      timeGreeting = 'Good morning';
-    } else if (hour < 17) {
-      timeGreeting = 'Good afternoon';
-    } else {
-      timeGreeting = 'Good evening';
-    }
-
-    if (name != null && name.trim().isNotEmpty) {
-      final firstName = name.trim().split(' ').first;
-      return '$timeGreeting, $firstName 👋';
-    }
-    return '$timeGreeting 👋';
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final userInitials = user?.initials ?? 'U';
+    final userInitials = user?.initials ?? 'AK';
 
     final locationState = ref.watch(locationProvider);
-    final selectedRadius = ref.watch(radiusProvider);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      color: AppColors.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Row 1: Logo & App name + User Avatar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+          // App Logo
+          Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: Image.asset(
+              'assets/branding/extrabite_logo.png',
+              height: 36,
+              width: 36,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.eco,
+                color: AppColors.primary,
+                size: 26,
+              ),
+            ),
+          ),
+
+          // Location details (Tappable to pick location)
+          Expanded(
+            child: InkWell(
+              onTap: () => _showLocationPicker(context, ref, locationState.displayName),
+              borderRadius: BorderRadius.circular(10),
+              child: Row(
                 children: [
-                  Image.asset(
-                    'assets/branding/extrabite_logo.png',
-                    height: 40,
-                    width: 40,
-                    fit: BoxFit.contain,
+                  const Icon(
+                    Icons.location_on,
+                    color: AppColors.primary,
+                    size: 22,
                   ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'SavourE',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.2,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          locationState.displayName,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        getGreeting(user?.name),
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          locationState.status == LocationStateStatus.available &&
+                                  locationState.latitude != null &&
+                                  locationState.longitude != null
+                              ? '${locationState.latitude!.toStringAsFixed(3)}, ${locationState.longitude!.toStringAsFixed(3)}'
+                              : 'Tap to change area',
+                          style: GoogleFonts.inter(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                 ],
               ),
-              InkWell(
-                onTap: () => context.go('/customer/profile'),
-                borderRadius: BorderRadius.circular(22),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      userInitials,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+            ),
+          ),
+
+          // User Profile Initials Pill / Button
+          InkWell(
+            onTap: () => context.go('/customer/profile'),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerHigh,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.outline),
+              ),
+              child: Center(
+                child: Text(
+                  userInitials,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Row 2: Location details + Radius Dropdown + Refresh Button
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Location text & coordinates (tappable to trigger manual location picker bottom sheet)
-                Expanded(
-                  child: InkWell(
-                    onTap: () => _showLocationPicker(context, ref, locationState.displayName),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  locationState.displayName,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (locationState.status == LocationStateStatus.available &&
-                                    locationState.latitude != null &&
-                                    locationState.longitude != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${locationState.latitude!.toStringAsFixed(4)}, ${locationState.longitude!.toStringAsFixed(4)}',
-                                    style: const TextStyle(
-                                      color: AppColors.textLight,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.keyboard_arrow_down,
-                            color: AppColors.primary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Radius Dropdown Selector + Refresh Button
-                Row(
-                  children: [
-                    DropdownButton<double>(
-                      value: selectedRadius,
-                      underline: const SizedBox(),
-                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 1.0, child: Text('Within 1 km')),
-                        DropdownMenuItem(value: 2.0, child: Text('Within 2 km')),
-                        DropdownMenuItem(value: 5.0, child: Text('Within 5 km')),
-                        DropdownMenuItem(value: 10.0, child: Text('Within 10 km')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          ref.read(radiusProvider.notifier).state = val;
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 4),
-                    // Refresh Button (GPS Refresh)
-                    IconButton(
-                      key: const Key('refresh_location_button'),
-                      icon: const Icon(Icons.refresh, color: AppColors.primary, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: locationState.status == LocationStateStatus.loading
-                          ? null
-                          : () {
-                              ref.read(locationProvider.notifier).resetToDefault();
-                            },
-                    ),
-                  ],
-                ),
-              ],
             ),
           ),
         ],
@@ -315,13 +219,17 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.place_outlined, color: AppColors.primary),
-                    SizedBox(width: 8),
+                    const Icon(Icons.place_outlined, color: AppColors.primary),
+                    const SizedBox(width: 8),
                     Text(
                       'Choose Your Location',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ],
                 ),
@@ -331,13 +239,12 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                 ),
               ],
             ),
-            const Divider(),
+            const Divider(color: AppColors.outline),
             const SizedBox(height: 12),
 
             // Custom search / location input
             TextField(
               controller: _customLocationController,
-              autofocus: false,
               decoration: InputDecoration(
                 hintText: 'Enter campus, hostel, or landmark...',
                 prefixIcon: const Icon(Icons.search, color: AppColors.primary),
@@ -351,10 +258,6 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                     }
                   },
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               onSubmitted: (val) {
                 if (val.trim().isNotEmpty) {
@@ -377,29 +280,33 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                   ),
                 );
               },
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.my_location, color: AppColors.primary, size: 20),
-                    SizedBox(width: 10),
+                    const Icon(Icons.my_location, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Use Current GPS Location',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                              fontSize: 14,
+                            ),
                           ),
                           Text(
-                            'Fetch nearest surplus meals in your area using real device GPS',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            'Fetch nearest surplus meals using device GPS',
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -410,9 +317,13 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             ),
             const SizedBox(height: 16),
 
-            const Text(
+            Text(
               'Popular Campuses & Areas',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
 
@@ -424,7 +335,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryLight : Colors.grey.shade100,
+                    color: isSelected ? AppColors.primaryLight : AppColors.surfaceContainerHigh,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -435,14 +346,14 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                 ),
                 title: Text(
                   loc['title']!,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  style: GoogleFonts.inter(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                     color: isSelected ? AppColors.primary : AppColors.textPrimary,
                   ),
                 ),
                 subtitle: Text(
                   loc['subtitle']!,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textLight),
                 ),
                 trailing: isSelected
                     ? const Icon(Icons.check_circle, color: AppColors.primary)

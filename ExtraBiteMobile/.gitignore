@@ -1,21 +1,24 @@
-# Miscellaneous
+# Miscellaneous / OS
 *.class
 *.log
 *.pyc
 *.swp
 .DS_Store
+Thumbs.db
+Desktop.ini
 .atom/
 .buildlog/
 .history
 .svn/
 
-# IntelliJ related
+# IntelliJ / VS Code
 *.iml
 *.ipr
 *.iws
 .idea/
+.vscode/
 
-# Flutter/Dart/Pub related
+# Flutter / Dart
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
@@ -23,21 +26,24 @@
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/coverage/
+build/
+coverage/
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# Local configuration files
-/android/local.properties
-/android/key.properties
+# Android
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+android/key.properties
 .gradle/
-/ios/Flutter/Generated.xcconfig
-/ios/Flutter/flutter_export_environment.sh
 
-# Web / Node
-node_modules/
+# iOS
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# Environment
 .env
+.env.*
+*.env
+!.env.example
+dart-defines.json
