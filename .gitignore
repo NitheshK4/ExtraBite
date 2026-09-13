@@ -25,6 +25,7 @@ migrate_working_dir/
 **/.flutter-plugins-dependencies
 **/coverage/
 **/doc/api/
+**/devtools_options.yaml
 
 # Android
 **/.gradle/
