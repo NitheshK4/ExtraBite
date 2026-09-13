@@ -244,18 +244,17 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
   Widget build(BuildContext context) {
     final history = ref.watch(locationHistoryProvider);
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SingleChildScrollView(
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,6 +507,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
             ],
           ],
         ),
+      ),
       ),
     );
   }
