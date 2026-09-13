@@ -255,259 +255,262 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
           bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
         child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.place_outlined, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Choose Your Location',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const Divider(color: AppColors.outline),
-            const SizedBox(height: 12),
-
-            // Custom search / location input
-            TextField(
-              controller: _customLocationController,
-              decoration: InputDecoration(
-                hintText: 'Enter campus, hostel, or landmark...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear,
-                            color: AppColors.textSecondary, size: 20),
-                        tooltip: 'Clear input',
-                        onPressed: () {
-                          _customLocationController.clear();
-                        },
-                      )
-                    : null,
-              ),
-              onSubmitted: (val) {
-                if (val.trim().isNotEmpty) {
-                  _selectCustomLocation(val.trim());
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Use Current GPS Location Button
-            InkWell(
-              onTap: () {
-                ref.read(locationProvider.notifier).resetToDefault();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: AppColors.primary,
-                    content: Text('📍 Reset to GPS location tracking'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.my_location,
-                        color: AppColors.primary, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Use Current GPS Location',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            'Fetch nearest surplus meals using device GPS',
-                            style: GoogleFonts.inter(
-                                fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // DYNAMIC SECTION: Search Results OR Recent Locations
-            if (_searchQuery.isNotEmpty) ...[
-              Text(
-                'Search Results',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildSearchResults(_searchQuery),
-            ] else ...[
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Recent Locations',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  if (history.isNotEmpty)
-                    TextButton(
-                      onPressed: () => _confirmClearHistory(context),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Clear All',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.error,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              if (history.isEmpty)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  alignment: Alignment.center,
-                  child: Column(
+                  Row(
                     children: [
-                      Icon(Icons.history,
-                          size: 36,
-                          color: AppColors.textSecondary.withOpacity(0.4)),
-                      const SizedBox(height: 8),
+                      const Icon(Icons.place_outlined,
+                          color: AppColors.primary),
+                      const SizedBox(width: 8),
                       Text(
-                        'Search for a location to get started.',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                        'Choose Your Location',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Your selected campus or area will be saved here for quick access.',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.textLight,
-                        ),
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                )
-              else
-                ...history.map((item) {
-                  final isSelected = widget.currentLocation == item.title;
-                  return ListTile(
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primaryLight
-                            : AppColors.surfaceContainerHigh,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        item.icon == 'campus'
-                            ? Icons.school_outlined
-                            : item.icon == 'city' || item.icon == 'town'
-                                ? Icons.location_city_outlined
-                                : Icons.place_outlined,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      item.title,
-                      style: GoogleFonts.inter(
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w600,
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                    subtitle: Text(
-                      item.subtitle,
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: AppColors.textLight),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 8.0),
-                            child: Icon(Icons.check_circle,
-                                color: AppColors.primary, size: 20),
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.close,
-                              size: 16, color: AppColors.textLight),
-                          tooltip: 'Remove',
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(color: AppColors.outline),
+              const SizedBox(height: 12),
+
+              // Custom search / location input
+              TextField(
+                controller: _customLocationController,
+                decoration: InputDecoration(
+                  hintText: 'Enter campus, hostel, or landmark...',
+                  prefixIcon:
+                      const Icon(Icons.search, color: AppColors.primary),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear,
+                              color: AppColors.textSecondary, size: 20),
+                          tooltip: 'Clear input',
                           onPressed: () {
-                            ref
-                                .read(locationHistoryProvider.notifier)
-                                .removeLocation(item.id);
+                            _customLocationController.clear();
                           },
+                        )
+                      : null,
+                ),
+                onSubmitted: (val) {
+                  if (val.trim().isNotEmpty) {
+                    _selectCustomLocation(val.trim());
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Use Current GPS Location Button
+              InkWell(
+                onTap: () {
+                  ref.read(locationProvider.notifier).resetToDefault();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: AppColors.primary,
+                      content: Text('📍 Reset to GPS location tracking'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.my_location,
+                          color: AppColors.primary, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Use Current GPS Location',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              'Fetch nearest surplus meals using device GPS',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // DYNAMIC SECTION: Search Results OR Recent Locations
+              if (_searchQuery.isNotEmpty) ...[
+                Text(
+                  'Search Results',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildSearchResults(_searchQuery),
+              ] else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Locations',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    if (history.isNotEmpty)
+                      TextButton(
+                        onPressed: () => _confirmClearHistory(context),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Clear All',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (history.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 24, horizontal: 16),
+                    alignment: Alignment.center,
+                    child: Column(
+                      children: [
+                        Icon(Icons.history,
+                            size: 36,
+                            color: AppColors.textSecondary.withOpacity(0.4)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Search for a location to get started.',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Your selected campus or area will be saved here for quick access.',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppColors.textLight,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                    onTap: () => _selectLocationItem(item),
-                  );
-                }),
+                  )
+                else
+                  ...history.map((item) {
+                    final isSelected = widget.currentLocation == item.title;
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryLight
+                              : AppColors.surfaceContainerHigh,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          item.icon == 'campus'
+                              ? Icons.school_outlined
+                              : item.icon == 'city' || item.icon == 'town'
+                                  ? Icons.location_city_outlined
+                                  : Icons.place_outlined,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        item.title,
+                        style: GoogleFonts.inter(
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w600,
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      subtitle: Text(
+                        item.subtitle,
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: AppColors.textLight),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isSelected)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 8.0),
+                              child: Icon(Icons.check_circle,
+                                  color: AppColors.primary, size: 20),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.close,
+                                size: 16, color: AppColors.textLight),
+                            tooltip: 'Remove',
+                            onPressed: () {
+                              ref
+                                  .read(locationHistoryProvider.notifier)
+                                  .removeLocation(item.id);
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () => _selectLocationItem(item),
+                    );
+                  }),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
