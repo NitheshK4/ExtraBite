@@ -28,7 +28,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final food = ref.watch(foodDetailProvider(widget.foodId));
-    
+
     if (food == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Meal Listing')),
@@ -36,7 +36,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.search_off, size: 64, color: AppColors.textLight),
+              const Icon(Icons.search_off,
+                  size: 64, color: AppColors.textLight),
               const SizedBox(height: 16),
               Text(
                 'Surplus meal listing not found.',
@@ -58,9 +59,13 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     }
 
     final formatTime = DateFormat('hh:mm a');
-    final pickupWindowStr = '${formatTime.format(food.pickupStarts)} - ${formatTime.format(food.pickupEnds)}';
-    final savingsPerPortion = (food.originalPrice - food.sellingPrice).clamp(0.0, double.infinity).toDouble();
-    final remainingMinutes = food.pickupEnds.difference(DateTime.now()).inMinutes;
+    final pickupWindowStr =
+        '${formatTime.format(food.pickupStarts)} - ${formatTime.format(food.pickupEnds)}';
+    final savingsPerPortion = (food.originalPrice - food.sellingPrice)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+    final remainingMinutes =
+        food.pickupEnds.difference(DateTime.now()).inMinutes;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -99,7 +104,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                       const SizedBox(height: 14),
 
                       // Urgency & Pickup Window Card
-                      _buildUrgencyCard(food, pickupWindowStr, remainingMinutes),
+                      _buildUrgencyCard(
+                          food, pickupWindowStr, remainingMinutes),
                       const SizedBox(height: 16),
 
                       // PG Property Card
@@ -142,22 +148,26 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: food.ingredients.map((ing) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(9999),
-                              border: Border.all(color: AppColors.outline),
-                            ),
-                            child: Text(
-                              ing,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          )).toList(),
+                          children: food.ingredients
+                              .map((ing) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(9999),
+                                      border:
+                                          Border.all(color: AppColors.outline),
+                                    ),
+                                    child: Text(
+                                      ing,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ))
+                              .toList(),
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -175,29 +185,35 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: food.allergens.map((all) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.errorLight,
-                              borderRadius: BorderRadius.circular(9999),
-                              border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.error),
-                                const SizedBox(width: 4),
-                                Text(
-                                  all,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: AppColors.error,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )).toList(),
+                          children: food.allergens
+                              .map((all) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.errorLight,
+                                      borderRadius: BorderRadius.circular(9999),
+                                      border: Border.all(
+                                          color:
+                                              AppColors.error.withOpacity(0.3)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.warning_amber_rounded,
+                                            size: 14, color: AppColors.error),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          all,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: AppColors.error,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ))
+                              .toList(),
                         ),
                         const SizedBox(height: 16),
                       ],
@@ -240,11 +256,30 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               ? Image.network(
                   food.imageUrl!,
                   fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Center(
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: CircularProgressIndicator(
+                          value: progress.expectedTotalBytes != null
+                              ? progress.cumulativeBytesLoaded /
+                                  (progress.expectedTotalBytes ?? 1)
+                              : null,
+                          strokeWidth: 3,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    );
+                  },
                   errorBuilder: (_, __, ___) => Center(
                     child: Icon(
                       food.isVegetarian ? Icons.eco : Icons.kebab_dining,
                       size: 80,
-                      color: food.isVegetarian ? AppColors.vegColor.withOpacity(0.5) : AppColors.nonVegColor.withOpacity(0.5),
+                      color: food.isVegetarian
+                          ? AppColors.vegColor.withOpacity(0.5)
+                          : AppColors.nonVegColor.withOpacity(0.5),
                     ),
                   ),
                 )
@@ -252,7 +287,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   child: Icon(
                     food.isVegetarian ? Icons.eco : Icons.kebab_dining,
                     size: 80,
-                    color: food.isVegetarian ? AppColors.vegColor.withOpacity(0.5) : AppColors.nonVegColor.withOpacity(0.5),
+                    color: food.isVegetarian
+                        ? AppColors.vegColor.withOpacity(0.5)
+                        : AppColors.nonVegColor.withOpacity(0.5),
                   ),
                 ),
         ),
@@ -282,7 +319,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             backgroundColor: AppColors.surface,
             radius: 20,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 20),
+              icon: const Icon(Icons.arrow_back,
+                  color: AppColors.textPrimary, size: 20),
               onPressed: () => context.pop(),
             ),
           ),
@@ -296,10 +334,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             backgroundColor: AppColors.surface,
             radius: 20,
             child: IconButton(
-              icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary, size: 20),
+              icon: const Icon(Icons.share_outlined,
+                  color: AppColors.textPrimary, size: 20),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Meal link copied to clipboard!')),
+                  const SnackBar(
+                      content: Text('Meal link copied to clipboard!')),
                 );
               },
             ),
@@ -424,7 +464,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 
-  Widget _buildUrgencyCard(FoodListing food, String pickupWindowStr, int remainingMinutes) {
+  Widget _buildUrgencyCard(
+      FoodListing food, String pickupWindowStr, int remainingMinutes) {
     final isUrgent = remainingMinutes <= 60 && remainingMinutes > 0;
 
     return Container(
@@ -433,7 +474,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         color: isUrgent ? AppColors.errorLight : AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isUrgent ? AppColors.error.withOpacity(0.3) : AppColors.outlineVariant,
+          color: isUrgent
+              ? AppColors.error.withOpacity(0.3)
+              : AppColors.outlineVariant,
         ),
       ),
       child: Row(
@@ -494,7 +537,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.storefront, color: AppColors.primary, size: 20),
+                child: const Icon(Icons.storefront,
+                    color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -512,7 +556,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.verified, color: AppColors.tertiary, size: 16),
+                        const Icon(Icons.verified,
+                            color: AppColors.tertiary, size: 16),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -535,7 +580,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textSecondary),
+              const Icon(Icons.location_on_outlined,
+                  size: 18, color: AppColors.textSecondary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -606,10 +652,13 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                     ),
                   ),
                   Text(
-                    isSoldOut ? 'Sold out' : '${food.availablePortions} portions left',
+                    isSoldOut
+                        ? 'Sold out'
+                        : '${food.availablePortions} portions left',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: isSoldOut ? AppColors.error : AppColors.textSecondary,
+                      color:
+                          isSoldOut ? AppColors.error : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -694,7 +743,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5),
                         )
                       : Text(
                           isSoldOut ? 'Sold Out' : 'Reserve & Get Pass',
@@ -715,13 +765,16 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   Future<void> _handleReserve(BuildContext context, FoodListing food) async {
     setState(() => _isLoading = true);
     try {
-      final reservation = await ref.read(reservationProvider.notifier).createReservation(
-        listing: food,
-        quantity: _portionsToReserve,
-      );
+      final reservation =
+          await ref.read(reservationProvider.notifier).createReservation(
+                listing: food,
+                quantity: _portionsToReserve,
+              );
 
       // Decrement portion count in local state
-      ref.read(foodProvider.notifier).decrementPortions(food.id, _portionsToReserve);
+      ref
+          .read(foodProvider.notifier)
+          .decrementPortions(food.id, _portionsToReserve);
 
       if (!mounted || !context.mounted) return;
 
@@ -730,14 +783,17 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         context: context,
         barrierDismissible: false,
         builder: (dialogCtx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.vegColor, size: 28),
+              const Icon(Icons.check_circle,
+                  color: AppColors.vegColor, size: 28),
               const SizedBox(width: 10),
               Text(
                 'Meal Reserved!',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18),
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800, fontSize: 18),
               ),
             ],
           ),
@@ -747,15 +803,18 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             children: [
               Text(
                 'Your surplus food has been successfully reserved! Present your digital pass at pickup to complete your purchase.',
-                style: GoogleFonts.inter(height: 1.4, fontSize: 13, color: AppColors.textSecondary),
+                style: GoogleFonts.inter(
+                    height: 1.4, fontSize: 13, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 14),
               const Divider(color: AppColors.outline),
               const SizedBox(height: 6),
-              _buildDialogRow('Order Reference', '#${reservation.id.substring(0, reservation.id.length > 8 ? 8 : reservation.id.length).toUpperCase()}'),
+              _buildDialogRow('Order Reference',
+                  '#${reservation.id.substring(0, reservation.id.length > 8 ? 8 : reservation.id.length).toUpperCase()}'),
               _buildDialogRow('Reserved Item', reservation.foodName),
               _buildDialogRow('Quantity', '${reservation.quantity} portion(s)'),
-              _buildDialogRow('Amount to Collect', '₹${reservation.amountToCollect.toStringAsFixed(0)}'),
+              _buildDialogRow('Amount to Collect',
+                  '₹${reservation.amountToCollect.toStringAsFixed(0)}'),
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -766,7 +825,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.payments_outlined, size: 16, color: AppColors.primary),
+                    const Icon(Icons.payments_outlined,
+                        size: 16, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
                       'Pay at Pickup (Cash / UPI)',
@@ -792,7 +852,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               child: const Text('All Reservations'),
             ),
             ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               onPressed: () {
                 Navigator.pop(dialogCtx);
                 if (context.mounted) {
@@ -815,7 +876,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         } else if (msg.contains('not approved')) {
           msg = 'The PG property is no longer approved.';
         } else {
-          msg = 'Reservation failed: ${e.toString().replaceAll('Exception:', '').trim()}';
+          msg =
+              'Reservation failed: ${e.toString().replaceAll('Exception:', '').trim()}';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -834,8 +896,14 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
-          Text(value, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
+          Text(label,
+              style: GoogleFonts.inter(
+                  color: AppColors.textSecondary, fontSize: 13)),
+          Text(value,
+              style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: AppColors.textPrimary)),
         ],
       ),
     );

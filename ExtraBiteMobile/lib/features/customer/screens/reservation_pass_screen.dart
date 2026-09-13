@@ -16,7 +16,8 @@ class ReservationPassScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ReservationPassScreen> createState() => _ReservationPassScreenState();
+  ConsumerState<ReservationPassScreen> createState() =>
+      _ReservationPassScreenState();
 }
 
 class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
@@ -37,11 +38,13 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.receipt_long_outlined, size: 64, color: AppColors.textLight),
+              const Icon(Icons.receipt_long_outlined,
+                  size: 64, color: AppColors.textLight),
               const SizedBox(height: 16),
               Text(
                 'Reservation not found',
-                style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700),
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -55,7 +58,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
     }
 
     final formatTime = DateFormat('hh:mm a');
-    final pickupWindow = '${formatTime.format(reservation.pickupStarts)} - ${formatTime.format(reservation.pickupEnds)}';
+    final pickupWindow =
+        '${formatTime.format(reservation.pickupStarts)} - ${formatTime.format(reservation.pickupEnds)}';
     final isCancelled = reservation.status == ReservationStatus.cancelled;
     final isCompleted = reservation.status == ReservationStatus.completed;
 
@@ -64,7 +68,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
       appBar: AppBar(
         title: Text(
           'Digital Pickup Pass',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 18),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -98,7 +103,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: const BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(19)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(19)),
                       ),
                       child: Column(
                         children: [
@@ -107,7 +113,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.verified_outlined, color: Colors.white, size: 18),
+                                  const Icon(Icons.verified_outlined,
+                                      color: Colors.white, size: 18),
                                   const SizedBox(width: 6),
                                   Text(
                                     'OFFICIAL PICKUP PASS',
@@ -121,13 +128,18 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                                 ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(9999),
                                 ),
                                 child: Text(
-                                  isCompleted ? 'COMPLETED' : (isCancelled ? 'CANCELLED' : 'CONFIRMED'),
+                                  isCompleted
+                                      ? 'COMPLETED'
+                                      : (isCancelled
+                                          ? 'CANCELLED'
+                                          : 'CONFIRMED'),
                                   style: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -205,7 +217,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
                               color: AppColors.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(8),
@@ -243,7 +256,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
                         children: [
-                          _buildDetailRow('Portions Reserved', '${reservation.quantity} portion(s)'),
+                          _buildDetailRow('Portions Reserved',
+                              '${reservation.quantity} portion(s)'),
                           const SizedBox(height: 8),
                           _buildDetailRow('Pickup Window', pickupWindow),
                           const SizedBox(height: 8),
@@ -258,12 +272,14 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.secondaryLight,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+                              border: Border.all(
+                                  color: AppColors.secondary.withOpacity(0.3)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.payment, size: 16, color: AppColors.secondary),
+                                const Icon(Icons.payment,
+                                    size: 16, color: AppColors.secondary),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Pay at Pickup via Cash or UPI',
@@ -294,12 +310,15 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
                       side: const BorderSide(color: AppColors.error),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    onPressed: _isCancelling ? null : () => _confirmCancel(reservation.id),
+                    onPressed: _isCancelling
+                        ? null
+                        : () => _confirmCancel(reservation.id),
                     icon: _isCancelling
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.error),
                           )
                         : const Icon(Icons.cancel_outlined, size: 18),
                     label: const Text('Cancel Reservation'),
@@ -313,7 +332,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isHighlight = false}) {
+  Widget _buildDetailRow(String label, String value,
+      {bool isHighlight = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -347,7 +367,8 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
         ),
         content: Text(
           'Are you sure you want to cancel this reservation? The food portions will be returned to the surplus marketplace immediately.',
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+          style:
+              GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -360,12 +381,25 @@ class _ReservationPassScreenState extends ConsumerState<ReservationPassScreen> {
               Navigator.pop(dialogCtx);
               setState(() => _isCancelling = true);
               try {
-                await ref.read(reservationProvider.notifier).cancelReservation(id);
+                await ref
+                    .read(reservationProvider.notifier)
+                    .cancelReservation(id);
                 if (mounted) {
                   messenger.showSnackBar(
                     const SnackBar(
-                      content: Text('Reservation cancelled successfully.'),
+                      content: Text(
+                          'Reservation cancelled successfully. Food portions returned.'),
                       backgroundColor: AppColors.textPrimary,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Cancellation failed: ${e.toString().replaceAll('Exception: ', '')}'),
+                      backgroundColor: AppColors.error,
                     ),
                   );
                 }
@@ -459,7 +493,9 @@ class _DigitalPassQrPainter extends CustomPainter {
     final bytes = payload.codeUnits;
     for (int r = 0; r < gridSize; r++) {
       for (int c = 0; c < gridSize; c++) {
-        if ((r < 8 && c < 8) || (r >= gridSize - 8 && c < 8) || (r < 8 && c >= gridSize - 8)) {
+        if ((r < 8 && c < 8) ||
+            (r >= gridSize - 8 && c < 8) ||
+            (r < 8 && c >= gridSize - 8)) {
           continue;
         }
 
@@ -467,7 +503,8 @@ class _DigitalPassQrPainter extends CustomPainter {
           if ((r + c) % 2 == 0) {
             canvas.drawRRect(
               RRect.fromRectAndRadius(
-                Rect.fromLTWH(c * cellSize, r * cellSize, cellSize * 0.9, cellSize * 0.9),
+                Rect.fromLTWH(
+                    c * cellSize, r * cellSize, cellSize * 0.9, cellSize * 0.9),
                 const Radius.circular(1),
               ),
               paint,
@@ -481,7 +518,8 @@ class _DigitalPassQrPainter extends CustomPainter {
         if (bit) {
           canvas.drawRRect(
             RRect.fromRectAndRadius(
-              Rect.fromLTWH(c * cellSize, r * cellSize, cellSize * 0.88, cellSize * 0.88),
+              Rect.fromLTWH(
+                  c * cellSize, r * cellSize, cellSize * 0.88, cellSize * 0.88),
               const Radius.circular(1.5),
             ),
             paint,
@@ -491,7 +529,8 @@ class _DigitalPassQrPainter extends CustomPainter {
     }
   }
 
-  void _drawFinderPattern(Canvas canvas, int row, int col, double cellSize, Paint paint) {
+  void _drawFinderPattern(
+      Canvas canvas, int row, int col, double cellSize, Paint paint) {
     final left = col * cellSize;
     final top = row * cellSize;
     final size = 7 * cellSize;
@@ -509,7 +548,8 @@ class _DigitalPassQrPainter extends CustomPainter {
     final bgPaint = Paint()..color = Colors.white;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(left + cellSize, top + cellSize, size - 2 * cellSize, size - 2 * cellSize),
+        Rect.fromLTWH(left + cellSize, top + cellSize, size - 2 * cellSize,
+            size - 2 * cellSize),
         Radius.circular(cellSize),
       ),
       bgPaint,
@@ -518,7 +558,8 @@ class _DigitalPassQrPainter extends CustomPainter {
     // Center 3x3
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(left + 2 * cellSize, top + 2 * cellSize, 3 * cellSize, 3 * cellSize),
+        Rect.fromLTWH(left + 2 * cellSize, top + 2 * cellSize, 3 * cellSize,
+            3 * cellSize),
         Radius.circular(cellSize * 0.8),
       ),
       paint,
@@ -527,6 +568,7 @@ class _DigitalPassQrPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DigitalPassQrPainter oldDelegate) {
-    return oldDelegate.payload != payload || oldDelegate.isCancelled != isCancelled;
+    return oldDelegate.payload != payload ||
+        oldDelegate.isCancelled != isCancelled;
   }
 }

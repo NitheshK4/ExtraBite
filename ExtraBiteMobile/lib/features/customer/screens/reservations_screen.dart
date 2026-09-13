@@ -22,7 +22,9 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authProvider).user;
       if (user != null) {
-        ref.read(reservationProvider.notifier).loadCustomerReservations(user.id);
+        ref
+            .read(reservationProvider.notifier)
+            .loadCustomerReservations(user.id);
       }
     });
   }
@@ -39,15 +41,18 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
         appBar: AppBar(
           title: Text(
             'My Food Reservations',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+            style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700, fontSize: 18),
           ),
           bottom: TabBar(
             indicatorColor: AppColors.primary,
             indicatorSize: TabBarIndicatorSize.tab,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
-            labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
-            unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+            labelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700, fontSize: 13),
+            unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600, fontSize: 13),
             tabs: const [
               Tab(text: 'ACTIVE'),
               Tab(text: 'PAST HISTORY'),
@@ -64,12 +69,14 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
     );
   }
 
-  Widget _buildActiveTab(BuildContext context, WidgetRef ref, List<Reservation> activeList) {
+  Widget _buildActiveTab(
+      BuildContext context, WidgetRef ref, List<Reservation> activeList) {
     if (activeList.isEmpty) {
       return _buildEmptyState(
         icon: Icons.receipt_long_outlined,
         title: 'No active reservations',
-        description: 'Reserved surplus meals will appear here. Find delicious surplus food nearby to start saving!',
+        description:
+            'Reserved surplus meals will appear here. Find delicious surplus food nearby to start saving!',
       );
     }
 
@@ -80,8 +87,9 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
       itemCount: activeList.length,
       itemBuilder: (context, index) {
         final res = activeList[index];
-        final windowStr = '${formatTime.format(res.pickupStarts)} - ${formatTime.format(res.pickupEnds)}';
-        
+        final windowStr =
+            '${formatTime.format(res.pickupStarts)} - ${formatTime.format(res.pickupEnds)}';
+
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -114,7 +122,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(9999),
@@ -131,7 +140,7 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Food details
                 Text(
                   res.foodName,
@@ -150,7 +159,7 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                
+
                 // Key metrics row: Qty + Amount
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -158,40 +167,52 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Quantity', style: GoogleFonts.inter(color: AppColors.textLight, fontSize: 12)),
+                        Text('Quantity',
+                            style: GoogleFonts.inter(
+                                color: AppColors.textLight, fontSize: 12)),
                         const SizedBox(height: 2),
                         Text(
                           '${res.quantity} portion(s)',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppColors.textPrimary, fontSize: 14),
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              fontSize: 14),
                         ),
                       ],
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('Amount to Collect', style: GoogleFonts.inter(color: AppColors.textLight, fontSize: 12)),
+                        Text('Amount to Collect',
+                            style: GoogleFonts.inter(
+                                color: AppColors.textLight, fontSize: 12)),
                         const SizedBox(height: 2),
                         Text(
                           '₹${res.amountToCollect.toStringAsFixed(0)}',
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+                          style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                              color: AppColors.primary),
                         ),
                       ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                
+
                 // Pickup Info Banner
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.secondaryLight.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.secondary.withOpacity(0.25)),
+                    border: Border.all(
+                        color: AppColors.secondary.withOpacity(0.25)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.timer_outlined, color: AppColors.secondary, size: 20),
+                      const Icon(Icons.timer_outlined,
+                          color: AppColors.secondary, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -199,12 +220,18 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                           children: [
                             Text(
                               'Pickup Time Window',
-                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+                              style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               windowStr,
-                              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w700),
                             ),
                           ],
                         ),
@@ -222,7 +249,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: () {
                       context.push('/customer/pass/${res.id}');
@@ -230,7 +258,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                     icon: const Icon(Icons.qr_code_2, size: 20),
                     label: Text(
                       'Show Digital Pass & QR',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                   ),
                 ),
@@ -243,14 +272,16 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: const BorderSide(color: AppColors.outline),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: () {
                       _showCancelDialog(context, ref, res.id);
                     },
                     child: Text(
                       'Cancel Reservation',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w600, fontSize: 13),
                     ),
                   ),
                 ),
@@ -267,7 +298,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
       return _buildEmptyState(
         icon: Icons.history,
         title: 'No past reservations',
-        description: 'Your completed or cancelled reservations will show up here.',
+        description:
+            'Your completed or cancelled reservations will show up here.',
       );
     }
 
@@ -297,7 +329,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                   Expanded(
                     child: Text(
                       res.foodName,
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700, fontSize: 16),
                     ),
                   ),
                   Text(
@@ -305,7 +338,9 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: isCompleted ? AppColors.primary : AppColors.textSecondary,
+                      color: isCompleted
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -314,19 +349,22 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 4),
-                  Text(res.propertyName, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                  Text(res.propertyName,
+                      style: GoogleFonts.inter(
+                          fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   Text(
                     dateFormat.format(res.reservedAt),
-                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textLight),
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: AppColors.textLight),
                   ),
                 ],
               ),
               trailing: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isCompleted 
-                      ? AppColors.primaryLight 
+                  color: isCompleted
+                      ? AppColors.primaryLight
                       : AppColors.errorLight,
                   borderRadius: BorderRadius.circular(9999),
                 ),
@@ -347,22 +385,46 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
   }
 
   void _showCancelDialog(BuildContext context, WidgetRef ref, String id) {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Cancel Reservation?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to cancel this reservation? Surplus portions are limited and others might need them.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+        title: Text('Cancel Reservation?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(
+            'Are you sure you want to cancel this reservation? Surplus portions are limited and others might need them.',
+            style: GoogleFonts.inter(
+                fontSize: 13, color: AppColors.textSecondary)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('No, Keep It'),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            onPressed: () {
-              ref.read(reservationProvider.notifier).cancelReservation(id);
-              Navigator.pop(context);
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              try {
+                await ref
+                    .read(reservationProvider.notifier)
+                    .cancelReservation(id);
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Reservation cancelled and portions returned to marketplace.'),
+                    backgroundColor: AppColors.textPrimary,
+                  ),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'Failed to cancel reservation: ${e.toString().replaceAll('Exception: ', '')}'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
             },
             child: const Text('Yes, Cancel'),
           ),
@@ -403,7 +465,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+              style: GoogleFonts.inter(
+                  color: AppColors.textSecondary, fontSize: 13, height: 1.4),
             ),
           ],
         ),

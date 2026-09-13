@@ -19,8 +19,10 @@ class FoodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatTime = DateFormat('hh:mm a');
-    final pickupWindowStr = '${formatTime.format(food.pickupStarts)} - ${formatTime.format(food.pickupEnds)}';
-    final remainingMinutes = food.pickupEnds.difference(DateTime.now()).inMinutes;
+    final pickupWindowStr =
+        '${formatTime.format(food.pickupStarts)} - ${formatTime.format(food.pickupEnds)}';
+    final remainingMinutes =
+        food.pickupEnds.difference(DateTime.now()).inMinutes;
 
     if (isCompact) {
       return _buildCompactCard(context, pickupWindowStr, remainingMinutes);
@@ -29,7 +31,8 @@ class FoodCard extends StatelessWidget {
   }
 
   // 1. Compact Card for "Ending Soon" Horizontal Carousel (280px wide)
-  Widget _buildCompactCard(BuildContext context, String pickupWindowStr, int remainingMinutes) {
+  Widget _buildCompactCard(
+      BuildContext context, String pickupWindowStr, int remainingMinutes) {
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 14),
@@ -57,7 +60,8 @@ class FoodCard extends StatelessWidget {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(15)),
                     child: Container(
                       height: 120,
                       width: double.infinity,
@@ -75,7 +79,25 @@ class FoodCard extends StatelessWidget {
                           ? Image.network(
                               food.imageUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      value: progress.expectedTotalBytes != null
+                                          ? progress.cumulativeBytesLoaded /
+                                              (progress.expectedTotalBytes ?? 1)
+                                          : null,
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (_, __, ___) =>
+                                  _buildPlaceholderIcon(),
                             )
                           : _buildPlaceholderIcon(),
                     ),
@@ -86,7 +108,8 @@ class FoodCard extends StatelessWidget {
                     top: 10,
                     left: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.secondary,
                         borderRadius: BorderRadius.circular(8),
@@ -101,10 +124,13 @@ class FoodCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.schedule, color: Colors.white, size: 14),
+                          const Icon(Icons.schedule,
+                              color: Colors.white, size: 14),
                           const SizedBox(width: 4),
                           Text(
-                            remainingMinutes > 0 ? '${remainingMinutes}m' : 'Ending',
+                            remainingMinutes > 0
+                                ? '${remainingMinutes}m'
+                                : 'Ending',
                             style: GoogleFonts.inter(
                               color: Colors.white,
                               fontSize: 12,
@@ -147,7 +173,8 @@ class FoodCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.verified, color: AppColors.tertiary, size: 14),
+                        const Icon(Icons.verified,
+                            color: AppColors.tertiary, size: 14),
                         const SizedBox(width: 4),
                         Text(
                           '· ${food.distanceKm.toStringAsFixed(1)} km',
@@ -207,7 +234,8 @@ class FoodCard extends StatelessWidget {
                             if (food.discountPercentage > 0)
                               Container(
                                 margin: const EdgeInsets.only(top: 2),
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppColors.secondaryLight,
                                   borderRadius: BorderRadius.circular(4),
@@ -225,10 +253,12 @@ class FoodCard extends StatelessWidget {
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
                           child: Row(
                             children: [
-                              const Icon(Icons.local_fire_department, color: AppColors.secondary, size: 14),
+                              const Icon(Icons.local_fire_department,
+                                  color: AppColors.secondary, size: 14),
                               const SizedBox(width: 2),
                               Text(
                                 '${food.availablePortions} left',
@@ -254,7 +284,8 @@ class FoodCard extends StatelessWidget {
   }
 
   // 2. Standard Feed Card for "Nearby Fresh Surplus"
-  Widget _buildStandardFeedCard(BuildContext context, String pickupWindowStr, int remainingMinutes) {
+  Widget _buildStandardFeedCard(
+      BuildContext context, String pickupWindowStr, int remainingMinutes) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -281,7 +312,8 @@ class FoodCard extends StatelessWidget {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(15)),
                     child: Container(
                       height: 160,
                       width: double.infinity,
@@ -299,7 +331,25 @@ class FoodCard extends StatelessWidget {
                           ? Image.network(
                               food.imageUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Center(
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      value: progress.expectedTotalBytes != null
+                                          ? progress.cumulativeBytesLoaded /
+                                              (progress.expectedTotalBytes ?? 1)
+                                          : null,
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (_, __, ___) =>
+                                  _buildPlaceholderIcon(),
                             )
                           : _buildPlaceholderIcon(),
                     ),
@@ -317,7 +367,8 @@ class FoodCard extends StatelessWidget {
                     top: 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.65),
                         borderRadius: BorderRadius.circular(8),
@@ -325,7 +376,8 @@ class FoodCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.location_on, color: Colors.white, size: 12),
+                          const Icon(Icons.location_on,
+                              color: Colors.white, size: 12),
                           const SizedBox(width: 4),
                           Text(
                             '${food.distanceKm.toStringAsFixed(1)} km',
@@ -360,7 +412,8 @@ class FoodCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.verified, color: AppColors.tertiary, size: 15),
+                        const Icon(Icons.verified,
+                            color: AppColors.tertiary, size: 15),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -378,7 +431,8 @@ class FoodCard extends StatelessWidget {
 
                     // Pickup Window Tag
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(6),
@@ -386,7 +440,8 @@ class FoodCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.shopping_bag_outlined, size: 14, color: AppColors.textSecondary),
+                          const Icon(Icons.shopping_bag_outlined,
+                              size: 14, color: AppColors.textSecondary),
                           const SizedBox(width: 6),
                           Text(
                             'Pickup $pickupWindowStr',
@@ -454,13 +509,16 @@ class FoodCard extends StatelessWidget {
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: food.availablePortions <= 3 ? AppColors.error : AppColors.secondary,
+                                color: food.availablePortions <= 3
+                                    ? AppColors.error
+                                    : AppColors.secondary,
                               ),
                             ),
                             if (food.discountPercentage > 0)
                               Container(
                                 margin: const EdgeInsets.only(top: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: AppColors.secondaryLight,
                                   borderRadius: BorderRadius.circular(4),
@@ -531,7 +589,9 @@ class FoodCard extends StatelessWidget {
       child: Icon(
         food.isVegetarian ? Icons.eco : Icons.kebab_dining,
         size: 56,
-        color: food.isVegetarian ? AppColors.vegColor.withOpacity(0.6) : AppColors.nonVegColor.withOpacity(0.6),
+        color: food.isVegetarian
+            ? AppColors.vegColor.withOpacity(0.6)
+            : AppColors.nonVegColor.withOpacity(0.6),
       ),
     );
   }

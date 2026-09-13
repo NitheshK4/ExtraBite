@@ -23,6 +23,8 @@ class CustomerBottomNav extends ConsumerWidget {
   }
 
   void _onItemTapped(int index, BuildContext context) {
+    if (index == _getSelectedIndex(context)) return;
+
     switch (index) {
       case 0:
         context.go('/customer/home');
@@ -138,7 +140,8 @@ class CustomerBottomNav extends ConsumerWidget {
               children: [
                 Icon(
                   isSelected ? selectedIcon : icon,
-                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  color:
+                      isSelected ? AppColors.primary : AppColors.textSecondary,
                   size: 24,
                 ),
                 if (badgeCount > 0)
