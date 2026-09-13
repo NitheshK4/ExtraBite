@@ -480,7 +480,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final emailLabel = isOwner ? 'Business Email' : 'Email Address';
     final emailPlaceholder =
         isOwner ? 'owner@pg-business.com' : 'Email Address';
-    final submitButtonText = isOwner ? 'Sign In as PG Owner' : 'Sign In';
+    final submitButtonText =
+        isOwner ? 'Sign In as PG Owner' : 'Log In as Personal User';
 
     return Form(
       key: _loginFormKey,
