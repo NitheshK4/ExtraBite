@@ -21,11 +21,11 @@ ExtraBite bridges the gap between campus food providers and hungry students:
 
 ## 🚀 What's New in v1.1.0
 
-1. **Dual-Themed Google Stitch UI System**:
+1. **Dual-Themed Material 3 Adaptive Design System**:
    - **PG Owner Mode**: Warm Orange palette (`#E65100` primary, `#FFF3E0` container) with storefront branding, business copy, 6-field registration form, and a 3-step onboarding timeline card.
    - **Customer / Personal User Mode**: Emerald Green palette (`#1B5E20` primary, `#E8F5E9` container) with eco leaf branding, meal saving focus, and an interactive 4-bar password strength meter.
 2. **Dedicated Android & Web Google OAuth 2.0**:
-   - Native Android deep linking (`io.extrabite.extrabite_mobile://login-callback` & `com.extrabite.extrabite_mobile://login-callback`) with Android 11+ browser intent queries.
+   - Native Android deep linking (`io.extrabite.extrabitemobile://login-callback`) with Android 11+ browser intent queries.
    - Automatic web browser origin callback resolution.
    - Instant profile metadata fallback for first-time Google sign-ins.
 3. **Atomic Inventory Restoration on Cancellation**:
@@ -92,11 +92,12 @@ static const String supabaseAnonKey = '<your-anon-key>';
    - Add Authorized Redirect URIs: `https://<your-project-ref>.supabase.co/auth/v1/callback`
 2. **Supabase Dashboard**:
    - Go to **Authentication** → **Providers** → **Google** → Enable and enter Client ID & Secret.
-   - Go to **Authentication** → **URL Configuration** → **Redirect URLs**:
-     - `io.extrabite.extrabite_mobile://login-callback/**`
-     - `io.extrabite.extrabite_mobile://login-callback`
-     - `com.extrabite.extrabite_mobile://login-callback/**`
-     - `http://localhost:*/**` (for local Web testing)
+   - Go to **Authentication** → **URL Configuration**:
+     - **Site URL**: `io.extrabite.extrabitemobile://login-callback`
+     - **Redirect URLs**:
+       - `io.extrabite.extrabitemobile://login-callback/**`
+       - `io.extrabite.extrabitemobile://login-callback`
+       - `http://localhost:*/**` (for local Web testing)
 
 ---
 
