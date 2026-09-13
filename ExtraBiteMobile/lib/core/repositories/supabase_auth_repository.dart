@@ -1,4 +1,4 @@
-
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../../models/user_model.dart';
@@ -40,7 +40,14 @@ UserModel _profileToUserModel(Map<String, dynamic> profile) {
 
 class SupabaseAuthRepository implements AuthRepository {
   SupabaseClient get _client => Supabase.instance.client;
-  static const String _redirectTo = 'io.extrabite.extrabite_mobile://login-callback/';
+
+  /// Custom scheme redirect URI for Native Android (handled by AndroidManifest.xml)
+  static const String _androidRedirectTo =
+      'io.extrabite.extrabite_mobile://login-callback';
+
+  /// Returns platform-specific redirect URL (null on Web to auto-resolve to current origin)
+  static String? get _authRedirectUrl =>
+      kIsWeb ? null : _androidRedirectTo;
 
   @override
   Future<AuthResult> signUp({
@@ -55,7 +62,7 @@ class SupabaseAuthRepository implements AuthRepository {
       final response = await _client.auth.signUp(
         email: email.trim().toLowerCase(),
         password: password,
-        emailRedirectTo: _redirectTo,
+        emailRedirectTo: _authRedirectUrl,
         data: {
           'full_name': fullName.trim(),
           'role': _roleToDbString(role),
@@ -130,11 +137,29 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    await _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: _redirectTo,
-      authScreenLaunchMode: LaunchMode.externalApplication,
-    );
+    if (kIsWeb) {
+      // -------------------------------------------------------------
+      // WEB FLOW:
+      // In web browser, redirectTo = null automatically returns to the
+      // origin (e.g. http://localhost:<port> or your web host domain).
+      // -------------------------------------------------------------
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: null,
+        authScreenLaunchMode: LaunchMode.platformDefault,
+      );
+    } else {
+      // -------------------------------------------------------------
+      // ANDROID / MOBILE FLOW:
+      // Uses the custom deep-link scheme io.extrabite.extrabite_mobile://login-callback
+      // captured by the intent-filter in AndroidManifest.xml.
+      // -------------------------------------------------------------
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: _androidRedirectTo,
+        authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+    }
   }
 
   @override
@@ -149,7 +174,24 @@ class SupabaseAuthRepository implements AuthRepository {
 
     try {
       final profile = await _fetchProfile(session.user.id);
-      if (profile == null) return null;
+      if (profile == null) {
+        // Fallback for new Google OAuth sign-in before profile row is created
+        final metadata = session.user.userMetadata ?? {};
+        final name = (metadata['full_name'] as String?) ??
+            (metadata['name'] as String?) ??
+            '';
+        return UserModel(
+          id: session.user.id,
+          name: name,
+          email: session.user.email ?? '',
+          phone: session.user.phone ?? '',
+          role: UserRole.personal,
+          createdAt: DateTime.now(),
+          roleFinalized: false,
+          isOwnerEligible: false,
+          isSuspended: false,
+        );
+      }
       return _profileToUserModel(profile);
     } catch (_) {
       return null;
@@ -176,7 +218,8 @@ class SupabaseAuthRepository implements AuthRepository {
       }
       final profile = await _fetchProfile(session.user.id);
       if (profile == null) {
-        return const AuthFailure('Could not reload your profile. Please try again.');
+        return const AuthFailure(
+            'Could not reload your profile. Please try again.');
       }
       return AuthSuccess(_profileToUserModel(profile));
     } catch (e) {
@@ -193,13 +236,14 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> resetPasswordForEmail(String email) async {
     await _client.auth.resetPasswordForEmail(
       email.trim().toLowerCase(),
-      redirectTo: _redirectTo,
+      redirectTo: _authRedirectUrl,
     );
   }
 
   Future<Map<String, dynamic>?> _fetchProfile(String userId) async {
     try {
-      final response = await _client.from('profiles').select().eq('id', userId).single();
+      final response =
+          await _client.from('profiles').select().eq('id', userId).single();
       return response;
     } catch (_) {
       return null;

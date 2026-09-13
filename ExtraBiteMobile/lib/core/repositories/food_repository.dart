@@ -16,7 +16,8 @@ class FoodRepository {
   static List<FoodListing> getTestMockData() => _getTestMockData();
 
   /// Realtime channel subscription for instant live updates across customers & owners
-  RealtimeChannel? subscribeToListingsChanges(void Function() onListingChanged) {
+  RealtimeChannel? subscribeToListingsChanges(
+      void Function() onListingChanged) {
     if (_client == null) return null;
     try {
       final channel = _client.channel('public:food_listings_changes')
@@ -52,7 +53,8 @@ class FoodRepository {
       for (final item in data) {
         final pgRow = item['pg_profiles'] as Map<String, dynamic>?;
         if (pgRow != null) {
-          listings.add(FoodListing.fromSupabase(item as Map<String, dynamic>, pgRow));
+          listings.add(
+              FoodListing.fromSupabase(item as Map<String, dynamic>, pgRow));
         }
       }
       return listings;
@@ -68,7 +70,8 @@ class FoodRepository {
       FoodListing(
         id: '1',
         foodName: 'Veg Meals',
-        description: 'Nutritious South Indian thali featuring rice, sambar, rasam, two vegetable curries, curd, and papad.',
+        description:
+            'Nutritious South Indian thali featuring rice, sambar, rasam, two vegetable curries, curd, and papad.',
         propertyId: 'p1',
         propertyName: 'Sri Sai Deluxe PG',
         distanceKm: 0.8,
@@ -89,7 +92,8 @@ class FoodRepository {
       FoodListing(
         id: '2',
         foodName: 'Chicken Rice',
-        description: 'Aromatic basmati rice cooked with succulent chicken pieces and traditional spices, served with raita.',
+        description:
+            'Aromatic basmati rice cooked with succulent chicken pieces and traditional spices, served with raita.',
         propertyId: 'p2',
         propertyName: 'Royal Men\'s Hostel',
         distanceKm: 1.2,
@@ -110,7 +114,8 @@ class FoodRepository {
       FoodListing(
         id: '3',
         foodName: 'Idli & Vada Combo',
-        description: 'Fluffy steamed rice cakes (3 pcs) paired with a crispy lentil donut (1 pc), served with fresh coconut chutney and hot sambar.',
+        description:
+            'Fluffy steamed rice cakes (3 pcs) paired with a crispy lentil donut (1 pc), served with fresh coconut chutney and hot sambar.',
         propertyId: 'p3',
         propertyName: 'Green Gardens PG',
         distanceKm: 0.5,
@@ -131,7 +136,8 @@ class FoodRepository {
       FoodListing(
         id: '4',
         foodName: 'Paneer Rice',
-        description: 'Fragrant fried rice tossed with golden paneer cubes, spring onions, capsicum, and light soy sauce.',
+        description:
+            'Fragrant fried rice tossed with golden paneer cubes, spring onions, capsicum, and light soy sauce.',
         propertyId: 'p4',
         propertyName: 'Stanza Living Delhi PG',
         distanceKm: 2.3,
@@ -143,7 +149,13 @@ class FoodRepository {
         preparedTime: now.subtract(const Duration(hours: 1, minutes: 30)),
         pickupStarts: now.subtract(const Duration(hours: 1)),
         pickupEnds: now.add(const Duration(hours: 2, minutes: 30)),
-        ingredients: ['Rice', 'Paneer', 'Capsicum', 'Spring Onion', 'Soy Sauce'],
+        ingredients: [
+          'Rice',
+          'Paneer',
+          'Capsicum',
+          'Spring Onion',
+          'Soy Sauce'
+        ],
         allergens: ['Dairy', 'Soy', 'Gluten'],
         verificationStatus: 'verified',
         latitude: 16.4850,
@@ -152,7 +164,8 @@ class FoodRepository {
       FoodListing(
         id: '5',
         foodName: 'Chapati Curry',
-        description: 'Soft whole-wheat chapatis (3 pcs) served with a flavorful mixed vegetable korma curry.',
+        description:
+            'Soft whole-wheat chapatis (3 pcs) served with a flavorful mixed vegetable korma curry.',
         propertyId: 'p1',
         propertyName: 'Sri Sai Deluxe PG',
         distanceKm: 0.8,
@@ -164,7 +177,13 @@ class FoodRepository {
         preparedTime: now.subtract(const Duration(minutes: 30)),
         pickupStarts: now.add(const Duration(minutes: 30)),
         pickupEnds: now.add(const Duration(hours: 3)),
-        ingredients: ['Wheat Flour', 'Potatoes', 'Carrots', 'Beans', 'Coconut Milk'],
+        ingredients: [
+          'Wheat Flour',
+          'Potatoes',
+          'Carrots',
+          'Beans',
+          'Coconut Milk'
+        ],
         allergens: ['Gluten'],
         verificationStatus: 'verified',
         latitude: 16.4950,
@@ -173,7 +192,8 @@ class FoodRepository {
       FoodListing(
         id: '6',
         foodName: 'Lemon Rice',
-        description: 'Tangy and refreshing rice dish tempered with mustard seeds, curry leaves, peanuts, and fresh lemon juice.',
+        description:
+            'Tangy and refreshing rice dish tempered with mustard seeds, curry leaves, peanuts, and fresh lemon juice.',
         propertyId: 'p5',
         propertyName: 'Modern Mess & PG',
         distanceKm: 1.5,
@@ -185,7 +205,13 @@ class FoodRepository {
         preparedTime: now.subtract(const Duration(hours: 3)),
         pickupStarts: now.subtract(const Duration(hours: 2)),
         pickupEnds: now.add(const Duration(minutes: 30)),
-        ingredients: ['Rice', 'Lemon Juice', 'Peanuts', 'Curry Leaves', 'Turmeric'],
+        ingredients: [
+          'Rice',
+          'Lemon Juice',
+          'Peanuts',
+          'Curry Leaves',
+          'Turmeric'
+        ],
         allergens: ['Peanuts', 'Mustard'],
         verificationStatus: 'verified',
         latitude: 16.5050,
@@ -194,7 +220,8 @@ class FoodRepository {
       FoodListing(
         id: '7',
         foodName: 'Veg Biryani',
-        description: 'Rich, layered vegetable biryani cooked in dum style with saffron, fried onions, and mixed veggies, served with raita.',
+        description:
+            'Rich, layered vegetable biryani cooked in dum style with saffron, fried onions, and mixed veggies, served with raita.',
         propertyId: 'p6',
         propertyName: 'Aura Executive PG',
         distanceKm: 3.1,
@@ -206,7 +233,13 @@ class FoodRepository {
         preparedTime: now.subtract(const Duration(hours: 4)),
         pickupStarts: now.subtract(const Duration(hours: 3, minutes: 30)),
         pickupEnds: now.subtract(const Duration(minutes: 10)),
-        ingredients: ['Basmati Rice', 'Carrots', 'Green Peas', 'Yogurt', 'Spices'],
+        ingredients: [
+          'Basmati Rice',
+          'Carrots',
+          'Green Peas',
+          'Yogurt',
+          'Spices'
+        ],
         allergens: ['Dairy'],
         verificationStatus: 'verified',
         latitude: 16.5200,
@@ -215,7 +248,8 @@ class FoodRepository {
       FoodListing(
         id: '8',
         foodName: 'Egg Rice',
-        description: 'Stir-fried rice cooked with scrambled eggs, onions, bell peppers, and touch of pepper and spice.',
+        description:
+            'Stir-fried rice cooked with scrambled eggs, onions, bell peppers, and touch of pepper and spice.',
         propertyId: 'p2',
         propertyName: 'Royal Men\'s Hostel',
         distanceKm: 1.2,
@@ -271,34 +305,76 @@ class FoodRepository {
     }
   }
 
-  /// Upload compressed food image to 'food-images' storage bucket
-  Future<String?> uploadFoodImage(Uint8List bytes, String pgId, String extension) async {
+  /// Upload compressed food image to 'food-images' storage bucket.
+  /// Suggested storage path: {owner_user_id}/{food_listing_id}/{unique_image_name}.jpg
+  Future<String?> uploadFoodImage(
+    Uint8List bytes,
+    String ownerId,
+    String extension, {
+    String? listingId,
+  }) async {
+    if (_client == null) {
+      return null;
+    }
+
+    final cleanExt = extension.replaceAll('.', '').toLowerCase();
+    final mimeType = switch (cleanExt) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'gif' => 'image/gif',
+      _ => 'image/jpeg',
+    };
+
+    final folderListing = (listingId != null && listingId.isNotEmpty)
+        ? listingId
+        : 'item_${DateTime.now().millisecondsSinceEpoch}';
+    final fileName =
+        '$ownerId/$folderListing/${DateTime.now().millisecondsSinceEpoch}.$cleanExt';
+
     try {
-      final fileName = '$pgId/${DateTime.now().millisecondsSinceEpoch}.$extension';
-      await _client!.storage.from('food-images').uploadBinary(
+      await _client.storage.from('food-images').uploadBinary(
             fileName,
             bytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
+            fileOptions: FileOptions(
+              contentType: mimeType,
               cacheControl: '3600',
+              upsert: true,
             ),
           );
 
-      final String publicUrl = _client.storage.from('food-images').getPublicUrl(fileName);
+      final String publicUrl =
+          _client.storage.from('food-images').getPublicUrl(fileName);
       return publicUrl;
-    } catch (_) {
-      return null;
+    } catch (e) {
+      throw Exception('Storage upload failed: $e');
     }
   }
 
   /// Create and insert a new food listing
-  Future<FoodListing> createListing(Map<String, dynamic> rowData, Map<String, dynamic> pgRow) async {
-    final response = await _client!
+  Future<FoodListing> createListing(
+      Map<String, dynamic> rowData, Map<String, dynamic> pgRow) async {
+    final response =
+        await _client!.from('food_listings').insert(rowData).select().single();
+
+    return FoodListing.fromSupabase(response, pgRow);
+  }
+
+  /// Update an existing food listing in Supabase
+  Future<FoodListing> updateListing(
+    String listingId,
+    Map<String, dynamic> rowData,
+    Map<String, dynamic> pgRow,
+  ) async {
+    if (_client == null) {
+      throw UnimplementedError('updateListing not supported in fake client');
+    }
+    final response = await _client
         .from('food_listings')
-        .insert(rowData)
+        .update(rowData)
+        .eq('id', listingId)
         .select()
         .single();
-    
+
     return FoodListing.fromSupabase(response, pgRow);
   }
 
@@ -307,8 +383,7 @@ class FoodRepository {
     if (_client == null) return;
     await _client
         .from('food_listings')
-        .update({'available_portions': portions})
-        .eq('id', listingId);
+        .update({'available_portions': portions}).eq('id', listingId);
   }
 
   /// Mark a food listing as removed in Supabase
@@ -316,7 +391,6 @@ class FoodRepository {
     if (_client == null) return;
     await _client
         .from('food_listings')
-        .update({'status': 'removed'})
-        .eq('id', listingId);
+        .update({'status': 'removed'}).eq('id', listingId);
   }
 }

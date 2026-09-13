@@ -41,8 +41,7 @@ class AdminUserRecord {
   }
 
   /// True if this user attempted PG Owner signup but is not yet approved.
-  bool get isPendingOwnerApproval =>
-      !roleFinalized && !isOwnerEligible;
+  bool get isPendingOwnerApproval => !roleFinalized && !isOwnerEligible;
 
   factory AdminUserRecord.fromJson(Map<String, dynamic> json) {
     UserRole role;
@@ -137,7 +136,6 @@ class AdminRepository {
   Future<void> setSuspended(String userId, {required bool suspended}) async {
     await _client
         .from('profiles')
-        .update({'is_suspended': suspended})
-        .eq('id', userId);
+        .update({'is_suspended': suspended}).eq('id', userId);
   }
 }

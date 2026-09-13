@@ -3,7 +3,7 @@ class PaymentConfig {
   PaymentConfig._();
 
   /// Razorpay API Key ID.
-  /// 
+  ///
   /// How to get your free Test / Live Key:
   /// 1. Log in to https://dashboard.razorpay.com/
   /// 2. Navigate to Settings -> API Keys
