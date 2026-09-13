@@ -10,7 +10,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -34,7 +35,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      await ref.read(authRepositoryProvider).resetPasswordForEmail(_emailController.text.trim());
+      await ref
+          .read(authRepositoryProvider)
+          .resetPasswordForEmail(_emailController.text.trim());
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -156,7 +159,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: GoogleFonts.inter(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(
+                        color: AppColors.error,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -168,11 +174,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    border:
+                        Border.all(color: AppColors.primary.withOpacity(0.3)),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.check_circle, color: AppColors.primary, size: 36),
+                      const Icon(Icons.check_circle,
+                          color: AppColors.primary, size: 36),
                       const SizedBox(height: 10),
                       Text(
                         'Password reset link sent!',
@@ -186,7 +194,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       Text(
                         'We sent an email to ${_emailController.text}. Please follow the instructions to set your new password.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                        style: GoogleFonts.inter(
+                            fontSize: 13, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -198,11 +207,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
                     'Back to Sign In',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                 ),
               ] else ...[
@@ -219,8 +230,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return 'Enter your email address';
-                          if (!val.contains('@')) return 'Enter a valid email address';
+                          if (val == null || val.trim().isEmpty)
+                            return 'Enter your email address';
+                          if (!val.contains('@'))
+                            return 'Enter a valid email address';
                           return null;
                         },
                       ),
@@ -231,17 +244,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
                               )
                             : Text(
                                 'Send Reset Link',
-                                style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
+                                style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 15, fontWeight: FontWeight.w700),
                               ),
                       ),
                       const SizedBox(height: 14),

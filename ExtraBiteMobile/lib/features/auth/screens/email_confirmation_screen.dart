@@ -20,10 +20,12 @@ class EmailConfirmationScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<EmailConfirmationScreen> createState() => _EmailConfirmationScreenState();
+  ConsumerState<EmailConfirmationScreen> createState() =>
+      _EmailConfirmationScreenState();
 }
 
-class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScreen> {
+class _EmailConfirmationScreenState
+    extends ConsumerState<EmailConfirmationScreen> {
   int _countdown = 30;
   Timer? _timer;
   bool _isResending = false;
@@ -74,8 +76,12 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final userEmail = widget.email ?? authState.user?.email ?? 'your.email@example.com';
-    final userRole = widget.role ?? authState.user?.role ?? authState.selectedRole ?? UserRole.personal;
+    final userEmail =
+        widget.email ?? authState.user?.email ?? 'your.email@example.com';
+    final userRole = widget.role ??
+        authState.user?.role ??
+        authState.selectedRole ??
+        UserRole.personal;
     final isOwner = userRole == UserRole.owner;
 
     return Scaffold(
@@ -134,7 +140,9 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: isOwner ? AppColors.secondaryLight : AppColors.primaryLight,
+                    color: isOwner
+                        ? AppColors.secondaryLight
+                        : AppColors.primaryLight,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -174,7 +182,8 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
               // 3. Email Display Pill (JetBrains Mono + Copy)
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(9999),
@@ -245,12 +254,14 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    border:
+                        Border.all(color: AppColors.primary.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle, color: AppColors.primary, size: 18),
+                      const Icon(Icons.check_circle,
+                          color: AppColors.primary, size: 18),
                       const SizedBox(width: 8),
                       Text(
                         'Confirmation email sent successfully.',
@@ -276,7 +287,8 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isOwner ? AppColors.secondary : AppColors.primary,
+                  backgroundColor:
+                      isOwner ? AppColors.secondary : AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
@@ -296,11 +308,14 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
               const SizedBox(height: 12),
 
               OutlinedButton(
-                onPressed: (_countdown > 0 || _isResending) ? null : _resendEmail,
+                onPressed:
+                    (_countdown > 0 || _isResending) ? null : _resendEmail,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   side: BorderSide(
-                    color: _countdown > 0 ? AppColors.border : (isOwner ? AppColors.secondary : AppColors.primary),
+                    color: _countdown > 0
+                        ? AppColors.border
+                        : (isOwner ? AppColors.secondary : AppColors.primary),
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -313,11 +328,17 @@ class _EmailConfirmationScreenState extends ConsumerState<EmailConfirmationScree
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        _countdown > 0 ? 'Resend Email in ${_countdown}s' : 'Resend Verification Email',
+                        _countdown > 0
+                            ? 'Resend Email in ${_countdown}s'
+                            : 'Resend Verification Email',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: _countdown > 0 ? AppColors.textLight : (isOwner ? AppColors.secondary : AppColors.primary),
+                          color: _countdown > 0
+                              ? AppColors.textLight
+                              : (isOwner
+                                  ? AppColors.secondary
+                                  : AppColors.primary),
                         ),
                       ),
               ),

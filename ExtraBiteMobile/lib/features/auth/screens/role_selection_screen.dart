@@ -15,8 +15,7 @@ class RoleSelectionScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     final hasSession =
-        authState.status == AuthStatus.authenticated ||
-        authState.user != null;
+        authState.status == AuthStatus.authenticated || authState.user != null;
 
     final isLoading = authState.status == AuthStatus.profileLoading ||
         authState.status == AuthStatus.authenticating;
@@ -180,7 +179,8 @@ class RoleSelectionScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.admin_panel_settings_outlined, size: 20, color: AppColors.textSecondary),
+                    const Icon(Icons.admin_panel_settings_outlined,
+                        size: 20, color: AppColors.textSecondary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -279,7 +279,8 @@ class RoleSelectionScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: badgeBgColor,
                               borderRadius: BorderRadius.circular(9999),
@@ -353,7 +354,8 @@ class RoleSelectionScreen extends ConsumerWidget {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : Text(
                           buttonText,
