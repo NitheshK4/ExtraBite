@@ -34,10 +34,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
-                    android:scheme="io.extrabite.extrabite_mobile"
-                    android:host="login-callback" />
-                <data
-                    android:scheme="com.extrabite.extrabite_mobile"
+                    android:scheme="io.extrabite.extrabitemobile"
                     android:host="login-callback" />
             </intent-filter>
         </activity>

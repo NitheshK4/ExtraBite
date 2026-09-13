@@ -42,12 +42,11 @@ class SupabaseAuthRepository implements AuthRepository {
   SupabaseClient get _client => Supabase.instance.client;
 
   /// Custom scheme redirect URI for Native Android (handled by AndroidManifest.xml)
-  static const String _androidRedirectTo =
-      'io.extrabite.extrabite_mobile://login-callback';
+  static const String androidRedirectTo =
+      'io.extrabite.extrabitemobile://login-callback';
 
   /// Returns platform-specific redirect URL (null on Web to auto-resolve to current origin)
-  static String? get _authRedirectUrl =>
-      kIsWeb ? null : _androidRedirectTo;
+  static String? get _authRedirectUrl => kIsWeb ? null : androidRedirectTo;
 
   @override
   Future<AuthResult> signUp({
@@ -151,12 +150,12 @@ class SupabaseAuthRepository implements AuthRepository {
     } else {
       // -------------------------------------------------------------
       // ANDROID / MOBILE FLOW:
-      // Uses the custom deep-link scheme io.extrabite.extrabite_mobile://login-callback
+      // Uses the custom deep-link scheme io.extrabite.extrabitemobile://login-callback
       // captured by the intent-filter in AndroidManifest.xml.
       // -------------------------------------------------------------
       await _client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: _androidRedirectTo,
+        redirectTo: androidRedirectTo,
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
     }
