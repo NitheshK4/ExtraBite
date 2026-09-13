@@ -9,11 +9,13 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Version-1.1.0-orange?logo=git" alt="Version 1.1.0" />
   <img src="https://img.shields.io/badge/Flutter-3.24+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
   <img src="https://img.shields.io/badge/Dart-3.5+-0175C2?logo=dart&logoColor=white" alt="Dart" />
   <img src="https://img.shields.io/badge/Supabase-Backend%20%26%20RLS-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Design%20System-Google%20Stitch-FF5722" alt="Design System" />
   <img src="https://img.shields.io/badge/Architecture-Riverpod%20%2B%20GoRouter-FF6F00" alt="Riverpod" />
-  <img src="https://img.shields.io/badge/Tests-69%2F69%20Passing-success" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-100%25%20Passing-success" alt="Tests" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" />
 </p>
 

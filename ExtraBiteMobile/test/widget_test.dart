@@ -68,10 +68,11 @@ void main() {
   });
 
   group('2. Food Provider & Filtering Tests', () {
-    test('Initializes with verified mock listings only in filtered provider', () {
+    test('Initializes with verified mock listings only in filtered provider',
+        () {
       final container = createMockLocationContainer();
       final filteredList = container.read(filteredFoodProvider);
-      
+
       for (final item in filteredList) {
         expect(item.verificationStatus, equals('verified'));
       }
@@ -80,7 +81,7 @@ void main() {
     test('Filters listings correctly by Category Selection', () {
       final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
-      
+
       notifier.updateCategory('Breakfast');
       var filteredList = container.read(filteredFoodProvider);
       for (final item in filteredList) {
@@ -97,20 +98,22 @@ void main() {
     test('Filters listings correctly by Search Query', () {
       final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
-      
+
       notifier.updateSearchQuery('Biryani');
       final filteredList = container.read(filteredFoodProvider);
       for (final item in filteredList) {
         expect(
           item.foodName.toLowerCase().contains('biryani') ||
-          item.propertyName.toLowerCase().contains('biryani') ||
-          item.category.toLowerCase().contains('biryani'),
+              item.propertyName.toLowerCase().contains('biryani') ||
+              item.category.toLowerCase().contains('biryani'),
           isTrue,
         );
       }
     });
 
-    test('Starts with clean/mock sample listings and supports dynamic additions', () {
+    test(
+        'Starts with clean/mock sample listings and supports dynamic additions',
+        () {
       final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
       notifier.clearAll();
@@ -144,7 +147,9 @@ void main() {
       expect(filteredList.first.foodName, equals('Chicken Biryani'));
     });
 
-    test('Filters listings correctly by Category Selection & Search Query on dynamic lists', () {
+    test(
+        'Filters listings correctly by Category Selection & Search Query on dynamic lists',
+        () {
       final container = createMockLocationContainer();
       final notifier = container.read(foodProvider.notifier);
       notifier.clearAll();
@@ -219,7 +224,8 @@ void main() {
       final foodList = container.read(filteredFoodProvider);
       final reservationNotifier = container.read(reservationProvider.notifier);
 
-      final initialActiveCount = container.read(activeReservationsProvider).length;
+      final initialActiveCount =
+          container.read(activeReservationsProvider).length;
 
       final targetFood = foodList.first;
       final reservation = await reservationNotifier.createReservation(
@@ -258,10 +264,15 @@ void main() {
       expect(newActiveList.any((item) => item.id == targetId), isFalse);
 
       final pastList = container.read(pastReservationsProvider);
-      expect(pastList.any((item) => item.id == targetId && item.status == ReservationStatus.cancelled), isTrue);
+      expect(
+          pastList.any((item) =>
+              item.id == targetId &&
+              item.status == ReservationStatus.cancelled),
+          isTrue);
     });
 
-    test('Creates new active reservations and decrements portions in real time', () async {
+    test('Creates new active reservations and decrements portions in real time',
+        () async {
       final container = createMockLocationContainer();
       final foodNotifier = container.read(foodProvider.notifier);
       final reservationNotifier = container.read(reservationProvider.notifier);
@@ -309,7 +320,9 @@ void main() {
       expect(updatedFood?.availablePortions, equals(7));
     });
 
-    testWidgets('Sold Out listing disables Reserve button and displays Sold Out in UI', (WidgetTester tester) async {
+    testWidgets(
+        'Sold Out listing disables Reserve button and displays Sold Out in UI',
+        (WidgetTester tester) async {
       final mockService = MockLocationService();
 
       final soldOutListing = FoodListing(
@@ -350,7 +363,8 @@ void main() {
               return notifier;
             }),
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
-            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+            pgProfileRepositoryProvider
+                .overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: FoodDetailScreen(foodId: 'item_sold_out'),
@@ -367,7 +381,8 @@ void main() {
       expect(find.text('0'), findsOneWidget);
 
       // Verify the ElevatedButton is disabled (onPressed is null)
-      final elevatedButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final elevatedButton =
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(elevatedButton.onPressed, isNull);
     });
   });
@@ -393,7 +408,8 @@ void main() {
 
       // 3. Log in as Personal User
       expect(find.text('Log In as Personal User'), findsOneWidget);
-      await tester.enterText(find.byType(TextFormField).at(0), 'testuser@example.com');
+      await tester.enterText(
+          find.byType(TextFormField).at(0), 'testuser@example.com');
       await tester.enterText(find.byType(TextFormField).at(1), 'password123');
       await tester.tap(find.text('Log In as Personal User'));
       await tester.pumpAndSettle();

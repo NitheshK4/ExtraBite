@@ -18,13 +18,15 @@ import 'mocks.dart';
 void main() {
   group('1. Haversine Calculations', () {
     test('Zero distance same coordinates returns 0.0', () {
-      final distance = Haversine.calculateDistance(16.4971, 80.5005, 16.4971, 80.5005);
+      final distance =
+          Haversine.calculateDistance(16.4971, 80.5005, 16.4971, 80.5005);
       expect(distance, closeTo(0.0, 0.001));
     });
 
     test('Known coordinates distance calculates correctly', () {
       // VIT-AP to Sri Sai Deluxe PG (16.4950, 80.5070)
-      final distance = Haversine.calculateDistance(16.4971, 80.5005, 16.4950, 80.5070);
+      final distance =
+          Haversine.calculateDistance(16.4971, 80.5005, 16.4950, 80.5070);
       expect(distance, closeTo(0.732, 0.05));
     });
   });
@@ -69,7 +71,8 @@ void main() {
       final future = notifier.determinePosition();
 
       // Check it immediately goes to loading
-      expect(container.read(locationProvider).status, equals(LocationStateStatus.loading));
+      expect(container.read(locationProvider).status,
+          equals(LocationStateStatus.loading));
 
       await future;
 
@@ -99,14 +102,17 @@ void main() {
       expect(state.status, equals(LocationStateStatus.permissionDenied));
     });
 
-    test('Permission permanently denied transitions to permissionPermanentlyDenied', () async {
+    test(
+        'Permission permanently denied transitions to permissionPermanentlyDenied',
+        () async {
       mockService.permissionStatus = LocationPermission.deniedForever;
 
       final notifier = container.read(locationProvider.notifier);
       await notifier.determinePosition();
 
       final state = container.read(locationProvider);
-      expect(state.status, equals(LocationStateStatus.permissionPermanentlyDenied));
+      expect(state.status,
+          equals(LocationStateStatus.permissionPermanentlyDenied));
     });
 
     test('GPS error transitions to error state', () async {
@@ -117,7 +123,8 @@ void main() {
 
       final state = container.read(locationProvider);
       expect(state.status, equals(LocationStateStatus.error));
-      expect(state.errorMessage, equals('Unable to determine location. Please try again.'));
+      expect(state.errorMessage,
+          equals('Unable to determine location. Please try again.'));
     });
   });
 
@@ -131,7 +138,8 @@ void main() {
         overrides: [
           locationServiceProvider.overrideWithValue(mockService),
           foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
-          pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+          pgProfileRepositoryProvider
+              .overrideWithValue(PgProfileRepository.fakeForTest()),
         ],
       );
     });
@@ -140,7 +148,8 @@ void main() {
       container.dispose();
     });
 
-    test('Unverified PG is NEVER returned regardless of distance/radius', () async {
+    test('Unverified PG is NEVER returned regardless of distance/radius',
+        () async {
       mockService.mockPosition = Position(
         longitude: 80.5005,
         latitude: 16.4971,
@@ -158,8 +167,9 @@ void main() {
       container.read(radiusProvider.notifier).state = 10.0; // Large radius
 
       final filteredList = container.read(filteredFoodProvider);
-      
-      final hasUnverified = filteredList.any((item) => item.verificationStatus != 'verified');
+
+      final hasUnverified =
+          filteredList.any((item) => item.verificationStatus != 'verified');
       expect(hasUnverified, isFalse);
     });
 
@@ -185,11 +195,21 @@ void main() {
       for (final item in filteredList) {
         expect(item.distanceKm, lessThanOrEqualTo(1.0));
       }
-      
-      expect(filteredList.any((item) => item.propertyName == 'Sri Sai Deluxe PG'), isTrue);
-      expect(filteredList.any((item) => item.propertyName == 'Green Gardens PG'), isTrue);
-      expect(filteredList.any((item) => item.propertyName == 'Royal Men\'s Hostel'), isFalse);
-      expect(filteredList.any((item) => item.propertyName == 'Stanza Living Delhi PG'), isFalse);
+
+      expect(
+          filteredList.any((item) => item.propertyName == 'Sri Sai Deluxe PG'),
+          isTrue);
+      expect(
+          filteredList.any((item) => item.propertyName == 'Green Gardens PG'),
+          isTrue);
+      expect(
+          filteredList
+              .any((item) => item.propertyName == 'Royal Men\'s Hostel'),
+          isFalse);
+      expect(
+          filteredList
+              .any((item) => item.propertyName == 'Stanza Living Delhi PG'),
+          isFalse);
     });
 
     test('Filtering at Radius 2.0 km', () async {
@@ -215,9 +235,17 @@ void main() {
         expect(item.distanceKm, lessThanOrEqualTo(2.0));
       }
 
-      expect(filteredList.any((item) => item.propertyName == 'Royal Men\'s Hostel'), isTrue);
-      expect(filteredList.any((item) => item.propertyName == 'Modern Mess & PG'), isTrue);
-      expect(filteredList.any((item) => item.propertyName == 'Stanza Living Delhi PG'), isFalse);
+      expect(
+          filteredList
+              .any((item) => item.propertyName == 'Royal Men\'s Hostel'),
+          isTrue);
+      expect(
+          filteredList.any((item) => item.propertyName == 'Modern Mess & PG'),
+          isTrue);
+      expect(
+          filteredList
+              .any((item) => item.propertyName == 'Stanza Living Delhi PG'),
+          isFalse);
     });
 
     test('Filtering at Radius 5.0 km', () async {
@@ -243,10 +271,15 @@ void main() {
         expect(item.distanceKm, lessThanOrEqualTo(5.0));
       }
 
-      expect(filteredList.any((item) => item.propertyName == 'Stanza Living Delhi PG'), isTrue);
+      expect(
+          filteredList
+              .any((item) => item.propertyName == 'Stanza Living Delhi PG'),
+          isTrue);
     });
 
-    test('Boundary Distance Filtering: Exactly 1.0 km, 1.01 km, 2.0 km, 2.01 km', () async {
+    test(
+        'Boundary Distance Filtering: Exactly 1.0 km, 1.01 km, 2.0 km, 2.01 km',
+        () async {
       mockService.mockPosition = Position(
         longitude: 80.5005,
         latitude: 16.4971,
@@ -336,7 +369,8 @@ void main() {
       mockService = MockLocationService();
     });
 
-    testWidgets('Location Loading State UI works correctly', (WidgetTester tester) async {
+    testWidgets('Location Loading State UI works correctly',
+        (WidgetTester tester) async {
       final completer = Completer<Position>();
       mockService.positionCompleter = completer;
 
@@ -346,7 +380,8 @@ void main() {
             locationServiceProvider.overrideWithValue(mockService),
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
             foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
-            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+            pgProfileRepositoryProvider
+                .overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -355,7 +390,7 @@ void main() {
       );
 
       await tester.pump();
-      
+
       expect(find.text('Detecting your location...'), findsAtLeastNWidgets(1));
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
@@ -375,7 +410,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('Location Permission Denied UI works correctly', (WidgetTester tester) async {
+    testWidgets('Location Permission Denied UI works correctly',
+        (WidgetTester tester) async {
       mockService.permissionStatus = LocationPermission.denied;
 
       await tester.pumpWidget(
@@ -384,7 +420,8 @@ void main() {
             locationServiceProvider.overrideWithValue(mockService),
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
             foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
-            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+            pgProfileRepositoryProvider
+                .overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -394,11 +431,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Location permission required'), findsAtLeastNWidgets(1));
+      expect(
+          find.text('Location permission required'), findsAtLeastNWidgets(1));
       expect(find.text('Enable Location'), findsOneWidget);
     });
 
-    testWidgets('Location Services Disabled UI works correctly', (WidgetTester tester) async {
+    testWidgets('Location Services Disabled UI works correctly',
+        (WidgetTester tester) async {
       mockService.serviceEnabled = false;
 
       await tester.pumpWidget(
@@ -407,7 +446,8 @@ void main() {
             locationServiceProvider.overrideWithValue(mockService),
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
             foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
-            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+            pgProfileRepositoryProvider
+                .overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -417,11 +457,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Location services are turned off'), findsAtLeastNWidgets(1));
+      expect(find.text('Location services are turned off'),
+          findsAtLeastNWidgets(1));
       expect(find.text('Enable Location'), findsOneWidget);
     });
 
-    testWidgets('Successful GPS location resolution renders marketplace feed', (WidgetTester tester) async {
+    testWidgets('Successful GPS location resolution renders marketplace feed',
+        (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1200, 2000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -440,7 +482,8 @@ void main() {
             }),
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
             foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
-            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+            pgProfileRepositoryProvider
+                .overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const MaterialApp(
             home: CustomerHomeScreen(),
@@ -455,6 +498,131 @@ void main() {
       expect(find.text('All'), findsOneWidget);
       // Sri Sai Deluxe PG is within default 2.0 km, should render
       expect(find.text('Sri Sai Deluxe PG'), findsWidgets);
+    });
+  });
+
+  group('6. Location Caching and Deduplication', () {
+    late MockLocationService mockService;
+    late ProviderContainer container;
+
+    setUp(() {
+      mockService = MockLocationService();
+      container = ProviderContainer(
+        overrides: [
+          locationServiceProvider.overrideWithValue(mockService),
+        ],
+      );
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    test(
+        'Cached location is reused on subsequent determinePosition calls without triggering GPS',
+        () async {
+      final notifier = container.read(locationProvider.notifier);
+
+      // First call - queries GPS
+      await notifier.determinePosition();
+      expect(mockService.getCurrentPositionCallCount, equals(1));
+      expect(mockService.checkPermissionCallCount, equals(1));
+      expect(notifier.state.isAvailable, isTrue);
+
+      // Second call (e.g. user navigates back to Home tab) - must reuse cached location immediately
+      await notifier.determinePosition();
+      expect(mockService.getCurrentPositionCallCount,
+          equals(1)); // Still 1! No new GPS call
+      expect(mockService.checkPermissionCallCount,
+          equals(1)); // No permission check either
+      expect(notifier.state.isAvailable, isTrue);
+    });
+
+    test('forceRefresh: true bypasses cache and triggers fresh GPS query',
+        () async {
+      final notifier = container.read(locationProvider.notifier);
+
+      // First call
+      await notifier.determinePosition();
+      expect(mockService.getCurrentPositionCallCount, equals(1));
+
+      // Force refresh (e.g. pull-to-refresh or retry button)
+      await notifier.determinePosition(forceRefresh: true);
+      expect(mockService.getCurrentPositionCallCount, equals(2));
+    });
+
+    test(
+        'Concurrent determinePosition calls are deduplicated into a single in-flight request',
+        () async {
+      final completer = Completer<Position>();
+      mockService.positionCompleter = completer;
+
+      final notifier = container.read(locationProvider.notifier);
+
+      // Launch two calls in parallel
+      final future1 = notifier.determinePosition(forceRefresh: true);
+      final future2 = notifier.determinePosition(forceRefresh: true);
+
+      // In-flight deduplication returns the exact same running Future
+      expect(identical(future1, future2), isTrue);
+
+      // Allow async permission checks to complete and reach getCurrentPosition()
+      await Future<void>.delayed(Duration.zero);
+      expect(mockService.getCurrentPositionCallCount, equals(1));
+
+      completer.complete(Position(
+        longitude: 80.5005,
+        latitude: 16.4971,
+        timestamp: DateTime.now(),
+        accuracy: 10,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      ));
+
+      await Future.wait([future1, future2]);
+
+      expect(notifier.state.isAvailable, isTrue);
+      expect(mockService.getCurrentPositionCallCount, equals(1));
+    });
+
+    test('clearLocation resets state and cache so subsequent call queries GPS',
+        () async {
+      final notifier = container.read(locationProvider.notifier);
+
+      await notifier.determinePosition();
+      expect(mockService.getCurrentPositionCallCount, equals(1));
+      expect(notifier.state.isAvailable, isTrue);
+
+      // User logs out -> clearLocation called
+      notifier.clearLocation();
+      expect(notifier.state.status, equals(LocationStateStatus.initial));
+      expect(notifier.state.hasLocation, isFalse);
+
+      // Subsequent login/home access requires GPS again
+      await notifier.determinePosition();
+      expect(mockService.getCurrentPositionCallCount, equals(2));
+      expect(notifier.state.isAvailable, isTrue);
+    });
+
+    test('Stale location exceeding freshness limit triggers fresh GPS query',
+        () async {
+      final oldTime = DateTime.now().subtract(const Duration(minutes: 20));
+      final staleState =
+          LocationState.available(16.4971, 80.5005, null, oldTime);
+      final customNotifier = LocationNotifier(mockService, staleState);
+
+      expect(customNotifier.state.isFresh(maxAge: const Duration(minutes: 15)),
+          isFalse);
+
+      // Calling determinePosition with stale state should trigger GPS
+      await customNotifier.determinePosition(
+          freshnessLimit: const Duration(minutes: 15));
+      expect(mockService.getCurrentPositionCallCount, equals(1));
+      expect(customNotifier.state.isFresh(), isTrue);
     });
   });
 }

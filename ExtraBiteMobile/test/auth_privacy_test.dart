@@ -14,7 +14,9 @@ import 'mocks.dart';
 
 void main() {
   group('Privacy & User Data Isolation Tests', () {
-    testWidgets('1. Fresh install shows Role Selection, not a hardcoded profile', (WidgetTester tester) async {
+    testWidgets(
+        '1. Fresh install shows Role Selection, not a hardcoded profile',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: fakeLocationAndAuthOverrides(),
@@ -34,7 +36,9 @@ void main() {
       expect(find.text('+91 9876543210'), findsNothing);
     });
 
-    testWidgets('1b. Back button and Change button on Auth Screen navigate back to Role Selection', (WidgetTester tester) async {
+    testWidgets(
+        '1b. Back button and Change button on Auth Screen navigate back to Role Selection',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -75,7 +79,8 @@ void main() {
       expect(find.text('Welcome to ExtraBite'), findsOneWidget);
     });
 
-    testWidgets('2. User A logs in and sees only User A\'s authenticated data', (WidgetTester tester) async {
+    testWidgets('2. User A logs in and sees only User A\'s authenticated data',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: fakeLocationAndAuthOverrides(),
@@ -130,7 +135,8 @@ void main() {
       expect(find.text('pavan.kumar@example.com'), findsNothing);
     });
 
-    test('3. User A logs out; User B logs in and never sees User A\'s data', () async {
+    test('3. User A logs out; User B logs in and never sees User A\'s data',
+        () async {
       final fakeRepo = FakeAuthRepository();
       final container = ProviderContainer(
         overrides: [
@@ -175,7 +181,9 @@ void main() {
       expect(currentState.user?.email, isNot(equals('alice@example.com')));
     });
 
-    test('4. Reinstall / clear app data resets to Role Selection with zero profile leaks', () async {
+    test(
+        '4. Reinstall / clear app data resets to Role Selection with zero profile leaks',
+        () async {
       final fakeRepo = FakeAuthRepository();
       final container = ProviderContainer(
         overrides: [
@@ -204,7 +212,9 @@ void main() {
       expect(resetState.user, isNull);
     });
 
-    testWidgets('5. Owner Role onboarding: not-yet-eligible shows Pending Approval screen', (WidgetTester tester) async {
+    testWidgets(
+        '5. Owner Role onboarding: not-yet-eligible shows Pending Approval screen',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: fakeLocationAndAuthOverrides(),
@@ -223,10 +233,11 @@ void main() {
 
       final textFields = find.byType(TextFormField);
       await tester.enterText(textFields.at(0), 'Rajesh Kumar');
-      await tester.enterText(textFields.at(1), 'rajesh@srisai.com');
-      await tester.enterText(textFields.at(2), '+91 9444444444');
-      await tester.enterText(textFields.at(3), 'Sri Sai Luxury PG');
+      await tester.enterText(textFields.at(1), 'Sri Sai Luxury PG');
+      await tester.enterText(textFields.at(2), 'rajesh@srisai.com');
+      await tester.enterText(textFields.at(3), '+91 9444444444');
       await tester.enterText(textFields.at(4), 'ownerpass');
+      await tester.enterText(textFields.at(5), 'ownerpass');
 
       final submitBtn = find.text('Create Hostel / PG Owner Account');
       await tester.ensureVisible(submitBtn);
@@ -250,15 +261,20 @@ void main() {
       expect(find.text('Search meals, PGs or messes...'), findsNothing);
     });
 
-    testWidgets('6. PG Owner onboarding: eligible + no property shows Property Registration', (WidgetTester tester) async {
+    testWidgets(
+        '6. PG Owner onboarding: eligible + no property shows Property Registration',
+        (WidgetTester tester) async {
       final fakeAuthRepo = FakeAuthRepository();
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            locationProvider.overrideWith((ref) => FakeLocationNotifier(MockLocationService(), const LocationState.available(16.4971, 80.5005))),
+            locationProvider.overrideWith((ref) => FakeLocationNotifier(
+                MockLocationService(),
+                const LocationState.available(16.4971, 80.5005))),
             authRepositoryProvider.overrideWithValue(fakeAuthRepo),
             foodRepositoryProvider.overrideWithValue(FakeFoodRepository()),
-            pgProfileRepositoryProvider.overrideWithValue(PgProfileRepository.fakeForTest()),
+            pgProfileRepositoryProvider
+                .overrideWithValue(PgProfileRepository.fakeForTest()),
           ],
           child: const ExtraBiteApp(),
         ),
@@ -273,10 +289,11 @@ void main() {
 
       final textFields = find.byType(TextFormField);
       await tester.enterText(textFields.at(0), 'Rajesh Kumar');
-      await tester.enterText(textFields.at(1), 'rajesh@srisai.com');
-      await tester.enterText(textFields.at(2), '+91 9444444444');
-      await tester.enterText(textFields.at(3), 'Sri Sai Luxury PG');
+      await tester.enterText(textFields.at(1), 'Sri Sai Luxury PG');
+      await tester.enterText(textFields.at(2), 'rajesh@srisai.com');
+      await tester.enterText(textFields.at(3), '+91 9444444444');
       await tester.enterText(textFields.at(4), 'ownerpass');
+      await tester.enterText(textFields.at(5), 'ownerpass');
 
       final submitBtn = find.text('Create Hostel / PG Owner Account');
       await tester.ensureVisible(submitBtn);
