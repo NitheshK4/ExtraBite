@@ -54,7 +54,8 @@ class MetricStatCard extends StatelessWidget {
                     ),
                     if (subtitle != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceDim,
                           borderRadius: BorderRadius.circular(6),

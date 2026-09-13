@@ -9,7 +9,8 @@ class PropertyPendingScreen extends ConsumerStatefulWidget {
   const PropertyPendingScreen({super.key});
 
   @override
-  ConsumerState<PropertyPendingScreen> createState() => _PropertyPendingScreenState();
+  ConsumerState<PropertyPendingScreen> createState() =>
+      _PropertyPendingScreenState();
 }
 
 class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
@@ -42,7 +43,8 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final isRechecking = authState.status == AuthStatus.profileLoading || _isLoadingProfile;
+    final isRechecking =
+        authState.status == AuthStatus.profileLoading || _isLoadingProfile;
     final isRejected = _pgProfile?['is_rejected'] as bool? ?? false;
     final rejectionReason = _pgProfile?['rejection_reason'] as String?;
 
@@ -95,16 +97,19 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isRejected ? Icons.assignment_late_outlined : Icons.hourglass_top_rounded,
+                    isRejected
+                        ? Icons.assignment_late_outlined
+                        : Icons.hourglass_top_rounded,
                     size: 48,
                     color: isRejected ? AppColors.error : AppColors.primary,
                   ),
                 ),
               ),
               const SizedBox(height: 28),
-
               Text(
-                isRejected ? 'Property Registration Needs Updates' : 'Your PG is under review',
+                isRejected
+                    ? 'Property Registration Needs Updates'
+                    : 'Your PG is under review',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 22,
@@ -113,7 +118,6 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
               if (isRejected) ...[
                 Text(
                   'Our admin team reviewed your PG property submission and requested revisions before approval.',
@@ -137,7 +141,8 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.feedback_outlined, color: AppColors.error, size: 18),
+                          const Icon(Icons.feedback_outlined,
+                              color: AppColors.error, size: 18),
                           const SizedBox(width: 8),
                           Text(
                             'Admin Feedback / Reason',
@@ -151,7 +156,8 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        rejectionReason ?? 'Please update property details or coordinates and resubmit.',
+                        rejectionReason ??
+                            'Please update property details or coordinates and resubmit.',
                         style: GoogleFonts.inter(
                           color: AppColors.textPrimary,
                           fontSize: 14,
@@ -172,7 +178,8 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                   icon: const Icon(Icons.edit_note_rounded),
                   label: Text(
                     'Edit & Resubmit Property',
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ] else ...[
@@ -186,7 +193,6 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                   ),
                 ),
               ],
-
               if (authState.errorMessage != null) ...[
                 const SizedBox(height: 24),
                 Container(
@@ -199,24 +205,28 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                   child: Text(
                     authState.errorMessage!,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(color: AppColors.error, fontSize: 13),
+                    style:
+                        GoogleFonts.inter(color: AppColors.error, fontSize: 13),
                   ),
                 ),
               ],
-
               const SizedBox(height: 32),
-
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isRejected ? AppColors.surfaceContainerHigh : AppColors.primary,
-                  foregroundColor: isRejected ? AppColors.textPrimary : Colors.white,
+                  backgroundColor: isRejected
+                      ? AppColors.surfaceContainerHigh
+                      : AppColors.primary,
+                  foregroundColor:
+                      isRejected ? AppColors.textPrimary : Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: isRechecking
                     ? null
                     : () async {
                         await _loadProfile();
-                        await ref.read(authProvider.notifier).recheckPropertyStatus();
+                        await ref
+                            .read(authProvider.notifier)
+                            .recheckPropertyStatus();
                       },
                 icon: isRechecking
                     ? const SizedBox(
@@ -230,11 +240,11 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                     : const Icon(Icons.refresh_rounded),
                 label: Text(
                   isRechecking ? 'Checking…' : 'Check Approval Status',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                  style:
+                      GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 12),
-
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textSecondary,
@@ -247,7 +257,8 @@ class _PropertyPendingScreenState extends ConsumerState<PropertyPendingScreen> {
                 icon: const Icon(Icons.logout_rounded, size: 18),
                 label: Text(
                   'Sign Out',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                  style:
+                      GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
                 ),
               ),
             ],

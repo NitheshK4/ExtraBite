@@ -51,10 +51,12 @@ class _PropertyRegistrationScreenState
           if (_addressController.text.isEmpty && profile['address'] != null) {
             _addressController.text = profile['address'].toString();
           }
-          if (_phoneController.text.isEmpty && profile['contact_phone'] != null) {
+          if (_phoneController.text.isEmpty &&
+              profile['contact_phone'] != null) {
             _phoneController.text = profile['contact_phone'].toString();
           }
-          if (_descriptionController.text.isEmpty && profile['description'] != null) {
+          if (_descriptionController.text.isEmpty &&
+              profile['description'] != null) {
             _descriptionController.text = profile['description'].toString();
           }
         });
@@ -93,11 +95,13 @@ class _PropertyRegistrationScreenState
         });
       } else if (locState.status == LocationStateStatus.permissionDenied) {
         setState(() {
-          _gpsStatusMessage = 'Location permission denied. Using manual coordinates.';
+          _gpsStatusMessage =
+              'Location permission denied. Using manual coordinates.';
         });
       } else if (locState.status == LocationStateStatus.serviceDisabled) {
         setState(() {
-          _gpsStatusMessage = 'Location services disabled. Please enable GPS or enter coordinates.';
+          _gpsStatusMessage =
+              'Location services disabled. Please enable GPS or enter coordinates.';
         });
       } else {
         setState(() {
@@ -106,7 +110,8 @@ class _PropertyRegistrationScreenState
       }
     } catch (_) {
       setState(() {
-        _gpsStatusMessage = 'Location detection failed. Using default/manual coordinates.';
+        _gpsStatusMessage =
+            'Location detection failed. Using default/manual coordinates.';
       });
     } finally {
       if (mounted) {
@@ -262,7 +267,8 @@ class _PropertyRegistrationScreenState
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.my_location, size: 18, color: AppColors.primary),
+                              Icon(Icons.my_location,
+                                  size: 18, color: AppColors.primary),
                               SizedBox(width: 8),
                               Text(
                                 'Property Geolocation',
@@ -275,15 +281,18 @@ class _PropertyRegistrationScreenState
                             ],
                           ),
                           TextButton.icon(
-                            onPressed: _isLocating ? null : _detectCurrentLocation,
+                            onPressed:
+                                _isLocating ? null : _detectCurrentLocation,
                             icon: _isLocating
                                 ? const SizedBox(
                                     width: 14,
                                     height: 14,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   )
                                 : const Icon(Icons.refresh, size: 16),
-                            label: const Text('Detect GPS', style: TextStyle(fontSize: 13)),
+                            label: const Text('Detect GPS',
+                                style: TextStyle(fontSize: 13)),
                           ),
                         ],
                       ),
@@ -305,30 +314,36 @@ class _PropertyRegistrationScreenState
                           Expanded(
                             child: TextFormField(
                               controller: _latController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
                               decoration: const InputDecoration(
                                 labelText: 'Latitude',
                                 border: OutlineInputBorder(),
                                 isDense: true,
                               ),
-                              validator: (val) => val == null || double.tryParse(val) == null
-                                  ? 'Valid latitude'
-                                  : null,
+                              validator: (val) =>
+                                  val == null || double.tryParse(val) == null
+                                      ? 'Valid latitude'
+                                      : null,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
                               controller: _lonController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
                               decoration: const InputDecoration(
                                 labelText: 'Longitude',
                                 border: OutlineInputBorder(),
                                 isDense: true,
                               ),
-                              validator: (val) => val == null || double.tryParse(val) == null
-                                  ? 'Valid longitude'
-                                  : null,
+                              validator: (val) =>
+                                  val == null || double.tryParse(val) == null
+                                      ? 'Valid longitude'
+                                      : null,
                             ),
                           ),
                         ],
