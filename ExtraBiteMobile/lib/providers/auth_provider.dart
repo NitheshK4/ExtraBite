@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../models/user_role.dart';
 
 import '../core/repositories/pg_profile_repository.dart';
+import 'location_provider.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return SupabaseAuthRepository();
@@ -98,7 +99,8 @@ class AuthState {
       AuthState(status: AuthStatus.authenticating, selectedRole: role);
 
   factory AuthState.profileLoading({UserRole? role, UserModel? user}) =>
-      AuthState(status: AuthStatus.profileLoading, selectedRole: role, user: user);
+      AuthState(
+          status: AuthStatus.profileLoading, selectedRole: role, user: user);
 
   /// Creates an [authenticated] state and applies the correct sub-status
   /// based on the profile flags.  The router watches [status] only; it does
@@ -135,8 +137,8 @@ class AuthState {
   factory AuthState.suspended(UserModel user) =>
       AuthState(status: AuthStatus.suspended, user: user);
 
-  factory AuthState.error(String message, {UserRole? role}) =>
-      AuthState(status: AuthStatus.error, selectedRole: role, errorMessage: message);
+  factory AuthState.error(String message, {UserRole? role}) => AuthState(
+      status: AuthStatus.error, selectedRole: role, errorMessage: message);
 }
 
 // ---------------------------------------------------------------------------
@@ -217,8 +219,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void _listenToSupabaseAuthChanges() {
     if (_repo is! SupabaseAuthRepository) return;
 
-    _authStateSubscription =
-        supabase.Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+    _authStateSubscription = supabase
+        .Supabase.instance.client.auth.onAuthStateChange
+        .listen((data) async {
       if (_isDisposed) return;
 
       switch (data.event) {
@@ -292,7 +295,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }(),
       AuthOwnerNotEligible() => () {
           // Should not happen from login, but handle gracefully.
-          state = AuthState.error('Role error. Please contact support.', role: currentRole);
+          state = AuthState.error('Role error. Please contact support.',
+              role: currentRole);
           return false;
         }(),
       AuthFailure(:final message) => () {
@@ -335,7 +339,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           return true;
         }(),
       AuthOwnerNotEligible() => () {
-          state = AuthState.error('Role error. Please contact support.', role: role);
+          state = AuthState.error('Role error. Please contact support.',
+              role: role);
           return false;
         }(),
       AuthFailure(:final message) => () {
@@ -389,7 +394,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           if (!_isDisposed) {
             state = user != null
                 ? AuthState.pendingOwnerApproval(user)
-                : AuthState.error('Could not load your profile. Please restart the app.');
+                : AuthState.error(
+                    'Could not load your profile. Please restart the app.');
           }
         }
 
@@ -420,7 +426,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (_isDisposed) return;
 
     if (user == null) {
-      state = AuthState.error('Could not load your profile. Please sign in again.');
+      state =
+          AuthState.error('Could not load your profile. Please sign in again.');
       return;
     }
 
@@ -435,11 +442,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await _repo.signOut();
+    _ref.read(locationProvider.notifier).clearLocation();
     state = AuthState.selectingRole();
   }
 
   Future<void> clearAppData() async {
     await _repo.signOut();
+    _ref.read(locationProvider.notifier).clearLocation();
     state = AuthState.selectingRole();
   }
 
