@@ -14,6 +14,7 @@ class LocationState {
   final double? longitude;
   final String? errorMessage;
   final String? customName;
+  final DateTime? lastUpdated;
 
   const LocationState({
     required this.status,
@@ -21,22 +22,78 @@ class LocationState {
     this.longitude,
     this.errorMessage,
     this.customName,
+    this.lastUpdated,
   });
 
   const LocationState.initial() : this(status: LocationStateStatus.initial);
-  const LocationState.loading() : this(status: LocationStateStatus.loading);
-  const LocationState.permissionDenied() : this(status: LocationStateStatus.permissionDenied);
-  const LocationState.permissionPermanentlyDenied() : this(status: LocationStateStatus.permissionPermanentlyDenied);
-  const LocationState.serviceDisabled() : this(status: LocationStateStatus.serviceDisabled);
-  const LocationState.available(double lat, double lon, [String? name]) : this(status: LocationStateStatus.available, latitude: lat, longitude: lon, customName: name);
-  const LocationState.error(String message) : this(status: LocationStateStatus.error, errorMessage: message);
+  const LocationState.loading(
+      {double? latitude,
+      double? longitude,
+      String? customName,
+      DateTime? lastUpdated})
+      : this(
+          status: LocationStateStatus.loading,
+          latitude: latitude,
+          longitude: longitude,
+          customName: customName,
+          lastUpdated: lastUpdated,
+        );
+  const LocationState.permissionDenied()
+      : this(status: LocationStateStatus.permissionDenied);
+  const LocationState.permissionPermanentlyDenied()
+      : this(status: LocationStateStatus.permissionPermanentlyDenied);
+  const LocationState.serviceDisabled()
+      : this(status: LocationStateStatus.serviceDisabled);
+  const LocationState.available(double lat, double lon,
+      [String? name, DateTime? updatedAt])
+      : this(
+            status: LocationStateStatus.available,
+            latitude: lat,
+            longitude: lon,
+            customName: name,
+            lastUpdated: updatedAt);
+  const LocationState.error(String message)
+      : this(status: LocationStateStatus.error, errorMessage: message);
+
+  /// Whether valid coordinates are present in the state.
+  bool get hasLocation => latitude != null && longitude != null;
+
+  /// Whether location is successfully resolved and coordinates exist.
+  bool get isAvailable =>
+      status == LocationStateStatus.available && hasLocation;
+
+  /// Returns true if valid coordinates are present and fresh within [maxAge].
+  bool isFresh({Duration maxAge = const Duration(minutes: 15)}) {
+    if (!isAvailable || lastUpdated == null) return false;
+    return DateTime.now().difference(lastUpdated!) < maxAge;
+  }
+
+  LocationState copyWith({
+    LocationStateStatus? status,
+    double? latitude,
+    double? longitude,
+    String? errorMessage,
+    String? customName,
+    DateTime? lastUpdated,
+  }) {
+    return LocationState(
+      status: status ?? this.status,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      errorMessage: errorMessage ?? this.errorMessage,
+      customName: customName ?? this.customName,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
 
   String get displayName {
     if (customName != null && customName!.isNotEmpty) {
       return customName!;
     }
     if (status == LocationStateStatus.loading) {
-      return 'Detecting your location...';
+      return hasLocation
+          ? 'Refreshing location...'
+          : 'Detecting your location...';
     }
     if (status == LocationStateStatus.available) {
       return 'Near VIT-AP University';
@@ -62,13 +119,20 @@ class LocationState {
           latitude == other.latitude &&
           longitude == other.longitude &&
           errorMessage == other.errorMessage &&
-          customName == other.customName;
+          customName == other.customName &&
+          lastUpdated == other.lastUpdated;
 
   @override
-  int get hashCode => status.hashCode ^ latitude.hashCode ^ longitude.hashCode ^ errorMessage.hashCode ^ customName.hashCode;
+  int get hashCode =>
+      status.hashCode ^
+      latitude.hashCode ^
+      longitude.hashCode ^
+      errorMessage.hashCode ^
+      customName.hashCode ^
+      lastUpdated.hashCode;
 
   @override
   String toString() {
-    return 'LocationState(status: $status, latitude: $latitude, longitude: $longitude, errorMessage: $errorMessage, customName: $customName)';
+    return 'LocationState(status: $status, latitude: $latitude, longitude: $longitude, errorMessage: $errorMessage, customName: $customName, lastUpdated: $lastUpdated)';
   }
 }
