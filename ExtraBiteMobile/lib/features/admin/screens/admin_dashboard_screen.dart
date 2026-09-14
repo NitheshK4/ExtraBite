@@ -216,8 +216,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 indicatorWeight: 3,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white60,
-                labelStyle: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 13),
+                labelStyle:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 tabs: [
                   Tab(
                     child: Row(
@@ -253,7 +253,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Search by name or email…',
-                    prefixIcon: const Icon(Icons.search, color: AppColors.textLight),
+                    prefixIcon:
+                        const Icon(Icons.search, color: AppColors.textLight),
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(
@@ -267,7 +268,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       borderSide: const BorderSide(color: AppColors.border),
                     ),
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  onChanged: (v) =>
+                      setState(() => _searchQuery = v.toLowerCase()),
                 ),
               ),
               // Tab views
@@ -280,7 +282,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       asyncUsers: pendingAsync,
                       filter: (u) {
                         if (_searchQuery.isEmpty) return true;
-                        return u.fullName.toLowerCase().contains(_searchQuery) ||
+                        return u.fullName
+                                .toLowerCase()
+                                .contains(_searchQuery) ||
                             u.email.toLowerCase().contains(_searchQuery);
                       },
                       emptyMessage: 'No pending applications',
@@ -296,7 +300,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       filter: (u) {
                         if (u.role != UserRole.owner) return false;
                         if (_searchQuery.isEmpty) return true;
-                        return u.fullName.toLowerCase().contains(_searchQuery) ||
+                        return u.fullName
+                                .toLowerCase()
+                                .contains(_searchQuery) ||
                             u.email.toLowerCase().contains(_searchQuery);
                       },
                       emptyMessage: 'No PG Owners yet',
@@ -311,7 +317,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       asyncUsers: allUsersAsync,
                       filter: (u) {
                         if (_searchQuery.isEmpty) return true;
-                        return u.fullName.toLowerCase().contains(_searchQuery) ||
+                        return u.fullName
+                                .toLowerCase()
+                                .contains(_searchQuery) ||
                             u.email.toLowerCase().contains(_searchQuery);
                       },
                       emptyMessage: 'No users found',
@@ -675,9 +683,11 @@ class _UserCard extends StatelessWidget {
                     color: Colors.lightBlue,
                   ),
                 if (user.isSuspended)
-                  const _StatusBadge(label: 'Suspended', color: AppColors.error),
+                  const _StatusBadge(
+                      label: 'Suspended', color: AppColors.error),
                 if (user.isVerified)
-                  const _StatusBadge(label: 'Verified', color: AppColors.success),
+                  const _StatusBadge(
+                      label: 'Verified', color: AppColors.success),
               ],
             ),
             const SizedBox(height: 4),
@@ -771,8 +781,18 @@ class _UserCard extends StatelessWidget {
 
   String _formatDate(DateTime dt) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -802,9 +822,7 @@ class _StatusBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: color is MaterialColor
-              ? color
-              : color,
+          color: color is MaterialColor ? color : color,
         ),
       ),
     );

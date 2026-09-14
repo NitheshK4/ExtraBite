@@ -7,7 +7,8 @@ class AppColors {
   static const Color onPrimary = Colors.white;
   static const Color onPrimaryContainer = Color(0xFF003300);
 
-  static const Color secondary = Color(0xFFE65100); // Warm Amber Accent / Urgency
+  static const Color secondary =
+      Color(0xFFE65100); // Warm Amber Accent / Urgency
   static const Color secondaryLight = Color(0xFFFFF3E0); // Warm Glow Pill
   static const Color onSecondary = Colors.white;
   static const Color onSecondaryContainer = Color(0xFF561900);
@@ -15,20 +16,20 @@ class AppColors {
   static const Color tertiary = Color(0xFF1976D2); // Digital Pass Blue
   static const Color tertiaryLight = Color(0xFFE3F2FD);
   static const Color onTertiary = Colors.white;
-  
+
   // Surfaces & Backgrounds
   static const Color background = Color(0xFFF8F9FA); // Soft Neutral Canvas
   static const Color surface = Colors.white;
   static const Color surfaceDim = Color(0xFFF1F3F5);
   static const Color surfaceContainerHigh = Color(0xFFF1F3F5);
   static const Color surfaceContainerHighest = Color(0xFFE9ECEF);
-  
+
   // Typography
   static const Color textPrimary = Color(0xFF1A1D1E);
   static const Color textSecondary = Color(0xFF5A626A);
   static const Color textLight = Color(0xFF8D959E);
   static const Color onSurfaceVariant = Color(0xFF5A626A);
-  
+
   // Borders & Feedback
   static const Color border = Color(0xFFE0E3E7);
   static const Color outline = Color(0xFFE0E3E7);
@@ -36,7 +37,7 @@ class AppColors {
   static const Color error = Color(0xFFD32F2F);
   static const Color errorLight = Color(0xFFFFEBEE);
   static const Color success = Color(0xFF2E7D32);
-  
+
   // Veg/Non-Veg indicators
   static const Color vegColor = Color(0xFF2E7D32);
   static const Color dietaryVeg = Color(0xFF2E7D32);

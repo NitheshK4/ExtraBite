@@ -44,7 +44,8 @@ class AppConfig {
         'SUPABASE_ANON_KEY is missing. Provide it via compile-time definition (--dart-define=SUPABASE_ANON_KEY=...) or default configuration.',
       );
     }
-    if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
+    if (!supabaseUrl.startsWith('http://') &&
+        !supabaseUrl.startsWith('https://')) {
       throw StateError('SUPABASE_URL must start with http:// or https://');
     }
   }
@@ -68,17 +69,21 @@ class AppConfig {
     }
 
     // 2. Timeout exceptions
-    if (error is TimeoutException || str.contains('timeoutexception') || str.contains('timed out')) {
+    if (error is TimeoutException ||
+        str.contains('timeoutexception') ||
+        str.contains('timed out')) {
       return 'Connection timed out. Please verify your connection and try again.';
     }
 
     // 3. Supabase Auth Exceptions
     if (error is AuthException) {
       final msg = error.message.toLowerCase();
-      if (msg.contains('invalid login credentials') || msg.contains('invalid credentials')) {
+      if (msg.contains('invalid login credentials') ||
+          msg.contains('invalid credentials')) {
         return 'Invalid email or password. Please try again.';
       }
-      if (msg.contains('user already registered') || msg.contains('email already registered')) {
+      if (msg.contains('user already registered') ||
+          msg.contains('email already registered')) {
         return 'An account with this email already exists. Please sign in.';
       }
       if (msg.contains('password should be at least')) {

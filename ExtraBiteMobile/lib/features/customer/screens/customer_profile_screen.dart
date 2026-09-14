@@ -12,7 +12,8 @@ class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
 
   @override
-  ConsumerState<CustomerProfileScreen> createState() => _CustomerProfileScreenState();
+  ConsumerState<CustomerProfileScreen> createState() =>
+      _CustomerProfileScreenState();
 }
 
 class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
@@ -53,7 +54,10 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // User Header Card
-            _buildUserHeader(user?.name ?? 'Customer User', user?.email ?? 'customer@example.com', user?.role ?? UserRole.personal),
+            _buildUserHeader(
+                user?.name ?? 'Customer User',
+                user?.email ?? 'customer@example.com',
+                user?.role ?? UserRole.personal),
 
             const SizedBox(height: 20),
 
@@ -78,10 +82,12 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 final shouldLogout = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                     title: Text(
                       'Log Out',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700),
                     ),
                     content: Text(
                       'Are you sure you want to log out of ExtraBite?',
@@ -123,7 +129,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.error),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
 
@@ -174,7 +181,13 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
 
   Widget _buildUserHeader(String name, String email, UserRole role) {
     final initials = name.isNotEmpty
-        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        ? name
+            .trim()
+            .split(' ')
+            .map((e) => e.isNotEmpty ? e[0] : '')
+            .take(2)
+            .join()
+            .toUpperCase()
         : 'CU';
 
     return Container(
@@ -228,7 +241,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(8),
@@ -262,11 +276,19 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         child: Column(
           children: [
             ListTile(
-              leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
-              title: Text('Phone Number', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              leading:
+                  const Icon(Icons.phone_outlined, color: AppColors.primary),
+              title: Text('Phone Number',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: AppColors.textSecondary)),
               subtitle: Text(
-                phone != null && phone.isNotEmpty ? phone : '+91 (Not Provided)',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                phone != null && phone.isNotEmpty
+                    ? phone
+                    : '+91 (Not Provided)',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.textPrimary),
               ),
             ),
             const Divider(color: AppColors.outline, height: 1),
@@ -275,13 +297,19 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 isVerified ? Icons.verified_user : Icons.gpp_maybe_outlined,
                 color: isVerified ? AppColors.vegColor : AppColors.secondary,
               ),
-              title: Text('Account Status', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              title: Text('Account Status',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: AppColors.textSecondary)),
               subtitle: Text(
                 isVerified ? 'Verified Community Account' : 'Standard Member',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.textPrimary),
               ),
               trailing: isVerified
-                  ? const Icon(Icons.check_circle, color: AppColors.vegColor, size: 20)
+                  ? const Icon(Icons.check_circle,
+                      color: AppColors.vegColor, size: 20)
                   : null,
             ),
           ],
@@ -314,10 +342,16 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.location_on_outlined, color: AppColors.primary),
-              title: Text(currentAddress, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text('Tap to change default search area', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
-              trailing: const Icon(Icons.edit_location_alt_outlined, color: AppColors.primary, size: 20),
+              leading: const Icon(Icons.location_on_outlined,
+                  color: AppColors.primary),
+              title: Text(currentAddress,
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('Tap to change default search area',
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: AppColors.textSecondary)),
+              trailing: const Icon(Icons.edit_location_alt_outlined,
+                  color: AppColors.primary, size: 20),
               onTap: () {
                 _showLocationPicker(context);
               },
@@ -340,9 +374,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         child: Column(
           children: [
             ListTile(
-              leading: const Icon(Icons.report_problem_outlined, color: AppColors.error),
-              title: Text('Food Safety Incident Reporting', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text('Report concerns about food quality directly to admins.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              leading: const Icon(Icons.report_problem_outlined,
+                  color: AppColors.error),
+              title: Text('Food Safety Incident Reporting',
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text(
+                  'Report concerns about food quality directly to admins.',
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: AppColors.textSecondary)),
               trailing: const Icon(Icons.chevron_right, size: 20),
               onTap: () {
                 _showSafetyReportDialog(context);
@@ -351,8 +391,13 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             const Divider(color: AppColors.outline, height: 1),
             ListTile(
               leading: const Icon(Icons.help_outline, color: AppColors.primary),
-              title: Text('Help & Support FAQ', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text('Learn how pickup reservation and physical payments work.', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              title: Text('Help & Support FAQ',
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text(
+                  'Learn how pickup reservation and physical payments work.',
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: AppColors.textSecondary)),
               trailing: const Icon(Icons.chevron_right, size: 20),
               onTap: () {
                 _showFAQDialog(context);
@@ -360,9 +405,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             ),
             const Divider(color: AppColors.outline, height: 1),
             ListTile(
-              leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
-              title: Text('About ExtraBite', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text('Version 1.0.0 • Community Surplus Food Marketplace', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              leading: const Icon(Icons.info_outline,
+                  color: AppColors.textSecondary),
+              title: Text('About ExtraBite',
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text(
+                  'Version 1.0.0 • Community Surplus Food Marketplace',
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: AppColors.textSecondary)),
             ),
           ],
         ),
@@ -384,7 +435,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             const SizedBox(width: 8),
             Text(
               'Report Food Safety Incident',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+              style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ],
         ),
@@ -394,7 +446,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             children: [
               Text(
                 'If you received expired, unsafe, or contaminated food from any PG or hostel, submit a direct report here for immediate administrative review.',
-                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                style: GoogleFonts.inter(
+                    fontSize: 13, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -422,13 +475,16 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   backgroundColor: AppColors.primary,
-                  content: Text('🛡️ Safety report logged with ExtraBite Admin Team.'),
+                  content: Text(
+                      '🛡️ Safety report logged with ExtraBite Admin Team.'),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -445,21 +501,32 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Frequently Asked Questions', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        title: Text('Frequently Asked Questions',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Q: How do I pay?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-              Text('A: Payment is strictly physical at pickup directly to the PG mess owners using Cash or personal UPI.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Q: How do I pay?',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+              Text(
+                  'A: Payment is strictly physical at pickup directly to the PG mess owners using Cash or personal UPI.',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 12),
-              Text('Q: Can I cancel a reservation?', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-              Text('A: Yes, you can cancel an active reservation from the Digital Pass or Reservations tab anytime before the pickup window closes.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Q: Can I cancel a reservation?',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+              Text(
+                  'A: Yes, you can cancel an active reservation from the Digital Pass or Reservations tab anytime before the pickup window closes.',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got It')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Got It')),
         ],
       ),
     );
@@ -479,7 +546,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             const SizedBox(width: 8),
             Text(
               'Set Search Area',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+              style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ],
         ),
@@ -496,11 +564,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               if (textController.text.trim().isNotEmpty) {
-                ref.read(locationProvider.notifier).updateLocation(textController.text.trim());
+                ref
+                    .read(locationProvider.notifier)
+                    .updateLocation(textController.text.trim());
               }
               Navigator.pop(context);
             },

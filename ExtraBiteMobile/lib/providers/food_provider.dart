@@ -48,7 +48,9 @@ class FoodNotifier extends StateNotifier<FoodState> {
 
   FoodNotifier(this._repository)
       : super(FoodState(
-          listings: _repository.isFakeForTest ? FoodRepository.getTestMockData() : const [],
+          listings: _repository.isFakeForTest
+              ? FoodRepository.getTestMockData()
+              : const [],
           searchQuery: '',
           selectedCategory: 'All',
         )) {
@@ -105,6 +107,14 @@ class FoodNotifier extends StateNotifier<FoodState> {
     );
   }
 
+  void updateListing(FoodListing updated) {
+    state = state.copyWith(
+      listings: state.listings
+          .map((item) => item.id == updated.id ? updated : item)
+          .toList(),
+    );
+  }
+
   void refreshListings() {
     loadListings();
   }
@@ -133,6 +143,26 @@ class FoodNotifier extends StateNotifier<FoodState> {
       }).toList(),
     );
     await _repository.updatePortions(id, updatedPortions);
+  }
+
+  /// Restores available portions when a reservation is cancelled.
+  /// If the listing was previously sold out, it reactivates it back to active.
+  void restorePortions(String id, int count) {
+    if (count <= 0) return;
+    state = state.copyWith(
+      listings: state.listings.map((item) {
+        if (item.id == id) {
+          final newPortions = item.availablePortions + count;
+          final newStatus =
+              (item.status == 'sold_out') ? 'active' : item.status;
+          return item.copyWith(
+            availablePortions: newPortions,
+            status: newStatus,
+          );
+        }
+        return item;
+      }).toList(),
+    );
   }
 
   void updateSearchQuery(String query) {
@@ -184,7 +214,8 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
 
     var distanceFilteredList = <FoodListing>[];
     for (final item in eligibleList) {
-      final distance = Haversine.calculateDistance(lat, lon, item.latitude, item.longitude);
+      final distance =
+          Haversine.calculateDistance(lat, lon, item.latitude, item.longitude);
       final itemWithDistance = item.copyWith(distanceKm: distance);
       if (distance <= selectedRadius) {
         distanceFilteredList.add(itemWithDistance);
@@ -202,20 +233,26 @@ final filteredFoodProvider = Provider<List<FoodListing>>((ref) {
     } else if (state.selectedCategory == 'Non-Vegetarian') {
       eligibleList = eligibleList.where((item) => !item.isVegetarian).toList();
     } else if (state.selectedCategory == 'Under ₹30') {
-      eligibleList = eligibleList.where((item) => item.sellingPrice < 30.0).toList();
+      eligibleList =
+          eligibleList.where((item) => item.sellingPrice < 30.0).toList();
     } else {
-      eligibleList = eligibleList.where((item) => item.category.toLowerCase() == state.selectedCategory.toLowerCase()).toList();
+      eligibleList = eligibleList
+          .where((item) =>
+              item.category.toLowerCase() ==
+              state.selectedCategory.toLowerCase())
+          .toList();
     }
   }
 
   // Apply Search Query Filter
   if (state.searchQuery.isNotEmpty) {
     final query = state.searchQuery.toLowerCase();
-    eligibleList = eligibleList.where((item) =>
-      item.foodName.toLowerCase().contains(query) ||
-      item.propertyName.toLowerCase().contains(query) ||
-      item.category.toLowerCase().contains(query)
-    ).toList();
+    eligibleList = eligibleList
+        .where((item) =>
+            item.foodName.toLowerCase().contains(query) ||
+            item.propertyName.toLowerCase().contains(query) ||
+            item.category.toLowerCase().contains(query))
+        .toList();
   }
 
   // Sort by distance

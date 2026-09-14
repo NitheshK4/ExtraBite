@@ -49,7 +49,8 @@ void main() {
   );
 
   group('Semantics & ParentData Rigorous Test Suite', () {
-    testWidgets('1. OwnerDashboardScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('1. OwnerDashboardScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -57,7 +58,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testOwner);
                 return notifier;
               }),
@@ -74,7 +76,8 @@ void main() {
       }
     });
 
-    testWidgets('2. WelcomeScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('2. WelcomeScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -91,7 +94,8 @@ void main() {
       }
     });
 
-    testWidgets('3. RoleSelectionScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('3. RoleSelectionScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -108,7 +112,8 @@ void main() {
       }
     });
 
-    testWidgets('4. CustomerAuthScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('4. CustomerAuthScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -125,7 +130,8 @@ void main() {
       }
     });
 
-    testWidgets('5. OwnerAuthScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('5. OwnerAuthScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -142,7 +148,8 @@ void main() {
       }
     });
 
-    testWidgets('6. EmailConfirmationScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('6. EmailConfirmationScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -159,7 +166,8 @@ void main() {
       }
     });
 
-    testWidgets('7. ForgotPasswordScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('7. ForgotPasswordScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -176,7 +184,8 @@ void main() {
       }
     });
 
-    testWidgets('8. AccountStatusScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('8. AccountStatusScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -193,7 +202,8 @@ void main() {
       }
     });
 
-    testWidgets('9. PropertyPendingScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('9. PropertyPendingScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -201,7 +211,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testOwner);
                 return notifier;
               }),
@@ -217,7 +228,8 @@ void main() {
       }
     });
 
-    testWidgets('10. PropertyRegistrationScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('10. PropertyRegistrationScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -225,7 +237,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testOwner);
                 return notifier;
               }),
@@ -241,7 +254,8 @@ void main() {
       }
     });
 
-    testWidgets('11. CustomerHomeScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('11. CustomerHomeScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -249,7 +263,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testCustomer);
                 return notifier;
               }),
@@ -265,7 +280,8 @@ void main() {
       }
     });
 
-    testWidgets('12. FoodDetailScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('12. FoodDetailScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -273,7 +289,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testCustomer);
                 return notifier;
               }),
@@ -289,7 +306,8 @@ void main() {
       }
     });
 
-    testWidgets('13. ReservationPassScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('13. ReservationPassScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -297,7 +315,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testCustomer);
                 return notifier;
               }),
@@ -313,7 +332,8 @@ void main() {
       }
     });
 
-    testWidgets('14. OwnerPendingScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('14. OwnerPendingScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -321,7 +341,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.pendingOwnerApproval(testOwner);
                 return notifier;
               }),
@@ -337,7 +358,8 @@ void main() {
       }
     });
 
-    testWidgets('15. ReservationsScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('15. ReservationsScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -345,7 +367,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testCustomer);
                 return notifier;
               }),
@@ -361,7 +384,8 @@ void main() {
       }
     });
 
-    testWidgets('16. CustomerProfileScreen with semantics enabled', (WidgetTester tester) async {
+    testWidgets('16. CustomerProfileScreen with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -369,7 +393,8 @@ void main() {
             overrides: [
               ...fakeLocationAndAuthOverrides(),
               authProvider.overrideWith((ref) {
-                final notifier = AuthNotifier(ref.read(authRepositoryProvider), ref);
+                final notifier =
+                    AuthNotifier(ref.read(authRepositoryProvider), ref);
                 notifier.state = AuthState.fromProfile(testCustomer);
                 return notifier;
               }),
@@ -385,7 +410,8 @@ void main() {
       }
     });
 
-    testWidgets('17. Full App Navigation Flow with semantics enabled', (WidgetTester tester) async {
+    testWidgets('17. Full App Navigation Flow with semantics enabled',
+        (WidgetTester tester) async {
       final semanticsHandle = tester.binding.ensureSemantics();
       try {
         await tester.pumpWidget(
@@ -401,7 +427,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // Login
-        await tester.enterText(find.byType(TextFormField).at(0), 'test@example.com');
+        await tester.enterText(
+            find.byType(TextFormField).at(0), 'test@example.com');
         await tester.enterText(find.byType(TextFormField).at(1), 'pass123');
         await tester.tap(find.text('Log In as Personal User'));
         await tester.pumpAndSettle();

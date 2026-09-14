@@ -108,7 +108,8 @@ class OwnerPendingScreen extends ConsumerWidget {
                   child: Text(
                     authState.errorMessage!,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(color: AppColors.error, fontSize: 13),
+                    style:
+                        GoogleFonts.inter(color: AppColors.error, fontSize: 13),
                   ),
                 ),
               ],
@@ -139,7 +140,8 @@ class OwnerPendingScreen extends ConsumerWidget {
                     : const Icon(Icons.refresh_rounded),
                 label: Text(
                   isLoading ? 'Checking…' : 'Check Approval Status',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                  style:
+                      GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(height: 12),
@@ -157,7 +159,8 @@ class OwnerPendingScreen extends ConsumerWidget {
                 icon: const Icon(Icons.logout_rounded, size: 18),
                 label: Text(
                   'Sign Out',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                  style:
+                      GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
                 ),
               ),
 

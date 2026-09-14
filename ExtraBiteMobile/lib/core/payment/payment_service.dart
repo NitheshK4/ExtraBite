@@ -43,12 +43,14 @@ class PaymentService {
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    debugPrint('[PaymentService] Payment Cancelled/Error: [${response.code}] ${response.message}');
+    debugPrint(
+        '[PaymentService] Payment Cancelled/Error: [${response.code}] ${response.message}');
     _onFailure?.call(response);
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    debugPrint('[PaymentService] External Wallet Selected: ${response.walletName}');
+    debugPrint(
+        '[PaymentService] External Wallet Selected: ${response.walletName}');
     _onExternalWallet?.call(response);
   }
 
@@ -74,7 +76,8 @@ class PaymentService {
       'prefill': {
         'contact': customerContact ?? PaymentConfig.defaultContact,
         'email': customerEmail ?? PaymentConfig.defaultEmail,
-        'method': 'upi', // Pre-selects & prioritizes UPI payment tab in Razorpay Checkout
+        'method':
+            'upi', // Pre-selects & prioritizes UPI payment tab in Razorpay Checkout
       },
       'theme': {
         'color': PaymentConfig.themeColorHex,

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,13 +5,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../models/food_listing.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/food_provider.dart';
 
 class AddMealScreen extends ConsumerStatefulWidget {
   final UserModel user;
+  final FoodListing? initialListing;
 
-  const AddMealScreen({super.key, required this.user});
+  const AddMealScreen({
+    super.key,
+    required this.user,
+    this.initialListing,
+  });
 
   @override
   ConsumerState<AddMealScreen> createState() => _AddMealScreenState();
@@ -35,9 +40,16 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   TimeOfDay _startTime = const TimeOfDay(hour: 12, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 14, minute: 0);
 
-  File? _imageFile;
+  Uint8List? _imageBytes;
+  String? _imageExtension;
+  String? _existingImageUrl;
+  bool _imageRemoved = false;
+
   bool _isLoading = false;
+  String _loadingStatus = 'Publishing Meal live... Please wait.';
   Map<String, dynamic>? _ownerPg;
+
+  bool get _isEditing => widget.initialListing != null;
 
   final _categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
   final _dietaryTypes = [
@@ -50,6 +62,22 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialListing != null) {
+      final item = widget.initialListing!;
+      _titleController.text = item.foodName;
+      _descriptionController.text = item.description;
+      _originalPriceController.text = item.originalPrice.toStringAsFixed(0);
+      _sellingPriceController.text = item.sellingPrice.toStringAsFixed(0);
+      _portionsController.text = item.availablePortions.toString();
+      _ingredientsController.text = item.ingredients.join(', ');
+      _allergensController.text = item.allergens.join(', ');
+      _category = item.category;
+      _dietaryType = item.dietaryType;
+      _pickupDate = item.pickupStarts;
+      _startTime = TimeOfDay.fromDateTime(item.pickupStarts);
+      _endTime = TimeOfDay.fromDateTime(item.pickupEnds);
+      _existingImageUrl = item.imageUrl;
+    }
     _loadOwnerPg();
   }
 
@@ -79,27 +107,79 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source, imageQuality: 85);
-    if (pickedFile != null) {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source);
+      if (pickedFile == null) return;
+
+      final extension = pickedFile.name.split('.').last.toLowerCase();
+      const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+      if (!validExtensions.contains(extension)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Please choose a valid image format (JPG, PNG, or WebP).'),
+            ),
+          );
+        }
+        return;
+      }
+
+      final bytes = await pickedFile.readAsBytes();
+
+      // Enforce 5MB file-size limit
+      if (bytes.lengthInBytes > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Image file is too large. Please select a photo under 5MB.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Compress image on mobile platforms
+      Uint8List finalBytes = bytes;
+      if (!kIsWeb) {
+        try {
+          final compressed = await FlutterImageCompress.compressWithList(
+            bytes,
+            minWidth: 900,
+            minHeight: 600,
+            quality: 80,
+          );
+          if (compressed.isNotEmpty) {
+            finalBytes = Uint8List.fromList(compressed);
+          }
+        } catch (_) {
+          finalBytes = bytes;
+        }
+      }
+
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageBytes = finalBytes;
+        _imageExtension = extension;
+        _imageRemoved = false;
       });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load image: $e')),
+        );
+      }
     }
   }
 
-  Future<Uint8List?> _compressImage(File file) async {
-    try {
-      final result = await FlutterImageCompress.compressWithFile(
-        file.absolute.path,
-        minWidth: 800,
-        minHeight: 600,
-        quality: 80,
-      );
-      return result;
-    } catch (_) {
-      return await file.readAsBytes();
-    }
+  void _removeSelectedImage() {
+    setState(() {
+      _imageBytes = null;
+      _imageExtension = null;
+      _existingImageUrl = null;
+      _imageRemoved = true;
+    });
   }
 
   double _calculateDiscountPercent() {
@@ -119,7 +199,9 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   Future<void> _publish() async {
     if (_ownerPg == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No property registered or approved. Cannot publish meals.')),
+        const SnackBar(
+            content: Text(
+                'No property registered or approved. Cannot publish meals.')),
       );
       return;
     }
@@ -129,29 +211,96 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
 
     if (!isApproved || !isActive) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your property must be approved and active to post meals.')),
+        const SnackBar(
+            content: Text(
+                'Your property must be approved and active to post meals.')),
       );
       return;
     }
 
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadingStatus = _isEditing
+          ? 'Updating meal listing...'
+          : 'Publishing surplus meal...';
+    });
 
     try {
-      String? imageUrl;
-      if (_imageFile != null) {
-        final compressedBytes = await _compressImage(_imageFile!);
-        if (compressedBytes != null) {
-          final repo = ref.read(foodRepositoryProvider);
-          final extension = _imageFile!.path.split('.').last.toLowerCase();
+      String? imageUrl = _existingImageUrl;
+      if (_imageRemoved) {
+        imageUrl = null;
+      }
+
+      // If a new image was picked, upload it to Supabase Storage
+      if (_imageBytes != null && _imageExtension != null) {
+        setState(() => _loadingStatus = 'Uploading food photo...');
+        final repo = ref.read(foodRepositoryProvider);
+        try {
           imageUrl = await repo.uploadFoodImage(
-            compressedBytes,
-            _ownerPg!['id'] as String,
-            extension.isNotEmpty ? extension : 'jpg',
+            _imageBytes!,
+            widget.user.id,
+            _imageExtension!,
+            listingId: widget.initialListing?.id,
           );
+        } catch (uploadErr) {
+          final isBucket404 =
+              uploadErr.toString().contains('Bucket not found') ||
+                  uploadErr.toString().contains('404');
+          if (mounted) {
+            final proceedWithoutImage = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                title: Text(
+                  isBucket404
+                      ? 'Storage Bucket Not Found'
+                      : 'Photo Upload Failed',
+                  style:
+                      GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                ),
+                content: Text(
+                  isBucket404
+                      ? 'The "food-images" storage bucket has not been created in your Supabase project yet.\n\nWould you like to save your meal details without the new photo for now?'
+                      : 'Could not upload food image: $uploadErr\n\nWould you like to save your meal details without the new photo for now?',
+                  style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      height: 1.4),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Save Without Photo'),
+                  ),
+                ],
+              ),
+            );
+
+            if (proceedWithoutImage != true) {
+              setState(() => _isLoading = false);
+              return;
+            }
+            imageUrl = _existingImageUrl;
+          }
         }
       }
+
+      setState(() {
+        _loadingStatus = _isEditing
+            ? 'Saving listing changes...'
+            : 'Publishing listing live...';
+      });
 
       final startDateTime = DateTime(
         _pickupDate.year,
@@ -175,7 +324,11 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
 
       List<String> parseList(String text) => text.trim().isEmpty
           ? <String>[]
-          : text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          : text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
 
       final rowData = {
         'pg_id': _ownerPg!['id'] as String,
@@ -197,23 +350,50 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       };
 
       final repo = ref.read(foodRepositoryProvider);
-      final newListing = await repo.createListing(rowData, _ownerPg!);
 
-      await ref.read(foodProvider.notifier).loadListings();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.primary,
-            content: Text('🎉 "${newListing.foodName}" successfully published!'),
-          ),
+      if (_isEditing) {
+        final updatedListing = await repo.updateListing(
+          widget.initialListing!.id,
+          rowData,
+          _ownerPg!,
         );
-        Navigator.pop(context);
+        ref.read(foodProvider.notifier).updateListing(updatedListing);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.primary,
+              content:
+                  Text('✅ "${updatedListing.foodName}" successfully updated!'),
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        final newListing = await repo.createListing(rowData, _ownerPg!);
+        ref.read(foodProvider.notifier).addListing(newListing);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.primary,
+              content:
+                  Text('🎉 "${newListing.foodName}" successfully published!'),
+            ),
+          );
+          Navigator.pop(context);
+        }
       }
+
+      // Refresh listings in background to ensure sync
+      ref.read(foodProvider.notifier).loadListings();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -223,23 +403,196 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     }
   }
 
+  void _showImagePickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading:
+                  const Icon(Icons.photo_library, color: AppColors.primary),
+              title: Text('Pick from Gallery',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera, color: AppColors.primary),
+              title: Text('Take a Photo',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    final hasNewImage = _imageBytes != null;
+    final hasExistingImage = _existingImageUrl != null &&
+        _existingImageUrl!.isNotEmpty &&
+        !_imageRemoved;
+
+    if (!hasNewImage && !hasExistingImage) {
+      return GestureDetector(
+        onTap: _showImagePickerSheet,
+        child: Container(
+          height: 180,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.outline),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add_a_photo_outlined,
+                    size: 32, color: AppColors.primary),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Add Food Image',
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'JPG, PNG, WebP · Under 5MB',
+                style:
+                    GoogleFonts.inter(fontSize: 11, color: AppColors.textLight),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: hasNewImage
+                ? Image.memory(
+                    _imageBytes!,
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    _existingImageUrl!,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2));
+                    },
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Icon(Icons.broken_image_outlined,
+                          size: 48, color: AppColors.textLight),
+                    ),
+                  ),
+          ),
+
+          // Action overlay buttons (Change & Remove)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: Colors.black.withOpacity(0.65),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.white, size: 18),
+                    tooltip: 'Change Photo',
+                    onPressed: _showImagePickerSheet,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  color: Colors.black.withOpacity(0.65),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: Colors.white, size: 18),
+                    tooltip: 'Remove Photo',
+                    onPressed: _removeSelectedImage,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Positioned(
+            bottom: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.65),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                hasNewImage ? 'New image selected' : 'Current listing image',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_ownerPg == null && !_isLoading) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(title: const Text('Add Meal')),
+        appBar: AppBar(title: Text(_isEditing ? 'Edit Meal' : 'Add Meal')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                const Icon(Icons.error_outline,
+                    size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text(
                   'Owner Property Registration Required',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18, fontWeight: FontWeight.w700),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -264,8 +617,9 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Add Surplus Meal',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+          _isEditing ? 'Edit Surplus Meal' : 'Add Surplus Meal',
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
       body: Stack(
@@ -277,84 +631,20 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Image picker area
-                  GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        builder: (context) => SafeArea(
-                          child: Wrap(
-                            children: [
-                              ListTile(
-                                leading: const Icon(Icons.photo_library, color: AppColors.primary),
-                                title: Text('Pick from Gallery', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  _pickImage(ImageSource.gallery);
-                                },
-                              ),
-                              ListTile(
-                                leading: const Icon(Icons.photo_camera, color: AppColors.primary),
-                                title: Text('Take a Photo', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  _pickImage(ImageSource.camera);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 180,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.outline),
-                      ),
-                      child: _imageFile != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
-                              child: Image.file(_imageFile!, fit: BoxFit.cover, width: double.infinity),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primaryLight,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.add_a_photo_outlined, size: 32, color: AppColors.primary),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Add Food Image',
-                                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 14),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'High-quality photo attracts faster reservations',
-                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textLight),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
+                  // Image picker area with preview & validation
+                  _buildImagePreview(),
                   const SizedBox(height: 16),
 
                   TextFormField(
                     controller: _titleController,
                     decoration: const InputDecoration(
-                      labelText: 'Food/Meal Title *',
-                      hintText: 'e.g. Rice + Sambar + Fry, Chicken Biryani',
+                      labelText: 'Meal Name / Title *',
+                      hintText: 'e.g. Fresh Paneer Butter Masala Combo',
+                      prefixIcon: Icon(Icons.restaurant_menu),
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Please enter meal title' : null,
+                    validator: (val) => val == null || val.trim().isEmpty
+                        ? 'Please enter meal title'
+                        : null,
                   ),
                   const SizedBox(height: 12),
 
@@ -363,190 +653,270 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     maxLines: 2,
                     decoration: const InputDecoration(
                       labelText: 'Description',
-                      hintText: 'e.g. Prepared fresh for lunch. Fully hygienic.',
+                      hintText:
+                          'Brief description about portions, side dishes, etc.',
+                      prefixIcon: Icon(Icons.description_outlined),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _category,
-                          decoration: const InputDecoration(
-                            labelText: 'Category *',
-                          ),
-                          items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: GoogleFonts.inter()))).toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _category = v);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _dietaryType,
-                          decoration: const InputDecoration(
-                            labelText: 'Dietary Type *',
-                          ),
-                          items: _dietaryTypes.map((t) => DropdownMenuItem(value: t['value'], child: Text(t['label']!, style: GoogleFonts.inter()))).toList(),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _dietaryType = v);
-                          },
-                        ),
-                      ),
-                    ],
+                  // Meal Category
+                  Text(
+                    'Meal Category *',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700, fontSize: 14),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: _categories.map((cat) {
+                      final isSelected = _category == cat;
+                      return ChoiceChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          color:
+                              isSelected ? Colors.white : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                        onSelected: (selected) {
+                          if (selected) setState(() => _category = cat);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
 
+                  // Dietary Type
+                  Text(
+                    'Dietary Preference *',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _dietaryTypes.map((type) {
+                      final isSelected = _dietaryType == type['value'];
+                      return ChoiceChip(
+                        label: Text(type['label']!),
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryLight,
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                        onSelected: (selected) {
+                          if (selected)
+                            setState(() => _dietaryType = type['value']!);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Pricing row
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: _originalPriceController,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           decoration: const InputDecoration(
                             labelText: 'Original Price (₹) *',
+                            prefixText: '₹ ',
                           ),
                           onChanged: (_) => setState(() {}),
-                          validator: (v) => v == null || double.tryParse(v) == null ? 'Enter price' : null,
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty)
+                              return 'Enter original price';
+                            final parsed = double.tryParse(val);
+                            if (parsed == null || parsed <= 0)
+                              return 'Enter valid price';
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
                           controller: _sellingPriceController,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           decoration: const InputDecoration(
                             labelText: 'ExtraBite Price (₹) *',
+                            prefixText: '₹ ',
                           ),
                           onChanged: (_) => setState(() {}),
-                          validator: (v) => v == null || double.tryParse(v) == null ? 'Enter price' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _portionsController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Portions *',
-                          ),
-                          validator: (v) => v == null || int.tryParse(v) == null ? 'Count' : null,
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty)
+                              return 'Enter selling price';
+                            final parsed = double.tryParse(val);
+                            if (parsed == null || parsed <= 0)
+                              return 'Enter valid price';
+                            final orig = double.tryParse(
+                                    _originalPriceController.text.trim()) ??
+                                0;
+                            if (parsed >= orig)
+                              return 'Must be less than original';
+                            return null;
+                          },
                         ),
                       ),
                     ],
                   ),
-                  if (_calculateDiscountPercent() > 0) ...[
-                    const SizedBox(height: 8),
+
+                  // Discount / Savings summary
+                  if (_calculateDiscountPercent() > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: AppColors.secondaryLight,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.local_offer_outlined, size: 16, color: AppColors.secondary),
-                          const SizedBox(width: 6),
+                          const Icon(Icons.savings_outlined,
+                              color: AppColors.secondary, size: 18),
+                          const SizedBox(width: 8),
                           Text(
-                            '${_calculateDiscountPercent().toStringAsFixed(0)}% OFF • Student saves ₹${_calculateSavings().toStringAsFixed(0)} per portion',
+                            'Customer saves ₹${_calculateSavings().toStringAsFixed(0)} (${_calculateDiscountPercent().toStringAsFixed(0)}% OFF)',
                             style: GoogleFonts.inter(
                               color: AppColors.secondary,
-                              fontSize: 12,
                               fontWeight: FontWeight.w700,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                  const SizedBox(height: 18),
-
-                  Text(
-                    'Pickup Window Setting',
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 8),
-
-                  ListTile(
-                    tileColor: AppColors.surface,
-                    title: Text('Pickup Date', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                    subtitle: Text('${_pickupDate.day}/${_pickupDate.month}/${_pickupDate.year}', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-                    trailing: const Icon(Icons.calendar_month, color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: AppColors.outline),
-                    ),
-                    onTap: () async {
-                      final selected = await showDatePicker(
-                        context: context,
-                        initialDate: _pickupDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 7)),
-                      );
-                      if (selected != null) {
-                        setState(() => _pickupDate = selected);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ListTile(
-                          tileColor: AppColors.surface,
-                          title: Text('Start Time', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
-                          subtitle: Text(_startTime.format(context), style: GoogleFonts.inter(color: AppColors.textSecondary)),
-                          trailing: const Icon(Icons.access_time, color: AppColors.primary, size: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: AppColors.outline),
-                          ),
-                          onTap: () async {
-                            final selected = await showTimePicker(
-                              context: context,
-                              initialTime: _startTime,
-                            );
-                            if (selected != null) {
-                              setState(() => _startTime = selected);
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ListTile(
-                          tileColor: AppColors.surface,
-                          title: Text('End Time', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
-                          subtitle: Text(_endTime.format(context), style: GoogleFonts.inter(color: AppColors.textSecondary)),
-                          trailing: const Icon(Icons.access_time, color: AppColors.primary, size: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: AppColors.outline),
-                          ),
-                          onTap: () async {
-                            final selected = await showTimePicker(
-                              context: context,
-                              initialTime: _endTime,
-                            );
-                            if (selected != null) {
-                              setState(() => _endTime = selected);
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
 
+                  // Portions
+                  TextFormField(
+                    controller: _portionsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Available Portions / Meals *',
+                      prefixIcon: Icon(Icons.format_list_numbered),
+                      helperText:
+                          'Number of extra portions available right now',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty)
+                        return 'Enter portions count';
+                      final parsed = int.tryParse(val);
+                      if (parsed == null || parsed <= 0)
+                        return 'Must be at least 1';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Pickup Window
+                  Text(
+                    'Pickup Window *',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.outline),
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.calendar_today,
+                              color: AppColors.primary),
+                          title: const Text('Pickup Date'),
+                          trailing: TextButton(
+                            child: Text(
+                              '${_pickupDate.day}/${_pickupDate.month}/${_pickupDate.year}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _pickupDate,
+                                firstDate: DateTime.now()
+                                    .subtract(const Duration(days: 1)),
+                                lastDate:
+                                    DateTime.now().add(const Duration(days: 7)),
+                              );
+                              if (picked != null)
+                                setState(() => _pickupDate = picked);
+                            },
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.access_time,
+                                    color: AppColors.primary),
+                                title: const Text('Start Time',
+                                    style: TextStyle(fontSize: 13)),
+                                subtitle: Text(_startTime.format(context),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                onTap: () async {
+                                  final picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: _startTime);
+                                  if (picked != null)
+                                    setState(() => _startTime = picked);
+                                },
+                              ),
+                            ),
+                            Container(
+                                width: 1, height: 40, color: AppColors.outline),
+                            Expanded(
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.only(left: 12),
+                                leading: const Icon(Icons.timelapse,
+                                    color: AppColors.secondary),
+                                title: const Text('End Time',
+                                    style: TextStyle(fontSize: 13)),
+                                subtitle: Text(_endTime.format(context),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                onTap: () async {
+                                  final picked = await showTimePicker(
+                                      context: context, initialTime: _endTime);
+                                  if (picked != null)
+                                    setState(() => _endTime = picked);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Optional ingredients & allergens
                   TextFormField(
                     controller: _ingredientsController,
                     decoration: const InputDecoration(
-                      labelText: 'Ingredients (comma separated)',
+                      labelText: 'Key Ingredients (comma separated)',
                       hintText: 'e.g. Rice, Lentils, Spices',
                     ),
                   ),
@@ -571,10 +941,11 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                   const SizedBox(height: 24),
 
                   ElevatedButton(
-                    onPressed: _publish,
+                    onPressed: _isLoading ? null : _publish,
                     child: Text(
-                      'Publish Surplus Meal',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15),
+                      _isEditing ? 'Save Changes' : 'Publish Surplus Meal',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700, fontSize: 15),
                     ),
                   ),
                 ],
@@ -583,13 +954,20 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withOpacity(0.4),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(24.0),
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 4)),
+                    ],
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -597,8 +975,10 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                       const CircularProgressIndicator(color: AppColors.primary),
                       const SizedBox(height: 16),
                       Text(
-                        'Publishing Meal live... Please wait.',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        _loadingStatus,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                     ],
                   ),

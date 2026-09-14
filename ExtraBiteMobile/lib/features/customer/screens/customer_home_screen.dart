@@ -18,18 +18,27 @@ class CustomerHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
 }
 
-class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
+class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen>
+    with AutomaticKeepAliveClientMixin<CustomerHomeScreen> {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
-    // Fetch user location on home startup
+    // Fetch user location only if not already cached and available.
+    // When returning to Home tab, cached location is immediately reused without GPS delays.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(locationProvider.notifier).determinePosition();
+      final locState = ref.read(locationProvider);
+      if (!locState.hasLocation) {
+        ref.read(locationProvider.notifier).determinePosition();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final foodState = ref.watch(foodProvider);
     final locationState = ref.watch(locationProvider);
     final filteredFood = ref.watch(filteredFoodProvider);
@@ -47,7 +56,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
 
     // Filter home lists
     final endingSoonList = filteredFood
-        .where((item) => !item.isExpired && item.pickupEnds.difference(DateTime.now()).inMinutes <= 90)
+        .where((item) =>
+            !item.isExpired &&
+            item.pickupEnds.difference(DateTime.now()).inMinutes <= 90)
         .toList();
 
     return Scaffold(
@@ -91,7 +102,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.my_location,
           iconColor: AppColors.primary,
           title: 'Detecting your location...',
-          subtitle: 'Please wait while we determine your coordinates to find nearby hostels & messes.',
+          subtitle:
+              'Please wait while we determine your coordinates to find nearby hostels & messes.',
           isProgress: true,
         );
 
@@ -100,9 +112,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.location_off_outlined,
           iconColor: AppColors.secondary,
           title: 'Location permission required',
-          subtitle: 'ExtraBite requires location access to discover surplus food listings near your campus.',
+          subtitle:
+              'ExtraBite requires location access to discover surplus food listings near your campus.',
           actionText: 'Enable Location',
-          onAction: () => ref.read(locationProvider.notifier).determinePosition(),
+          onAction: () => ref
+              .read(locationProvider.notifier)
+              .determinePosition(forceRefresh: true),
         );
 
       case LocationStateStatus.permissionPermanentlyDenied:
@@ -110,9 +125,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.block_outlined,
           iconColor: AppColors.error,
           title: 'Location permission permanently denied',
-          subtitle: 'Please enable location permissions for ExtraBite in your device system settings to discover nearby food.',
+          subtitle:
+              'Please enable location permissions for ExtraBite in your device system settings to discover nearby food.',
           actionText: 'Retry',
-          onAction: () => ref.read(locationProvider.notifier).determinePosition(),
+          onAction: () => ref
+              .read(locationProvider.notifier)
+              .determinePosition(forceRefresh: true),
         );
 
       case LocationStateStatus.serviceDisabled:
@@ -120,9 +138,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.gps_off_outlined,
           iconColor: AppColors.secondary,
           title: 'Location services are turned off',
-          subtitle: 'Please turn on GPS/location services on your device to fetch nearby surplus listings.',
+          subtitle:
+              'Please turn on GPS/location services on your device to fetch nearby surplus listings.',
           actionText: 'Enable Location',
-          onAction: () => ref.read(locationProvider.notifier).determinePosition(),
+          onAction: () => ref
+              .read(locationProvider.notifier)
+              .determinePosition(forceRefresh: true),
         );
 
       case LocationStateStatus.error:
@@ -130,17 +151,24 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           icon: Icons.error_outline,
           iconColor: AppColors.error,
           title: 'Unable to determine location',
-          subtitle: locationState.errorMessage ?? 'Something went wrong while retrieving your location.',
+          subtitle: locationState.errorMessage ??
+              'Something went wrong while retrieving your location.',
           actionText: 'Retry',
-          onAction: () => ref.read(locationProvider.notifier).determinePosition(),
+          onAction: () => ref
+              .read(locationProvider.notifier)
+              .determinePosition(forceRefresh: true),
         );
 
       case LocationStateStatus.available:
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
-            await ref.read(foodProvider.notifier).loadListings();
-            await ref.read(locationProvider.notifier).determinePosition();
+            await Future.wait([
+              ref.read(foodProvider.notifier).loadListings(),
+              ref
+                  .read(locationProvider.notifier)
+                  .determinePosition(forceRefresh: true),
+            ]);
           },
           child: ListView(
             padding: const EdgeInsets.only(bottom: 24),
@@ -159,15 +187,18 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                           child: GestureDetector(
                             onTap: () => context.go('/customer/search'),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceContainerHigh,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.outlineVariant),
+                                border:
+                                    Border.all(color: AppColors.outlineVariant),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                                  const Icon(Icons.search,
+                                      color: AppColors.textSecondary, size: 20),
                                   const SizedBox(width: 10),
                                   Text(
                                     'Search meals, PGs or messes...',
@@ -191,9 +222,11 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.outlineVariant),
+                              border:
+                                  Border.all(color: AppColors.outlineVariant),
                             ),
-                            child: const Icon(Icons.tune, color: AppColors.textSecondary, size: 20),
+                            child: const Icon(Icons.tune,
+                                color: AppColors.textSecondary, size: 20),
                           ),
                         ),
                       ],
@@ -233,15 +266,20 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                           final cat = categories[index];
                           final isSelected = foodState.selectedCategory == cat;
                           Color? dot;
-                          if (cat == 'Vegetarian') dot = AppColors.vegColor;
-                          if (cat == 'Non-Vegetarian') dot = AppColors.nonVegColor;
+                          if (cat == 'Vegetarian') {
+                            dot = AppColors.vegColor;
+                          } else if (cat == 'Non-Vegetarian') {
+                            dot = AppColors.nonVegColor;
+                          }
 
                           return CategoryChip(
                             label: cat,
                             isSelected: isSelected,
                             dotColor: dot,
                             onTap: () {
-                              ref.read(foodProvider.notifier).updateCategory(cat);
+                              ref
+                                  .read(foodProvider.notifier)
+                                  .updateCategory(cat);
                             },
                           );
                         },
@@ -258,15 +296,18 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 _buildEmptyState()
               else ...[
                 // Ending Soon Carousel (Only on 'All' category and if endingSoonList has items)
-                if (foodState.selectedCategory == 'All' && endingSoonList.isNotEmpty) ...[
+                if (foodState.selectedCategory == 'All' &&
+                    endingSoonList.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.timer_outlined, color: AppColors.secondary, size: 22),
+                            const Icon(Icons.timer_outlined,
+                                color: AppColors.secondary, size: 22),
                             const SizedBox(width: 6),
                             Text(
                               'Ending Soon',
@@ -295,7 +336,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                   SizedBox(
                     height: 264,
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
                       scrollDirection: Axis.horizontal,
                       itemCount: endingSoonList.length,
                       itemBuilder: (context, index) {
@@ -303,7 +345,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         return FoodCard(
                           food: food,
                           isCompact: true,
-                          onTap: () => context.push('/customer/food/${food.id}'),
+                          onTap: () =>
+                              context.push('/customer/food/${food.id}'),
                         );
                       },
                     ),
@@ -313,7 +356,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
 
                 // Nearby Fresh Surplus Section
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
                   child: Text(
                     'Nearby Fresh Surplus',
                     style: GoogleFonts.plusJakartaSans(
@@ -326,11 +370,14 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
-                    children: filteredFood.map((food) => FoodCard(
-                          food: food,
-                          isCompact: false,
-                          onTap: () => context.push('/customer/food/${food.id}'),
-                        )).toList(),
+                    children: filteredFood
+                        .map((food) => FoodCard(
+                              food: food,
+                              isCompact: false,
+                              onTap: () =>
+                                  context.push('/customer/food/${food.id}'),
+                            ))
+                        .toList(),
                   ),
                 ),
               ],

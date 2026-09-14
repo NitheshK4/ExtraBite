@@ -9,11 +9,15 @@ void main() {
     ProviderContainer createTestContainer() {
       final container = ProviderContainer();
       // Set mock location to VIT-AP so distance filtering allows items near 16.4971, 80.5005
-      container.read(locationProvider.notifier).setMockLocation(16.4971, 80.5005);
+      container
+          .read(locationProvider.notifier)
+          .setMockLocation(16.4971, 80.5005);
       return container;
     }
 
-    test('Food created by PG/Hostel Owner is immediately visible to Personal Users', () {
+    test(
+        'Food created by PG/Hostel Owner is immediately visible to Personal Users',
+        () {
       final container = createTestContainer();
       final foodNotifier = container.read(foodProvider.notifier);
       final initialFilteredCount = container.read(filteredFoodProvider).length;
@@ -48,7 +52,8 @@ void main() {
       final filteredList = container.read(filteredFoodProvider);
       expect(filteredList.length, equals(initialFilteredCount + 1));
 
-      final found = filteredList.firstWhere((item) => item.id == 'owner_item_1');
+      final found =
+          filteredList.firstWhere((item) => item.id == 'owner_item_1');
       expect(found.foodName, equals('Royal Special Thali'));
       expect(found.propertyName, equals('Royal Deluxe Hostel'));
       expect(found.isAvailable, isTrue);
@@ -88,7 +93,9 @@ void main() {
       expect(filteredList.any((item) => item.id == 'inactive_item_1'), isFalse);
     });
 
-    test('Sold-out food items (0 portions) are strictly hidden from Personal Users', () {
+    test(
+        'Sold-out food items (0 portions) are strictly hidden from Personal Users',
+        () {
       final container = createTestContainer();
       final foodNotifier = container.read(foodProvider.notifier);
 
@@ -156,7 +163,8 @@ void main() {
       expect(filteredList.any((item) => item.id == 'expired_1'), isFalse);
     });
 
-    test('Unverified PG food items are strictly hidden from Personal Users', () {
+    test('Unverified PG food items are strictly hidden from Personal Users',
+        () {
       final container = createTestContainer();
       final foodNotifier = container.read(foodProvider.notifier);
 
@@ -190,7 +198,9 @@ void main() {
       expect(filteredList.any((item) => item.id == 'unverified_1'), isFalse);
     });
 
-    test('Decrementing portions to 0 updates status to sold_out and removes from customer feed', () {
+    test(
+        'Decrementing portions to 0 updates status to sold_out and removes from customer feed',
+        () {
       final container = createTestContainer();
       final foodNotifier = container.read(foodProvider.notifier);
 
@@ -219,10 +229,18 @@ void main() {
       );
 
       foodNotifier.addListing(item);
-      expect(container.read(filteredFoodProvider).any((i) => i.id == 'item_to_sell_out'), isTrue);
+      expect(
+          container
+              .read(filteredFoodProvider)
+              .any((i) => i.id == 'item_to_sell_out'),
+          isTrue);
 
       foodNotifier.decrementPortions('item_to_sell_out', 2);
-      expect(container.read(filteredFoodProvider).any((i) => i.id == 'item_to_sell_out'), isFalse);
+      expect(
+          container
+              .read(filteredFoodProvider)
+              .any((i) => i.id == 'item_to_sell_out'),
+          isFalse);
     });
   });
 }

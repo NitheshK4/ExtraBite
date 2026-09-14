@@ -4,9 +4,10 @@ import 'package:extrabite_mobile/models/reservation.dart';
 import 'package:extrabite_mobile/models/food_listing.dart';
 
 void main() {
-
   group('OrderType & Reservation Billing Tests', () {
-    test('OrderType extension correctly handles display names, codes, and parsing', () {
+    test(
+        'OrderType extension correctly handles display names, codes, and parsing',
+        () {
       expect(OrderType.dineIn.displayName, equals('Dine In'));
       expect(OrderType.dineIn.code, equals('dine_in'));
 
@@ -14,14 +15,17 @@ void main() {
       expect(OrderType.takeAway.code, equals('take_away'));
 
       expect(OrderTypeExtension.fromCode('dine_in'), equals(OrderType.dineIn));
-      expect(OrderTypeExtension.fromCode('take_away'), equals(OrderType.takeAway));
+      expect(
+          OrderTypeExtension.fromCode('take_away'), equals(OrderType.takeAway));
       expect(OrderTypeExtension.fromCode(null), isNull);
       expect(OrderTypeExtension.fromCode('unknown'), isNull);
     });
 
-    test('Reservation model correctly serializes and deserializes order_type from Supabase map', () {
+    test(
+        'Reservation model correctly serializes and deserializes order_type from Supabase map',
+        () {
       final now = DateTime.now();
-      
+
       final dineInMap = {
         'readable_id': 'EB-10001',
         'listing_id': 'fl_1',
@@ -57,7 +61,9 @@ void main() {
       expect(takeAwayRes.toMap()['order_type'], equals('take_away'));
     });
 
-    test('Reservation maintains 100% backward compatibility for legacy records with null order_type', () {
+    test(
+        'Reservation maintains 100% backward compatibility for legacy records with null order_type',
+        () {
       final now = DateTime.now();
 
       final legacyMap = {
@@ -81,7 +87,9 @@ void main() {
       expect(legacyRes.paymentStatus, equals('paid'));
     });
 
-    test('Reservation model supports and serializes prepaid online payment method and status', () {
+    test(
+        'Reservation model supports and serializes prepaid online payment method and status',
+        () {
       final now = DateTime.now();
 
       final onlineMap = {
@@ -140,14 +148,17 @@ void main() {
       };
 
       final razorpayRes = Reservation.fromMap(razorpayMap);
-      expect(razorpayRes.paymentMethod, equals('Razorpay UPI & Cards (Prepaid)'));
+      expect(
+          razorpayRes.paymentMethod, equals('Razorpay UPI & Cards (Prepaid)'));
       expect(razorpayRes.isPrepaid, isTrue);
       expect(razorpayRes.amountPaid, equals(120.0));
-      expect(razorpayRes.toMap()['payment_method'], equals('Razorpay UPI & Cards (Prepaid)'));
+      expect(razorpayRes.toMap()['payment_method'],
+          equals('Razorpay UPI & Cards (Prepaid)'));
     });
 
-
-    test('FoodListing model correctly serializes, deserializes, and defaults allowsDineIn', () {
+    test(
+        'FoodListing model correctly serializes, deserializes, and defaults allowsDineIn',
+        () {
       // Case 1: Dine-in allowed listing
       final dineInMap = {
         'id': 'fl_dine',

@@ -7,6 +7,8 @@ class ReservationRepository {
 
   ReservationRepository.fakeForTest() : _client = null;
 
+  bool get isFakeForTest => _client == null;
+
   /// Trigger the atomic database RPC to reserve food portions.
   /// Returns the created reservation database row mapping.
   Future<Map<String, dynamic>> reserveFood({
@@ -35,7 +37,8 @@ class ReservationRepository {
   }
 
   /// Fetch all reservations created by a specific customer.
-  Future<List<Map<String, dynamic>>> fetchCustomerReservations(String customerId) async {
+  Future<List<Map<String, dynamic>>> fetchCustomerReservations(
+      String customerId) async {
     if (_client == null) return [];
     final response = await _client
         .from('reservations')
@@ -57,7 +60,8 @@ class ReservationRepository {
   }
 
   /// Update the status of a specific reservation (e.g., to ready_for_pickup, picked_up, cancelled).
-  Future<Map<String, dynamic>> updateReservationStatus(String reservationId, String newStatus) async {
+  Future<Map<String, dynamic>> updateReservationStatus(
+      String reservationId, String newStatus) async {
     if (_client == null) {
       return {
         'id': reservationId,
@@ -67,12 +71,44 @@ class ReservationRepository {
     }
     final isReadableId = reservationId.startsWith('EB-');
     final query = _client.from('reservations').update({'status': newStatus});
-    
+
     final response = await (isReadableId
-        ? query.eq('readable_id', reservationId)
-        : query.eq('id', reservationId))
+            ? query.eq('readable_id', reservationId)
+            : query.eq('id', reservationId))
         .select()
         .single();
     return response;
+  }
+
+  /// Cancel a reservation atomically using the database RPC.
+  /// This restores available portions to the food listing and marks the reservation as cancelled.
+  Future<Map<String, dynamic>> cancelReservation(String reservationId,
+      {String? reason}) async {
+    if (_client == null) {
+      return {
+        'id': reservationId,
+        'readable_id': reservationId,
+        'status': 'cancelled',
+        'cancellation_reason': reason ?? 'Cancelled by customer',
+      };
+    }
+
+    try {
+      final response = await _client.rpc(
+        'cancel_reservation',
+        params: {
+          'p_reservation_id': reservationId,
+          'p_reason': reason ?? 'Cancelled by customer',
+        },
+      );
+      return response as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202' ||
+          e.message.contains('Could not find the function')) {
+        // Fallback to direct status update if the cancel_reservation SQL function has not been applied in Supabase yet
+        return updateReservationStatus(reservationId, 'cancelled');
+      }
+      rethrow;
+    }
   }
 }

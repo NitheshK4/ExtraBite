@@ -81,7 +81,9 @@ class AccountStatusScreen extends ConsumerWidget {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSuspended ? AppColors.error.withOpacity(0.3) : AppColors.border,
+                    color: isSuspended
+                        ? AppColors.error.withOpacity(0.3)
+                        : AppColors.border,
                   ),
                   boxShadow: const [
                     BoxShadow(
@@ -97,27 +99,36 @@ class AccountStatusScreen extends ConsumerWidget {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: isSuspended ? AppColors.errorLight : AppColors.primaryLight,
+                        color: isSuspended
+                            ? AppColors.errorLight
+                            : AppColors.primaryLight,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         isSuspended
                             ? Icons.gpp_bad_outlined
-                            : (isExpired ? Icons.lock_clock_outlined : Icons.shield_outlined),
+                            : (isExpired
+                                ? Icons.lock_clock_outlined
+                                : Icons.shield_outlined),
                         size: 44,
-                        color: isSuspended ? AppColors.error : AppColors.primary,
+                        color:
+                            isSuspended ? AppColors.error : AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 20),
                     Text(
                       isSuspended
                           ? 'Account Suspended'
-                          : (isExpired ? 'Session Expired' : 'Access Restricted'),
+                          : (isExpired
+                              ? 'Session Expired'
+                              : 'Access Restricted'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: isSuspended ? AppColors.error : AppColors.textPrimary,
+                        color: isSuspended
+                            ? AppColors.error
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -137,7 +148,8 @@ class AccountStatusScreen extends ConsumerWidget {
                     if (referenceCode != null) ...[
                       const SizedBox(height: 16),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceDim,
                           borderRadius: BorderRadius.circular(8),
@@ -158,7 +170,8 @@ class AccountStatusScreen extends ConsumerWidget {
                         if (isSuspended) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Support request logged. Support email: support@extrabite.in'),
+                              content: Text(
+                                  'Support request logged. Support email: support@extrabite.in'),
                             ),
                           );
                         } else {
@@ -167,7 +180,8 @@ class AccountStatusScreen extends ConsumerWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isSuspended ? AppColors.error : AppColors.primary,
+                        backgroundColor:
+                            isSuspended ? AppColors.error : AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -175,7 +189,9 @@ class AccountStatusScreen extends ConsumerWidget {
                         ),
                       ),
                       child: Text(
-                        isSuspended ? 'Contact Safety Support' : 'Sign In Again',
+                        isSuspended
+                            ? 'Contact Safety Support'
+                            : 'Sign In Again',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,

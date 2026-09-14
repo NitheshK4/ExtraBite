@@ -49,7 +49,8 @@ class WelcomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.secondaryLight,
                         borderRadius: BorderRadius.circular(9999),
@@ -120,7 +121,8 @@ class WelcomeScreen extends ConsumerWidget {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.15),
+                                        color:
+                                            AppColors.primary.withOpacity(0.15),
                                         blurRadius: 20,
                                         offset: const Offset(0, 8),
                                       ),
@@ -140,7 +142,8 @@ class WelcomeScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 12),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(9999),
@@ -275,11 +278,13 @@ class WelcomeScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.lock_outline, size: 14, color: AppColors.textLight),
+                  const Icon(Icons.lock_outline,
+                      size: 14, color: AppColors.textLight),
                   const SizedBox(width: 6),
                   Text(
                     'Connecting students with verified hostel mess kitchens',
-                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textLight),
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: AppColors.textLight),
                   ),
                 ],
               ),

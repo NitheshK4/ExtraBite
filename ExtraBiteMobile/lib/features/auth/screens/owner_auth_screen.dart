@@ -118,7 +118,8 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               padding: const EdgeInsets.only(right: 16.0),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.secondaryLight,
                     borderRadius: BorderRadius.circular(9999),
@@ -138,7 +139,8 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -157,7 +159,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: !_isSignUp ? AppColors.secondary : Colors.transparent,
+                              color: !_isSignUp
+                                  ? AppColors.secondary
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             alignment: Alignment.center,
@@ -166,7 +170,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: !_isSignUp ? Colors.white : AppColors.textSecondary,
+                                color: !_isSignUp
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -178,7 +184,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: _isSignUp ? AppColors.secondary : Colors.transparent,
+                              color: _isSignUp
+                                  ? AppColors.secondary
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             alignment: Alignment.center,
@@ -187,7 +195,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: _isSignUp ? Colors.white : AppColors.textSecondary,
+                                color: _isSignUp
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -206,11 +216,13 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.errorLight,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                      border:
+                          Border.all(color: AppColors.error.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+                        const Icon(Icons.error_outline,
+                            color: AppColors.error, size: 18),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -229,7 +241,10 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                 ],
 
                 // 2. Main Form Content
-                if (!_isSignUp) _buildSignInView(isLoading) else _buildSignUpView(isLoading),
+                if (!_isSignUp)
+                  _buildSignInView(isLoading)
+                else
+                  _buildSignUpView(isLoading),
 
                 const SizedBox(height: 24),
 
@@ -237,10 +252,13 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                 Center(
                   child: TextButton.icon(
                     onPressed: () {
-                      ref.read(authProvider.notifier).selectRole(UserRole.personal);
+                      ref
+                          .read(authProvider.notifier)
+                          .selectRole(UserRole.personal);
                       context.go('/auth/customer-login');
                     },
-                    icon: const Icon(Icons.restaurant, size: 16, color: AppColors.primary),
+                    icon: const Icon(Icons.restaurant,
+                        size: 16, color: AppColors.primary),
                     label: Text(
                       'Looking for affordable meals as a student? Switch to Personal User',
                       textAlign: TextAlign.center,
@@ -295,7 +313,8 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               prefixIcon: Icon(Icons.email_outlined),
             ),
             validator: (val) {
-              if (val == null || val.trim().isEmpty) return 'Enter your business email';
+              if (val == null || val.trim().isEmpty)
+                return 'Enter your business email';
               if (!val.contains('@')) return 'Enter a valid email address';
               return null;
             },
@@ -310,11 +329,14 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               labelText: 'Password',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
-            validator: (val) => val == null || val.isEmpty ? 'Enter your password' : null,
+            validator: (val) =>
+                val == null || val.isEmpty ? 'Enter your password' : null,
           ),
 
           // Forgot Password
@@ -351,17 +373,20 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               backgroundColor: AppColors.secondary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: isLoading
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   )
                 : Text(
                     'Sign In as PG Owner',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15, fontWeight: FontWeight.w700),
                   ),
           ),
 
@@ -375,7 +400,10 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
                 child: Text(
                   'OR',
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textLight),
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textLight),
                 ),
               ),
               const Expanded(child: Divider(color: AppColors.border)),
@@ -395,9 +423,11 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               backgroundColor: AppColors.surface,
               side: const BorderSide(color: AppColors.border),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            icon: const Icon(Icons.g_mobiledata, size: 24, color: AppColors.textPrimary),
+            icon: const Icon(Icons.g_mobiledata,
+                size: 24, color: AppColors.textPrimary),
             label: Text(
               'Continue with Google',
               style: GoogleFonts.plusJakartaSans(
@@ -443,7 +473,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               labelText: 'Full Name / Contact Person',
               prefixIcon: Icon(Icons.person_outline),
             ),
-            validator: (val) => val == null || val.trim().isEmpty ? 'Enter your contact name' : null,
+            validator: (val) => val == null || val.trim().isEmpty
+                ? 'Enter your contact name'
+                : null,
           ),
           const SizedBox(height: 14),
 
@@ -454,7 +486,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               labelText: 'PG / Hostel / Mess Name',
               prefixIcon: Icon(Icons.business_outlined),
             ),
-            validator: (val) => val == null || val.trim().isEmpty ? 'Enter your PG property name' : null,
+            validator: (val) => val == null || val.trim().isEmpty
+                ? 'Enter your PG property name'
+                : null,
           ),
           const SizedBox(height: 14),
 
@@ -467,7 +501,8 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               prefixIcon: Icon(Icons.email_outlined),
             ),
             validator: (val) {
-              if (val == null || val.trim().isEmpty) return 'Enter your business email';
+              if (val == null || val.trim().isEmpty)
+                return 'Enter your business email';
               if (!val.contains('@')) return 'Enter a valid email address';
               return null;
             },
@@ -482,7 +517,9 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               labelText: 'Contact Phone Number',
               prefixIcon: Icon(Icons.phone_outlined),
             ),
-            validator: (val) => val == null || val.trim().isEmpty ? 'Enter your contact phone' : null,
+            validator: (val) => val == null || val.trim().isEmpty
+                ? 'Enter your contact phone'
+                : null,
           ),
           const SizedBox(height: 14),
 
@@ -494,11 +531,15 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               labelText: 'Password',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
-            validator: (val) => val == null || val.length < 6 ? 'Password must be at least 6 characters' : null,
+            validator: (val) => val == null || val.length < 6
+                ? 'Password must be at least 6 characters'
+                : null,
           ),
           const SizedBox(height: 14),
 
@@ -510,12 +551,16 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               labelText: 'Confirm Password',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                icon: Icon(_obscureConfirmPassword
+                    ? Icons.visibility_off
+                    : Icons.visibility),
+                onPressed: () => setState(
+                    () => _obscureConfirmPassword = !_obscureConfirmPassword),
               ),
             ),
             validator: (val) {
-              if (val != _signupPasswordController.text) return 'Passwords do not match';
+              if (val != _signupPasswordController.text)
+                return 'Passwords do not match';
               return null;
             },
           ),
@@ -544,9 +589,11 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                 const SizedBox(height: 8),
                 _buildRoadmapStep('1', 'Create Provider Account', true),
                 const SizedBox(height: 6),
-                _buildRoadmapStep('2', 'Submit Property & FSSAI Details', false),
+                _buildRoadmapStep(
+                    '2', 'Submit Property & FSSAI Details', false),
                 const SizedBox(height: 6),
-                _buildRoadmapStep('3', 'Admin Approval → Start Publishing Meals', false),
+                _buildRoadmapStep(
+                    '3', 'Admin Approval → Start Publishing Meals', false),
               ],
             ),
           ),
@@ -565,7 +612,8 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
                             phone: _signupPhoneController.text.trim(),
                             password: _signupPasswordController.text,
                             role: UserRole.owner,
-                            propertyName: _signupPropertyNameController.text.trim(),
+                            propertyName:
+                                _signupPropertyNameController.text.trim(),
                           );
                     }
                   },
@@ -573,17 +621,20 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               backgroundColor: AppColors.secondary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: isLoading
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   )
                 : Text(
                     'Create PG Owner Account',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15, fontWeight: FontWeight.w700),
                   ),
           ),
 
@@ -600,9 +651,11 @@ class _OwnerAuthScreenState extends ConsumerState<OwnerAuthScreen> {
               backgroundColor: AppColors.surface,
               side: const BorderSide(color: AppColors.border),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            icon: const Icon(Icons.g_mobiledata, size: 24, color: AppColors.textPrimary),
+            icon: const Icon(Icons.g_mobiledata,
+                size: 24, color: AppColors.textPrimary),
             label: Text(
               'Continue with Google',
               style: GoogleFonts.plusJakartaSans(

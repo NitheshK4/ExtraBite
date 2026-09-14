@@ -16,7 +16,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  
+
   final List<String> _recentSearches = [
     'Biryani',
     'Veg Meals',
@@ -60,7 +60,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       appBar: AppBar(
         title: Text(
           'Search Marketplace',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
       body: SafeArea(
@@ -77,10 +78,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Search meals, PGs or messes...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                  prefixIcon:
+                      const Icon(Icons.search, color: AppColors.primary),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                          icon: const Icon(Icons.clear,
+                              color: AppColors.textSecondary),
                           onPressed: _clearSearch,
                         )
                       : null,
@@ -102,7 +105,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             return FoodCard(
                               food: food,
                               isCompact: false,
-                              onTap: () => context.push('/customer/food/${food.id}'),
+                              onTap: () =>
+                                  context.push('/customer/food/${food.id}'),
                             );
                           },
                         ),
@@ -135,10 +139,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               return ActionChip(
                 label: Text(
                   term,
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 backgroundColor: AppColors.surface,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(9999),
                   side: const BorderSide(color: AppColors.outline),
@@ -187,7 +193,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Text(
               'We couldn\'t find any active listings matching "${_searchController.text}". Try a broader term or different keyword.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+              style: GoogleFonts.inter(
+                  color: AppColors.textSecondary, fontSize: 13, height: 1.4),
             ),
           ],
         ),

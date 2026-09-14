@@ -61,7 +61,9 @@ class Reservation {
   ) {
     final statusStr = row['status'] as String? ?? 'confirmed';
     ReservationStatus status;
-    if (statusStr == 'confirmed' || statusStr == 'ready_for_pickup' || statusStr == 'draft') {
+    if (statusStr == 'confirmed' ||
+        statusStr == 'ready_for_pickup' ||
+        statusStr == 'draft') {
       status = ReservationStatus.reserved;
     } else if (statusStr == 'picked_up' || statusStr == 'completed') {
       status = ReservationStatus.completed;
@@ -75,18 +77,27 @@ class Reservation {
       foodName: foodRow['title'] as String? ?? 'Surplus Meal',
       propertyName: pgRow['pg_name'] as String? ?? 'ExtraBite PG',
       quantity: (row['portions_count'] as num?)?.toInt() ?? 1,
-      amountToCollect: double.tryParse(row['total_amount']?.toString() ?? '0') ?? 0.0,
-      pickupStarts: DateTime.tryParse(foodRow['pickup_start_time']?.toString() ?? '') ?? DateTime.now(),
-      pickupEnds: DateTime.tryParse(foodRow['pickup_end_time']?.toString() ?? '') ?? DateTime.now(),
-      reservedAt: DateTime.tryParse(row['created_at']?.toString() ?? '') ?? DateTime.now(),
+      amountToCollect:
+          double.tryParse(row['total_amount']?.toString() ?? '0') ?? 0.0,
+      pickupStarts:
+          DateTime.tryParse(foodRow['pickup_start_time']?.toString() ?? '') ??
+              DateTime.now(),
+      pickupEnds:
+          DateTime.tryParse(foodRow['pickup_end_time']?.toString() ?? '') ??
+              DateTime.now(),
+      reservedAt: DateTime.tryParse(row['created_at']?.toString() ?? '') ??
+          DateTime.now(),
       status: status,
       pickupToken: row['pickup_token'] as String?,
       qrPayload: row['qr_payload'] as String?,
-      pickupDeadline: row['pickup_deadline'] != null ? DateTime.tryParse(row['pickup_deadline'].toString()) : null,
+      pickupDeadline: row['pickup_deadline'] != null
+          ? DateTime.tryParse(row['pickup_deadline'].toString())
+          : null,
       rawStatus: statusStr,
       orderType: OrderTypeExtension.fromCode(row['order_type'] as String?),
       paymentStatus: (row['payment_status'] as String?) ?? 'pending',
-      paymentMethod: (row['payment_method'] as String?) ?? 'Pay at Counter / Direct UPI',
+      paymentMethod:
+          (row['payment_method'] as String?) ?? 'Pay at Counter / Direct UPI',
     );
   }
 
@@ -112,11 +123,22 @@ class Reservation {
   factory Reservation.fromMap(Map<String, dynamic> map) {
     return Reservation(
       id: map['id'] as String? ?? map['readable_id'] as String? ?? 'EB-00000',
-      foodListingId: map['food_listing_id'] as String? ?? map['listing_id'] as String? ?? '',
-      foodName: map['food_name'] as String? ?? map['title'] as String? ?? 'Surplus Meal',
-      propertyName: map['property_name'] as String? ?? map['pg_name'] as String? ?? 'PG / Hostel',
-      quantity: (map['quantity'] as num? ?? map['portions_count'] as num? ?? 1).toInt(),
-      amountToCollect: (map['amount_to_collect'] as num? ?? map['amount_paid'] as num? ?? map['total_amount'] as num? ?? 0.0).toDouble(),
+      foodListingId: map['food_listing_id'] as String? ??
+          map['listing_id'] as String? ??
+          '',
+      foodName: map['food_name'] as String? ??
+          map['title'] as String? ??
+          'Surplus Meal',
+      propertyName: map['property_name'] as String? ??
+          map['pg_name'] as String? ??
+          'PG / Hostel',
+      quantity: (map['quantity'] as num? ?? map['portions_count'] as num? ?? 1)
+          .toInt(),
+      amountToCollect: (map['amount_to_collect'] as num? ??
+              map['amount_paid'] as num? ??
+              map['total_amount'] as num? ??
+              0.0)
+          .toDouble(),
       pickupStarts: map['pickup_starts'] != null
           ? DateTime.parse(map['pickup_starts'] as String)
           : DateTime.now(),
@@ -136,7 +158,8 @@ class Reservation {
       ),
       orderType: OrderTypeExtension.fromCode(map['order_type'] as String?),
       paymentStatus: map['payment_status'] as String? ?? 'paid',
-      paymentMethod: map['payment_method'] as String? ?? 'Online Platform (Prepaid)',
+      paymentMethod:
+          map['payment_method'] as String? ?? 'Online Platform (Prepaid)',
     );
   }
 }

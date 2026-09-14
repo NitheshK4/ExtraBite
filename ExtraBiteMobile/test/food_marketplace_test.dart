@@ -16,7 +16,8 @@ class TestFoodRepository extends FoodRepository {
   bool updatePortionsCalled = false;
   bool removeListingCalled = false;
 
-  TestFoodRepository({required this.mockListings, this.mockPg}) : super.fakeForTest();
+  TestFoodRepository({required this.mockListings, this.mockPg})
+      : super.fakeForTest();
 
   @override
   Future<List<FoodListing>> fetchListings() async => mockListings;
@@ -25,7 +26,8 @@ class TestFoodRepository extends FoodRepository {
   Future<Map<String, dynamic>?> fetchOwnerPg(String ownerId) async => mockPg;
 
   @override
-  Future<FoodListing> createListing(Map<String, dynamic> rowData, Map<String, dynamic> pgRow) async {
+  Future<FoodListing> createListing(
+      Map<String, dynamic> rowData, Map<String, dynamic> pgRow) async {
     createListingCalled = true;
     return FoodListing.fromSupabase(
       {
@@ -52,7 +54,8 @@ class TestReservationRepository extends ReservationRepository {
   bool reserveFoodCalled = false;
   bool updateStatusCalled = false;
 
-  TestReservationRepository({required this.mockReservationsData}) : super.fakeForTest();
+  TestReservationRepository({required this.mockReservationsData})
+      : super.fakeForTest();
 
   @override
   Future<Map<String, dynamic>> reserveFood({
@@ -75,7 +78,8 @@ class TestReservationRepository extends ReservationRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchCustomerReservations(String customerId) async {
+  Future<List<Map<String, dynamic>>> fetchCustomerReservations(
+      String customerId) async {
     return mockReservationsData;
   }
 
@@ -85,11 +89,13 @@ class TestReservationRepository extends ReservationRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> updateReservationStatus(String reservationId, String newStatus) async {
+  Future<Map<String, dynamic>> updateReservationStatus(
+      String reservationId, String newStatus) async {
     updateStatusCalled = true;
     return {
       'id': reservationId,
-      'readable_id': reservationId.startsWith('EB-') ? reservationId : 'EB-99999',
+      'readable_id':
+          reservationId.startsWith('EB-') ? reservationId : 'EB-99999',
       'status': newStatus,
     };
   }
@@ -179,27 +185,35 @@ void main() {
     });
 
     test('1. Approved owner can fetch/create food listing', () async {
-      final foodRepo = TestFoodRepository(mockListings: [], mockPg: {'id': 'pg-1', 'is_approved': true, 'is_active': true});
+      final foodRepo = TestFoodRepository(
+          mockListings: [],
+          mockPg: {'id': 'pg-1', 'is_approved': true, 'is_active': true});
       final container = ProviderContainer(overrides: [
         foodRepositoryProvider.overrideWithValue(foodRepo),
       ]);
 
-      final pg = await container.read(foodRepositoryProvider).fetchOwnerPg('owner-1');
+      final pg =
+          await container.read(foodRepositoryProvider).fetchOwnerPg('owner-1');
       expect(pg!['is_approved'], isTrue);
 
-      final listing = await container.read(foodRepositoryProvider).createListing({'title': 'Sambar Rice'}, {'pg_name': 'Sri Sai Mess'});
+      final listing = await container
+          .read(foodRepositoryProvider)
+          .createListing({'title': 'Sambar Rice'}, {'pg_name': 'Sri Sai Mess'});
       expect(listing.foodName, 'Sambar Rice');
       expect(foodRepo.createListingCalled, isTrue);
     });
 
-    test('2. Customer sees only approved, active, unexpired food listing with portions > 0', () {
-      final foodRepo = TestFoodRepository(mockListings: [approvedListing, unapprovedListing, expiredListing]);
+    test(
+        '2. Customer sees only approved, active, unexpired food listing with portions > 0',
+        () {
+      final foodRepo = TestFoodRepository(
+          mockListings: [approvedListing, unapprovedListing, expiredListing]);
       final container = ProviderContainer(overrides: [
         foodRepositoryProvider.overrideWithValue(foodRepo),
         locationProvider.overrideWith((ref) => FakeLocationNotifier(
-          MockLocationService(),
-          const LocationState.available(16.4971, 80.5005),
-        )),
+              MockLocationService(),
+              const LocationState.available(16.4971, 80.5005),
+            )),
       ]);
 
       // Seed notifier listings
@@ -214,21 +228,25 @@ void main() {
       expect(filtered.first.id, 'list-1');
     });
 
-    test('3. Reservation triggers reserve_food RPC and fails on over-limit', () async {
+    test('3. Reservation triggers reserve_food RPC and fails on over-limit',
+        () async {
       final resRepo = TestReservationRepository(mockReservationsData: []);
       final container = ProviderContainer(overrides: [
         reservationRepositoryProvider.overrideWithValue(resRepo),
       ]);
 
-      final res = await container.read(reservationProvider.notifier).createReservation(
-        listing: approvedListing,
-        quantity: 2,
-      );
+      final res =
+          await container.read(reservationProvider.notifier).createReservation(
+                listing: approvedListing,
+                quantity: 2,
+              );
       expect(res.quantity, 2);
       expect(resRepo.reserveFoodCalled, isTrue);
 
       expect(
-        () => container.read(reservationProvider.notifier).createReservation(listing: approvedListing, quantity: 15),
+        () => container
+            .read(reservationProvider.notifier)
+            .createReservation(listing: approvedListing, quantity: 15),
         throwsException,
       );
     });
@@ -239,7 +257,9 @@ void main() {
         reservationRepositoryProvider.overrideWithValue(resRepo),
       ]);
 
-      await container.read(reservationProvider.notifier).updateStatus('EB-12345', 'ready_for_pickup');
+      await container
+          .read(reservationProvider.notifier)
+          .updateStatus('EB-12345', 'ready_for_pickup');
       expect(resRepo.updateStatusCalled, isTrue);
     });
   });

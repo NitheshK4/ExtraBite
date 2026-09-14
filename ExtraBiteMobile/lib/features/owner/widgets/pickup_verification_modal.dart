@@ -18,15 +18,19 @@ class PickupVerificationModal extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => PickupVerificationModal(ownerPropertyName: ownerPropertyName),
+      builder: (context) =>
+          PickupVerificationModal(ownerPropertyName: ownerPropertyName),
     );
   }
 
   @override
-  ConsumerState<PickupVerificationModal> createState() => _PickupVerificationModalState();
+  ConsumerState<PickupVerificationModal> createState() =>
+      _PickupVerificationModalState();
 }
 
-class _PickupVerificationModalState extends ConsumerState<PickupVerificationModal> with SingleTickerProviderStateMixin {
+class _PickupVerificationModalState
+    extends ConsumerState<PickupVerificationModal>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final TextEditingController _tokenController = TextEditingController();
   Reservation? _verifiedReservation;
@@ -61,10 +65,12 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
     final match = allReservations.cast<Reservation?>().firstWhere(
       (r) {
         if (r == null) return false;
-        final idMatch = r.id.toUpperCase() == raw || r.id.toUpperCase().endsWith(raw);
+        final idMatch =
+            r.id.toUpperCase() == raw || r.id.toUpperCase().endsWith(raw);
         final tokenMatch = r.pickupToken?.toUpperCase() == raw;
         final qrMatch = r.qrPayload?.toUpperCase().contains(raw) ?? false;
-        return (idMatch || tokenMatch || qrMatch) && r.status == ReservationStatus.reserved;
+        return (idMatch || tokenMatch || qrMatch) &&
+            r.status == ReservationStatus.reserved;
       },
       orElse: () => null,
     );
@@ -75,7 +81,8 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
         _errorMessage = null;
       } else {
         _verifiedReservation = null;
-        _errorMessage = 'No active reservation matching "$query" found for pickup.';
+        _errorMessage =
+            'No active reservation matching "$query" found for pickup.';
       }
     });
   }
@@ -83,7 +90,9 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
   Future<void> _completePickup(Reservation res) async {
     setState(() => _isProcessing = true);
     try {
-      await ref.read(reservationProvider.notifier).updateStatus(res.id, 'picked_up');
+      await ref
+          .read(reservationProvider.notifier)
+          .updateStatus(res.id, 'picked_up');
       if (mounted) {
         setState(() {
           _isProcessing = false;
@@ -131,11 +140,15 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 24),
+                    const Icon(Icons.verified_user_outlined,
+                        color: AppColors.primary, size: 24),
                     const SizedBox(width: 8),
                     Text(
                       'Pickup Verification',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary),
                     ),
                   ],
                 ),
@@ -152,8 +165,10 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
-            labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
-            unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+            labelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700, fontSize: 13),
+            unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600, fontSize: 13),
             tabs: const [
               Tab(icon: Icon(Icons.qr_code_scanner), text: 'SCAN QR CODE'),
               Tab(icon: Icon(Icons.pin_outlined), text: 'ENTER TOKEN / ID'),
@@ -175,7 +190,10 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
   }
 
   Widget _buildScannerTab() {
-    final activeReservations = ref.watch(reservationProvider).where((r) => r.status == ReservationStatus.reserved).toList();
+    final activeReservations = ref
+        .watch(reservationProvider)
+        .where((r) => r.status == ReservationStatus.reserved)
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -201,14 +219,16 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(
-                    child: Icon(Icons.qr_code_2, size: 80, color: Colors.white24),
+                    child:
+                        Icon(Icons.qr_code_2, size: 80, color: Colors.white24),
                   ),
                 ),
                 Positioned(
                   bottom: 12,
                   child: Text(
                     'Point camera at student\'s Digital Pass QR',
-                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+                    style:
+                        GoogleFonts.inter(color: Colors.white70, fontSize: 12),
                   ),
                 ),
               ],
@@ -221,7 +241,10 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
               alignment: Alignment.centerLeft,
               child: Text(
                 'Quick Verify Active Reservations',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: AppColors.textPrimary),
               ),
             ),
             const SizedBox(height: 8),
@@ -241,18 +264,24 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                         backgroundColor: AppColors.primaryLight,
                         child: Icon(Icons.qr_code, color: AppColors.primary),
                       ),
-                      title: Text(r.foodName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14)),
+                      title: Text(r.foodName,
+                          style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700, fontSize: 14)),
                       subtitle: Text(
                         '#${r.id} • ${r.quantity} portion(s) • ₹${r.amountToCollect.toStringAsFixed(0)}',
-                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: AppColors.textSecondary),
                       ),
                       trailing: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                         ),
                         onPressed: () => _completePickup(r),
-                        child: Text('Verify', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 12)),
+                        child: Text('Verify',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w700, fontSize: 12)),
                       ),
                     ),
                   ),
@@ -263,7 +292,8 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: Text('No active reservations awaiting pickup right now.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                child: Text('No active reservations awaiting pickup right now.',
+                    style: GoogleFonts.inter(color: AppColors.textSecondary)),
               ),
             ),
           ],
@@ -286,12 +316,16 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                 color: AppColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_circle, size: 50, color: AppColors.primary),
+              child: const Icon(Icons.check_circle,
+                  size: 50, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
             Text(
               'Pickup Verified & Completed!',
-              style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
@@ -310,10 +344,14 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.currency_rupee, color: AppColors.secondary, size: 20),
+                  const Icon(Icons.currency_rupee,
+                      color: AppColors.secondary, size: 20),
                   Text(
                     'Collect ₹${_verifiedReservation!.amountToCollect.toStringAsFixed(0)} from Student',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.secondary),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: AppColors.secondary),
                   ),
                 ],
               ),
@@ -335,7 +373,8 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
         children: [
           Text(
             'Enter 6-character pickup token or Order # from student\'s digital pass',
-            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+            style:
+                GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 16),
           Row(
@@ -355,7 +394,8 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
               const SizedBox(width: 8),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 ),
                 onPressed: () => _verifyToken(_tokenController.text),
                 child: const Text('Verify'),
@@ -371,7 +411,9 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.error.withOpacity(0.3)),
               ),
-              child: Text(_errorMessage!, style: GoogleFonts.inter(color: AppColors.error, fontSize: 13)),
+              child: Text(_errorMessage!,
+                  style:
+                      GoogleFonts.inter(color: AppColors.error, fontSize: 13)),
             ),
           ],
           if (_verifiedReservation != null) ...[
@@ -391,24 +433,33 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                     children: [
                       Text(
                         '#${_verifiedReservation!.id}',
-                        style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700, fontSize: 14),
+                        style: GoogleFonts.jetBrainsMono(
+                            fontWeight: FontWeight.w700, fontSize: 14),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(9999),
                         ),
-                        child: Text('ACTIVE', style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 11)),
+                        child: Text('ACTIVE',
+                            style: GoogleFonts.inter(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(_verifiedReservation!.foodName, style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(_verifiedReservation!.foodName,
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text(
                     'Portions: ${_verifiedReservation!.quantity} | Total: ₹${_verifiedReservation!.amountToCollect.toStringAsFixed(0)}',
-                    style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+                    style: GoogleFonts.inter(
+                        color: AppColors.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -419,11 +470,19 @@ class _PickupVerificationModalState extends ConsumerState<PickupVerificationModa
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: _isProcessing ? null : () => _completePickup(_verifiedReservation!),
+                      onPressed: _isProcessing
+                          ? null
+                          : () => _completePickup(_verifiedReservation!),
                       icon: _isProcessing
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.check_circle_outline),
-                      label: Text('Confirm Pickup & Collect Payment', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                      label: Text('Confirm Pickup & Collect Payment',
+                          style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],

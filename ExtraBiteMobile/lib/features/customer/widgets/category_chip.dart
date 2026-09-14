@@ -59,14 +59,18 @@ class CategoryChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected ? AppColors.onPrimaryContainer : AppColors.textPrimary,
+                color: isSelected
+                    ? AppColors.onPrimaryContainer
+                    : AppColors.textPrimary,
               ),
               const SizedBox(width: 6),
             ],
             Text(
               label,
               style: GoogleFonts.plusJakartaSans(
-                color: isSelected ? AppColors.onPrimaryContainer : AppColors.textPrimary,
+                color: isSelected
+                    ? AppColors.onPrimaryContainer
+                    : AppColors.textPrimary,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 fontSize: 13,
               ),

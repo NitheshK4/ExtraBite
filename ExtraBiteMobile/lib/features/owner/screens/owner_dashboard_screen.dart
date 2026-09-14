@@ -15,7 +15,8 @@ class OwnerDashboardScreen extends ConsumerStatefulWidget {
   const OwnerDashboardScreen({super.key});
 
   @override
-  ConsumerState<OwnerDashboardScreen> createState() => _OwnerDashboardScreenState();
+  ConsumerState<OwnerDashboardScreen> createState() =>
+      _OwnerDashboardScreenState();
 }
 
 class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
@@ -39,26 +40,39 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
 
     if (user == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body:
+            Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
     final ownerPropName = (user.propertyName ?? user.name).toLowerCase();
-    final ownerListings = foodState.listings.where(
-      (listing) => listing.propertyName.toLowerCase() == ownerPropName || listing.propertyId == user.id,
-    ).toList();
+    final ownerListings = foodState.listings
+        .where(
+          (listing) =>
+              listing.propertyName.toLowerCase() == ownerPropName ||
+              listing.propertyId == user.id,
+        )
+        .toList();
 
-    final ownerReservations = allReservations.where(
-      (r) => r.propertyName.toLowerCase() == ownerPropName || ownerListings.any((l) => l.id == r.foodListingId),
-    ).toList();
+    final ownerReservations = allReservations
+        .where(
+          (r) =>
+              r.propertyName.toLowerCase() == ownerPropName ||
+              ownerListings.any((l) => l.id == r.foodListingId),
+        )
+        .toList();
 
-    final pendingPickups = ownerReservations.where(
-      (r) => r.status == ReservationStatus.reserved,
-    ).length;
+    final pendingPickups = ownerReservations
+        .where(
+          (r) => r.status == ReservationStatus.reserved,
+        )
+        .length;
 
-    final completedPickups = ownerReservations.where(
-      (r) => r.status == ReservationStatus.completed,
-    ).length;
+    final completedPickups = ownerReservations
+        .where(
+          (r) => r.status == ReservationStatus.completed,
+        )
+        .length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -77,7 +91,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
         ),
         title: Text(
           user.propertyName ?? 'Owner Dashboard',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -188,7 +203,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                 Expanded(
                   child: MetricStatCard(
                     title: 'Portions Left',
-                    value: '${ownerListings.fold<int>(0, (sum, item) => sum + item.availablePortions)}',
+                    value:
+                        '${ownerListings.fold<int>(0, (sum, item) => sum + item.availablePortions)}',
                     icon: Icons.inventory_2_outlined,
                     color: AppColors.secondary,
                   ),
@@ -224,7 +240,10 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.85)],
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.85)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -245,7 +264,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+                    child: const Icon(Icons.qr_code_scanner,
+                        color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -275,8 +295,10 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                     ),
                     onPressed: () {
                       showModalBottomSheet(
@@ -290,7 +312,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                     },
                     child: Text(
                       'Verify',
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700, fontSize: 13),
                     ),
                   ),
                 ],
@@ -326,7 +349,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                   padding: const EdgeInsets.all(32.0),
                   child: Column(
                     children: [
-                      const Icon(Icons.fastfood_outlined, size: 48, color: AppColors.textLight),
+                      const Icon(Icons.fastfood_outlined,
+                          size: 48, color: AppColors.textLight),
                       const SizedBox(height: 12),
                       Text(
                         'No surplus food listed today',
@@ -340,7 +364,10 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                       Text(
                         'Click "+ Add Meal" above to post fresh surplus food for nearby students and residents.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            height: 1.4),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -354,7 +381,9 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
               ),
             ] else ...[
               Column(
-                children: ownerListings.map((item) => _buildListingCard(context, item)).toList(),
+                children: ownerListings
+                    .map((item) => _buildListingCard(context, item))
+                    .toList(),
               ),
             ],
 
@@ -379,14 +408,17 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                   child: Center(
                     child: Text(
                       'No customer reservations received yet.',
-                      style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+                      style: GoogleFonts.inter(
+                          color: AppColors.textSecondary, fontSize: 13),
                     ),
                   ),
                 ),
               ),
             ] else ...[
               Column(
-                children: ownerReservations.map((res) => _buildReservationCard(context, ref, res)).toList(),
+                children: ownerReservations
+                    .map((res) => _buildReservationCard(context, ref, res))
+                    .toList(),
               ),
             ],
 
@@ -404,7 +436,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                 icon: const Icon(Icons.logout, size: 18),
                 label: Text(
                   'Log Out Owner Session',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
+                  style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700, fontSize: 13),
                 ),
               ),
             ),
@@ -427,58 +460,127 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: item.isVegetarian ? AppColors.dietaryVeg : AppColors.dietaryNonVeg,
-                          width: 1.5,
+              // Food Image Thumbnail
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    border: Border.all(color: AppColors.outlineVariant),
+                  ),
+                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          item.imageUrl!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                                  ? child
+                                  : const Center(
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      ),
+                                    ),
+                          errorBuilder: (_, __, ___) => Icon(
+                            item.isVegetarian ? Icons.eco : Icons.kebab_dining,
+                            color: item.isVegetarian
+                                ? AppColors.dietaryVeg
+                                : AppColors.dietaryNonVeg,
+                            size: 26,
+                          ),
+                        )
+                      : Icon(
+                          item.isVegetarian ? Icons.eco : Icons.kebab_dining,
+                          color: item.isVegetarian
+                              ? AppColors.dietaryVeg
+                              : AppColors.dietaryNonVeg,
+                          size: 26,
                         ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: item.isVegetarian ? AppColors.dietaryVeg : AppColors.dietaryNonVeg,
-                      ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Meal Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: item.isVegetarian
+                                        ? AppColors.dietaryVeg
+                                        : AppColors.dietaryNonVeg,
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Icon(
+                                  Icons.circle,
+                                  size: 6,
+                                  color: item.isVegetarian
+                                      ? AppColors.dietaryVeg
+                                      : AppColors.dietaryNonVeg,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  item.foodName,
+                                  style: GoogleFonts.plusJakartaSans(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: item.status == 'active'
+                                ? AppColors.primaryLight
+                                : AppColors.outlineVariant,
+                            borderRadius: BorderRadius.circular(9999),
+                          ),
+                          child: Text(
+                            item.status.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              color: item.status == 'active'
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.foodName,
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '₹${item.sellingPrice.toStringAsFixed(0)} (Original ₹${item.originalPrice.toStringAsFixed(0)}) · ${item.availablePortions} left',
+                      style: GoogleFonts.inter(
+                          color: AppColors.textSecondary, fontSize: 13),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: item.status == 'active' ? AppColors.primaryLight : AppColors.outlineVariant,
-                  borderRadius: BorderRadius.circular(9999),
-                ),
-                child: Text(
-                  item.status.toUpperCase(),
-                  style: GoogleFonts.inter(
-                    color: item.status == 'active' ? AppColors.primary : AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '₹${item.sellingPrice.toStringAsFixed(0)} (Original ₹${item.originalPrice.toStringAsFixed(0)}) · ${item.availablePortions} portions left',
-            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 12),
           Row(
@@ -486,19 +588,37 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
             children: [
               Text(
                 'Category: ${item.category}',
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textLight),
+                style:
+                    GoogleFonts.inter(fontSize: 12, color: AppColors.textLight),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
-                tooltip: 'Remove Listing',
-                onPressed: () async {
-                  await ref.read(foodProvider.notifier).removeListing(item.id);
-                  if (mounted && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Meal listing removed.')),
-                    );
-                  }
-                },
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined,
+                        color: AppColors.primary, size: 20),
+                    tooltip: 'Edit Listing',
+                    onPressed: () {
+                      context.push('/owner/add-meal', extra: item);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppColors.error, size: 20),
+                    tooltip: 'Remove Listing',
+                    onPressed: () async {
+                      await ref
+                          .read(foodProvider.notifier)
+                          .removeListing(item.id);
+                      if (mounted && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Meal listing removed.')),
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -507,7 +627,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
     );
   }
 
-  Widget _buildReservationCard(BuildContext context, WidgetRef ref, Reservation res) {
+  Widget _buildReservationCard(
+      BuildContext context, WidgetRef ref, Reservation res) {
     final isReserved = res.status == ReservationStatus.reserved;
     final isCompleted = res.status == ReservationStatus.completed;
 
@@ -527,7 +648,10 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
             children: [
               Text(
                 '#${res.id}',
-                style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textLight),
+                style: GoogleFonts.jetBrainsMono(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.textLight),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -557,12 +681,14 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
           const SizedBox(height: 8),
           Text(
             res.foodName,
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15),
+            style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700, fontSize: 15),
           ),
           const SizedBox(height: 4),
           Text(
             '${res.quantity} portion(s) · ₹${res.amountToCollect.toStringAsFixed(0)} to collect',
-            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+            style:
+                GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
           ),
           if (isReserved) ...[
             const SizedBox(height: 12),
@@ -573,11 +699,14 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     onPressed: () {
-                      ref.read(reservationProvider.notifier).updateStatus(res.id, 'picked_up');
+                      ref
+                          .read(reservationProvider.notifier)
+                          .updateStatus(res.id, 'picked_up');
                     },
                     icon: const Icon(Icons.check, size: 16),
                     label: const Text('Mark Collected'),
@@ -588,7 +717,9 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                   icon: const Icon(Icons.close, color: AppColors.error),
                   tooltip: 'Cancel Order',
                   onPressed: () {
-                    ref.read(reservationProvider.notifier).cancelReservation(res.id);
+                    ref
+                        .read(reservationProvider.notifier)
+                        .cancelReservation(res.id);
                   },
                 ),
               ],
@@ -608,13 +739,17 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Log Out?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        title: Text('Log Out?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Are you sure you want to log out? All cached owner session data will be cleared.',
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+          style:
+              GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             onPressed: () {

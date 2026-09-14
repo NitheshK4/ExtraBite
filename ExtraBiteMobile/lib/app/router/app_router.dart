@@ -22,6 +22,7 @@ import '../../features/customer/screens/food_detail_screen.dart';
 import '../../features/customer/screens/reservation_pass_screen.dart';
 import '../../features/customer/widgets/customer_bottom_nav.dart';
 import '../../models/user_role.dart';
+import '../../models/food_listing.dart';
 import '../../providers/auth_provider.dart';
 
 import '../../features/owner/screens/property_registration_screen.dart';
@@ -47,7 +48,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // -----------------------------------------------------------------------
       if (status == AuthStatus.uninitialized ||
           status == AuthStatus.profileLoading) {
-        if (loc == '/auth/role-selection' || loc == '/auth/welcome') return null;
+        if (loc == '/auth/role-selection' || loc == '/auth/welcome')
+          return null;
         return '/auth/role-selection';
       }
 
@@ -55,7 +57,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Priority 2 — No session (welcome, role-selection, or login flows)
       // -----------------------------------------------------------------------
       if (status == AuthStatus.selectingRole) {
-        if (loc == '/auth/role-selection' || loc == '/auth/welcome') return null;
+        if (loc == '/auth/role-selection' || loc == '/auth/welcome')
+          return null;
         return '/auth/role-selection';
       }
 
@@ -226,9 +229,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final authState = ref.read(authProvider);
           final user = authState.user;
           if (user == null) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+            return const Scaffold(
+                body: Center(child: CircularProgressIndicator()));
           }
-          return AddMealScreen(user: user);
+          final initialListing = state.extra as FoodListing?;
+          return AddMealScreen(user: user, initialListing: initialListing);
         },
       ),
 
