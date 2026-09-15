@@ -79,3 +79,7 @@ skills-lock.json
 *.temp
 app.*.symbols
 app.*.map.json
+
+# Local OAuth reports
+GOOGLE_OAUTH_ANDROID_REDIRECT_FIX_REPORT.md
+GOOGLE_OAUTH_REDIRECT_AUDIT.md
